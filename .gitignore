@@ -27,6 +27,11 @@
 # debug
 artifacts/
 server.log
+__pycache__/
+*.pyc
+images/processed/_alpha_test.png
+images/processed/_alpha_test.webp
+images/processed/_debug_*.png
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

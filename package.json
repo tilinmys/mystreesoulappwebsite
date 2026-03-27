@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "assets:optimize": "python scripts/optimize_bloop.py",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

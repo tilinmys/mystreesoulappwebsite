@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "MyStree Soul",
+    "slug": "mystree-soul",
+    "scheme": "mystreesoul",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "images/**/*",
+      "public/images/**/*",
+      "assets/fonts/**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF8F5"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/PlayfairDisplay_700Bold.ttf",
+            "./assets/fonts/PlayfairDisplay_800ExtraBold.ttf",
+            "./assets/fonts/PlayfairDisplay_400Regular_Italic.ttf"
+          ]
+        }
+      ]
+    ]
+  }
+}

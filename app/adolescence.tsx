@@ -1,6 +1,6 @@
 import { ComingSoonScreen } from "../components/system/ComingSoonScreen";
 
-const bloopImage = require("../public/images/bloop-learning-private.webp");
+const bloopImage = require("../public/images/bloop-adolescence-safe.webp");
 
 export default function AdolescenceScreen() {
   return (

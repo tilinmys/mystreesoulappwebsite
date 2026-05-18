@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
 import { ContextualAuraBackground } from "../components/ContextualAuraBackground";
+import { F } from "../constants/fonts";
 import { useAuthStore } from "../store/authStore";
 import { useSafeBack } from "../hooks/useSafeBack";
 
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
   header: { minHeight: 58, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
   iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(250,249,246,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.82)" },
   headerCopy: { flex: 1, alignItems: "center" },
-  headerTitle: { color: palette.text, fontFamily: "serif", fontSize: 22, lineHeight: 27, fontWeight: "800" },
+  headerTitle: { color: palette.text, fontFamily: F.luxuryBold, fontSize: 22, lineHeight: 27 },
   headerSub: { color: palette.muted, fontSize: 12, lineHeight: 16, fontWeight: "700", marginTop: 2 },
   headerSpacer: { width: 44, height: 44 },
   heroCard: { minHeight: 232, borderRadius: 32, padding: 24, overflow: "hidden", justifyContent: "flex-end", shadowColor: palette.text, shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.18, shadowRadius: 30, elevation: 7 },
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
   heroGlyph: { position: "absolute", top: 22, left: 22, width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.14)" },
   heroCopy: { maxWidth: 286 },
   heroKicker: { color: palette.lavender, fontSize: 11, lineHeight: 15, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
-  heroTitle: { color: "#FFFFFF", fontFamily: "serif", fontSize: 25, lineHeight: 31, fontWeight: "800", marginTop: 10 },
+  heroTitle: { color: "#FFFFFF", fontFamily: F.luxuryBold, fontSize: 25, lineHeight: 31, marginTop: 10 },
   heroSub: { color: "rgba(250,249,246,0.70)", fontSize: 13, lineHeight: 19, fontWeight: "700", marginTop: 10 },
   heroOrb: { position: "absolute", right: 22, top: 22, width: 62, height: 62, borderRadius: 31, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.12)" },
   heroBloop: { width: 48, height: 48 },

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
+import { normalizeAvailableNeeds } from "../../constants/onboardingAdaptation";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
 const { width: W, height: H } = Dimensions.get("window");
@@ -58,7 +59,7 @@ type NeedCard = {
 const NEEDS: NeedCard[] = [
   {
     id:        "self_love",
-    label:     "Self Love",
+    label:     "Self-love",
     icon:      "heart",
     iconColor: C.rose,
     selBg:     ["#FDDDE8", "#FBF0F4"],
@@ -69,8 +70,8 @@ const NEEDS: NeedCard[] = [
   },
   {
     id:        "goal_setting",
-    label:     "Goal Setting",
-    icon:      "star-four-points-outline",
+    label:     "Goal setter",
+    icon:      "target",
     iconColor: "#C87040",
     selBg:     ["#FBF0E2", "#FDF8F2"],
     idleBg:    ["#FFFCFB", "#FFFAF7"],
@@ -79,7 +80,7 @@ const NEEDS: NeedCard[] = [
   },
   {
     id:        "nutrition",
-    label:     "Balanced\nNutrition",
+    label:     "Balanced",
     icon:      "leaf",
     iconColor: C.sage,
     selBg:     ["#E4F4E8", "#F2FAF4"],
@@ -172,6 +173,9 @@ export default function OnboardingGoalsScreen() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const toggle = (id: string) => {
+    const card = NEEDS.find((need) => need.id === id);
+    if (card?.locked) return;
+
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -180,7 +184,7 @@ export default function OnboardingGoalsScreen() {
   };
 
   const handleContinue = () => {
-    setSelectedGoals(Array.from(selected));
+    setSelectedGoals(normalizeAvailableNeeds(Array.from(selected)));
     setLifeStage("cycle_fertility"); // sensible default; overridable in health-setup
     router.push("/(onboarding)/privacy-consent");
   };
@@ -205,7 +209,7 @@ export default function OnboardingGoalsScreen() {
       <View style={s.header}>
         <View>
           <Text style={s.logoText}>MyStree Soul</Text>
-          <Text style={s.logoSub}>Your wellness sanctuary</Text>
+          <Text style={s.logoSub}>Your wellness space</Text>
         </View>
         <Pressable
           style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
@@ -284,7 +288,7 @@ export default function OnboardingGoalsScreen() {
         {/* ── Main question ── */}
         <View style={s.questionWrap}>
           <Text style={s.question}>What do you{"\n"}need today?</Text>
-          <Text style={s.questionSub}>Choose what feels right.</Text>
+          <Text style={s.questionSub}>Self-love, goals, cycle, calm, or clarity.</Text>
         </View>
 
         {/* ── Card grid ── */}
@@ -374,10 +378,12 @@ function NeedTile({
   return (
     <Pressable
       onPress={onPress}
+      disabled={card.locked}
       accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
+      accessibilityState={{ disabled: card.locked, selected: isSelected }}
       style={({ pressed }) => [
         s.tileShell,
+        card.locked && s.tileLocked,
         isSelected && {
           borderColor: card.glow,
           shadowColor: card.glow,
@@ -434,6 +440,7 @@ function NeedTile({
         <Text style={[s.tileLabel, isSelected && { color: C.text }]}>
           {card.label}
         </Text>
+        {card.locked && <Text style={s.lockedLabel}>Soul Premium</Text>}
 
       </LinearGradient>
     </Pressable>
@@ -596,7 +603,7 @@ const s = StyleSheet.create({
   // ── Hero area ─────────────────────────────────────────────────────────────
   heroArea: {
     width: W,
-    height: H * 0.35,
+    height: H * 0.25,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -696,29 +703,29 @@ const s = StyleSheet.create({
     elevation: 8,
   },
   bloopImg: {
-    width: 158,
-    height: 158,
+    width: 124,
+    height: 124,
   },
 
   // ── Question text ──────────────────────────────────────────────────────────
   questionWrap: {
     paddingHorizontal: SIDE_PAD,
     alignItems: "center",
-    marginTop: 4,
-    marginBottom: 24,
-    gap: 6,
+    marginTop: 0,
+    marginBottom: 14,
+    gap: 4,
   },
   question: {
     fontFamily: F.luxuryBold,              // PlayfairDisplay Bold — hero question
-    fontSize: 36,
-    lineHeight: 44,
+    fontSize: 31,
+    lineHeight: 37,
     color: C.text,
     textAlign: "center",
     letterSpacing: 0.1,
   },
   questionSub: {
     fontFamily: F.uiMedium,                // Nunito Medium — gentle supporting line
-    fontSize: 14,
+    fontSize: 13,
     color: C.muted,
     textAlign: "center",
     letterSpacing: 0.2,
@@ -748,19 +755,22 @@ const s = StyleSheet.create({
     elevation: 3,
     overflow: "hidden",
   },
+  tileLocked: {
+    opacity: 0.68,
+  },
   tileGrad: {
     borderRadius: 26,
-    padding: 16,
-    minHeight: 188,
+    padding: 13,
+    minHeight: 146,
     justifyContent: "space-between",
   },
   tileBadge: {
     position: "absolute",
-    top: 14,
-    right: 14,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    top: 10,
+    right: 10,
+    width: 23,
+    height: 23,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -773,13 +783,13 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   tileIllusBubble: {
-    width: 88,
-    height: 88,
-    borderRadius: 26,
+    width: 66,
+    height: 66,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -789,15 +799,23 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   tileIllusImg: {
-    width: 72,
-    height: 72,
+    width: 56,
+    height: 56,
   },
   tileLabel: {
     fontFamily: F.uiBold,                  // Nunito Bold — card label
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 14,
+    lineHeight: 18,
     color: C.text,
-    marginTop: 4,
+    marginTop: 2,
+  },
+  lockedLabel: {
+    fontFamily: F.uiBlack,
+    fontSize: 9,
+    color: C.gold,
+    letterSpacing: 0.6,
+    marginTop: 3,
+    textTransform: "uppercase",
   },
 
   // ── CycleTile — full-width card ───────────────────────────────────────────
@@ -819,10 +837,10 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingLeft: 20,
+    paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 18,
-    minHeight: 110,
+    paddingVertical: 12,
+    minHeight: 88,
   },
   cycleLeft: {
     flex: 1,
@@ -831,26 +849,26 @@ const s = StyleSheet.create({
     gap: 14,
   },
   cycleIconBubble: {
-    width: 62,
-    height: 62,
-    borderRadius: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     backgroundColor: "rgba(224,122,95,0.13)",
     alignItems: "center",
     justifyContent: "center",
   },
   cycleOrbitOuter: {
     position: "absolute",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "rgba(224,122,95,0.18)",
   },
   cycleOrbitInner: {
     position: "absolute",
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: "rgba(224,122,95,0.12)",
     borderStyle: "dashed",

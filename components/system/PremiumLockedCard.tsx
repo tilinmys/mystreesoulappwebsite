@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { lightColors } from "../../constants/colors";
+import { F } from "../../constants/fonts";
 import { spacing } from "../../constants/spacing";
 
 const features = ["Advanced AI pattern detection", "Weekly hormone reports", "Premium yoga flows", "Nutrition guidance", "Wearable intelligence"];
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
   lockIcon: { position: "absolute", top: 20, right: 20, width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.12)" },
   previewChart: { position: "absolute", left: 22, top: 28, width: 132, gap: 9, opacity: 0.48 },
   previewLine: { height: 10, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.20)" },
-  title: { color: "#FFFFFF", fontFamily: "serif", fontSize: 24, lineHeight: 30, fontWeight: "800", maxWidth: 290 },
+  title: { color: "#FFFFFF", fontFamily: F.luxuryBold, fontSize: 24, lineHeight: 30, maxWidth: 290 },
   copy: { color: "rgba(250,249,246,0.68)", fontSize: 13, lineHeight: 19, fontWeight: "700", marginTop: 8 },
   cta: { alignSelf: "flex-start", marginTop: 16, minHeight: 42, borderRadius: 21, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(255,255,255,0.16)" },
   ctaText: { color: "#FFFFFF", fontSize: 12, lineHeight: 16, fontWeight: "900" },
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
   previewButtonText: { color: lightColors.terracotta, fontSize: 12, lineHeight: 16, fontWeight: "900" },
   sheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, backgroundColor: lightColors.background },
   sheetHandle: { alignSelf: "center", width: 44, height: 5, borderRadius: 999, backgroundColor: "rgba(107,112,141,0.22)", marginBottom: 18 },
-  sheetTitle: { color: lightColors.text, fontFamily: "serif", fontSize: 26, lineHeight: 32, fontWeight: "800", marginBottom: 14 },
+  sheetTitle: { color: lightColors.text, fontFamily: F.luxuryBold, fontSize: 26, lineHeight: 32, marginBottom: 14 },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 34 },
   featureText: { color: lightColors.text, fontSize: 13, lineHeight: 18, fontWeight: "800" },
   sheetCta: { minHeight: 50, borderRadius: 25, alignItems: "center", justifyContent: "center", backgroundColor: lightColors.terracotta, marginTop: 18 },

@@ -16,13 +16,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
 import { useHaptics } from "../../hooks/useHaptics";
+import { useSafeBack } from "../../hooks/useSafeBack";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
 const { width: W, height: H } = Dimensions.get("window");
 const SIDE_PAD     = 20;
 const CARD_GAP     = 10;
 const TRUST_CARD_W = (W - SIDE_PAD * 2 - CARD_GAP * 2) / 3;
-const HERO_H       = Math.round(H * 0.40);
+const HERO_H       = Math.round(H * 0.27);
 const CONTAINER_W  = W - SIDE_PAD * 2;
 
 // ── Assets ────────────────────────────────────────────────────────────────────
@@ -44,15 +45,15 @@ const C = {
 } as const;
 
 // ── Vault illustration dimensions (computed once) ─────────────────────────────
-const VAULT_W    = 148;
-const VAULT_H    = 148;
+const VAULT_W    = 112;
+const VAULT_H    = 112;
 const VAULT_LEFT = (CONTAINER_W - VAULT_W) / 2;
 const VAULT_TOP  = Math.round(HERO_H * 0.13);
 
-const SHIELD_W    = 48;
+const SHIELD_W    = 40;
 const SHIELD_LEFT = (CONTAINER_W - SHIELD_W) / 2;
 
-const FP_W    = 34;
+const FP_W    = 28;
 const FP_LEFT = (CONTAINER_W - FP_W) / 2;
 
 // ── Sparkle positions inside hero ─────────────────────────────────────────────
@@ -68,6 +69,7 @@ const SPARKLE_COLORS = ["#F4B86E", "#E05875", "#C9A96E", "#BDB2FF", "#E07A5F"] a
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function PrivacyConsentScreen() {
   const router              = useRouter();
+  const safeBack            = useSafeBack("/(onboarding)/onboarding");
   const haptics             = useHaptics();
   const acceptPrivacyConsent = useOnboardingStore((s) => s.acceptPrivacyConsent);
 
@@ -101,7 +103,7 @@ export default function PrivacyConsentScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={safeBack}
           style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}
           hitSlop={10}
         >
@@ -110,7 +112,7 @@ export default function PrivacyConsentScreen() {
 
         <View style={s.headerCenter}>
           <Text style={s.logoText}>MyStree Soul</Text>
-          <Text style={s.logoSub}>Private. Safe. Yours.</Text>
+          <Text style={s.logoSub}>Your secrets are safe here.</Text>
         </View>
 
         <Pressable
@@ -135,14 +137,14 @@ export default function PrivacyConsentScreen() {
         <View style={s.encryptedWrap}>
           <View style={s.encryptedBadge}>
             <MaterialCommunityIcons name="lock-outline" size={14} color={C.gold} />
-            <Text style={s.encryptedLabel}>Encrypted</Text>
+            <Text style={s.encryptedLabel}>Safe space</Text>
           </View>
         </View>
 
         {/* ── Main headline ── */}
         <View style={s.headlineWrap}>
-          <Text style={s.headline}>Your wellness{"\n"}stays with you.</Text>
-          <Text style={s.headlineSub}>Protected with care.</Text>
+          <Text style={s.headline}>Hey No worries.{"\n"}Your secrets are safe with us!</Text>
+          <Text style={s.headlineSub}>You choose what to share.</Text>
         </View>
 
         {/* ── Trust cards (3-column) ── */}
@@ -151,19 +153,19 @@ export default function PrivacyConsentScreen() {
             icon="shield-lock-outline"
             iconColor={C.terracotta}
             bg={["#FDEEE6", "#FFF6F2"]}
-            label="Private"
+            label="Secrets safe"
           />
           <TrustCard
             icon="heart-pulse"
             iconColor={C.rose}
             bg={["#FDDDE6", "#FFF0F4"]}
-            label={"Doctor\nguided"}
+            label={"Bloop\nhas you"}
           />
           <TrustCard
             icon="head-heart-outline"
             iconColor={C.lavender}
             bg={["#EDE8F8", "#F6F2FB"]}
-            label={"Emotionally\naware"}
+            label={"Not\nalone"}
             image={bloopCalm}
           />
         </View>
@@ -174,7 +176,7 @@ export default function PrivacyConsentScreen() {
             icon="shield-check-outline"
             iconColor={C.terracotta}
             iconBg="rgba(224,122,95,0.14)"
-            label="Health data protection"
+            label="Protect my health data"
             value={toggles.health}
             onToggle={() => flip("health")}
           />
@@ -183,7 +185,7 @@ export default function PrivacyConsentScreen() {
             icon="brain"
             iconColor={C.lavender}
             iconBg="rgba(146,119,200,0.14)"
-            label="AI wellness guidance"
+            label="Bloop can guide me"
             value={toggles.ai}
             onToggle={() => flip("ai")}
           />
@@ -192,7 +194,7 @@ export default function PrivacyConsentScreen() {
             icon="meditation"
             iconColor={C.sage}
             iconBg="rgba(94,155,107,0.14)"
-            label="Emotional wellness support"
+            label="Support my emotions"
             value={toggles.emotional}
             onToggle={() => flip("emotional")}
           />
@@ -215,11 +217,11 @@ export default function PrivacyConsentScreen() {
             style={s.ctaGrad}
           >
             <MaterialCommunityIcons name="shield-check" size={22} color="#FFF" />
-            <Text style={s.ctaLabel}>I Feel Safe</Text>
+            <Text style={s.ctaLabel}>Continue safely</Text>
           </LinearGradient>
         </Pressable>
 
-        <Text style={s.ctaSub}>You're always in control.</Text>
+        <Text style={s.ctaSub}>You can change this later.</Text>
 
         {/* Page dots — 6 total, 2nd active */}
         <View style={s.dotsRow}>
@@ -353,7 +355,7 @@ function VaultHero() {
               pointerEvents="none"
               style={[
                 s.dialTick,
-                { transform: [{ rotate: `${deg}deg` }, { translateY: -42 }] },
+                { transform: [{ rotate: `${deg}deg` }, { translateY: -32 }] },
               ]}
             />
           ))}
@@ -671,40 +673,40 @@ const s = StyleSheet.create({
   // Concentric combination dial rings
   dialRing4: {
     position: "absolute",
-    width: 110, height: 110, borderRadius: 55,
+    width: 84, height: 84, borderRadius: 42,
     borderWidth: 2, borderColor: "rgba(255,255,255,0.16)",
   },
   dialRing3: {
     position: "absolute",
-    width: 88, height: 88, borderRadius: 44,
+    width: 68, height: 68, borderRadius: 34,
     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.22)",
   },
   dialRing2: {
     position: "absolute",
-    width: 66, height: 66, borderRadius: 33,
+    width: 50, height: 50, borderRadius: 25,
     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.28)",
   },
   dialRing1: {
     position: "absolute",
-    width: 46, height: 46, borderRadius: 23,
+    width: 36, height: 36, borderRadius: 18,
     borderWidth: 2, borderColor: "rgba(255,255,255,0.36)",
   },
   dialTick: {
     position: "absolute",
-    width: 2, height: 8, borderRadius: 1,
+    width: 2, height: 6, borderRadius: 1,
     backgroundColor: "rgba(255,255,255,0.30)",
   },
   keyholeOuter: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 30, height: 30, borderRadius: 15,
     backgroundColor: "rgba(30,10,0,0.25)",
     alignItems: "center", justifyContent: "center",
     zIndex: 1,
   },
   vaultGlowBase: {
     position: "absolute",
-    bottom: -12,
-    left: (VAULT_W - 120) / 2,
-    width: 120, height: 20,
+    bottom: -10,
+    left: (VAULT_W - 92) / 2,
+    width: 92, height: 16,
     borderRadius: 10,
     backgroundColor: "rgba(200,100,60,0.22)",
   },
@@ -712,9 +714,9 @@ const s = StyleSheet.create({
   // Platform
   platform: {
     position: "absolute",
-    left: (CONTAINER_W - 200) / 2,
-    bottom: 28,
-    width: 200, height: 22,
+    left: (CONTAINER_W - 160) / 2,
+    bottom: 20,
+    width: 160, height: 18,
     borderRadius: 11,
     backgroundColor: "rgba(220,170,140,0.35)",
   },
@@ -765,20 +767,20 @@ const s = StyleSheet.create({
     paddingHorizontal: SIDE_PAD,
     alignItems: "center",
     gap: 6,
-    marginTop: 10,
-    marginBottom: 22,
+    marginTop: 6,
+    marginBottom: 12,
   },
   headline: {
     fontFamily: F.luxuryBold,              // PlayfairDisplay Bold — hero statement
-    fontSize: 34,
-    lineHeight: 42,
+    fontSize: 26,
+    lineHeight: 32,
     color: C.text,
     textAlign: "center",
     letterSpacing: 0.1,
   },
   headlineSub: {
     fontFamily: F.uiMedium,                // Nunito Medium
-    fontSize: 14,
+    fontSize: 13,
     color: C.muted,
     textAlign: "center",
   },
@@ -788,7 +790,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: SIDE_PAD,
     gap: CARD_GAP,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   trustCard: {
     width: TRUST_CARD_W,
@@ -801,16 +803,16 @@ const s = StyleSheet.create({
     shadowOpacity: 0.09, shadowRadius: 14, elevation: 3,
   },
   trustCardGrad: {
-    padding: 12,
-    minHeight: 140,
+    padding: 9,
+    minHeight: 102,
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
   },
   trustIconBubble: {
-    width: TRUST_CARD_W - 24,
-    height: TRUST_CARD_W - 24,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -818,13 +820,13 @@ const s = StyleSheet.create({
     shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
   trustCardImg: {
-    width: (TRUST_CARD_W - 24) * 0.85,
-    height: (TRUST_CARD_W - 24) * 0.85,
+    width: 46,
+    height: 46,
   },
   trustCardLabel: {
     fontFamily: F.uiBold,                  // Nunito Bold — card label
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 10.5,
+    lineHeight: 14,
     color: C.text,
     textAlign: "center",
   },
@@ -844,9 +846,9 @@ const s = StyleSheet.create({
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
   },
   toggleDivider: {
     height: 1,
@@ -854,13 +856,13 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
   },
   toggleIconBubble: {
-    width: 42, height: 42, borderRadius: 14,
+    width: 34, height: 34, borderRadius: 13,
     alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
   toggleLabel: {
     fontFamily: F.uiMedium,                // Nunito Medium — toggle label
-    fontSize: 13,
+    fontSize: 12.5,
     color: C.text,
     flex: 1,
   },

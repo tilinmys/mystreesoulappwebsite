@@ -21,6 +21,7 @@ import { typography } from "../constants/typography";
 import { useColorMode } from "../hooks/useColorMode";
 import { useHaptics } from "../hooks/useHaptics";
 import { useAuthStore } from "../store/authStore";
+import { useNavigationIntentStore } from "../store/navigationIntentStore";
 import { useOnboardingStore } from "../store/onboardingStore";
 
 const bloop = require("../public/images/bloop-welcome.webp");
@@ -31,6 +32,7 @@ export default function LoginScreen() {
   const { colors, mode } = useColorMode();
   const haptics = useHaptics();
   const login = useAuthStore((state) => state.login);
+  const consumeNavigationIntent = useNavigationIntentStore((state) => state.consumeNavigationIntent);
   const hasCompletedOnboarding = useOnboardingStore((state) => state.hasCompletedOnboarding);
   const [email, setEmail] = useState("test@mystreesoul.com");
   const [password, setPassword] = useState("password123");
@@ -50,7 +52,12 @@ export default function LoginScreen() {
     }
 
     haptics.success();
-    router.replace(hasCompletedOnboarding ? "/(tabs)/dashboard" : "/(onboarding)/onboarding");
+    const intendedPath = hasCompletedOnboarding ? consumeNavigationIntent() : null;
+    router.replace(
+      hasCompletedOnboarding
+        ? ((intendedPath ?? "/(tabs)/dashboard") as any)
+        : "/(onboarding)/onboarding"
+    );
   };
 
   return (

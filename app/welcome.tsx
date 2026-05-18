@@ -5,7 +5,6 @@ import {
   Animated,
   Dimensions,
   Easing,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Ellipse, Path } from "react-native-svg";
 import { CachedImage } from "../components/CachedImage";
+import { F } from "../constants/fonts";
 
 const { width: W, height: H } = Dimensions.get("window");
 
@@ -521,16 +521,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   headline: {
-    fontFamily: Platform.OS === "ios"
-      ? "PlayfairDisplay_800ExtraBold"
-      : "PlayfairDisplay_700Bold",
+    fontFamily: F.luxuryExtraBold,
     fontSize: H < 700 ? 26 : 30,
     lineHeight: H < 700 ? 33 : 38,
     textAlign: "center",
     color: C.text,
   },
   headlineAccent: {
-    fontFamily: "PlayfairDisplay_400Regular_Italic",
+    fontFamily: F.luxuryItalic,
     color: C.terracotta,
   },
   body: {

@@ -16,10 +16,10 @@ This map keeps Bloop art intentional, so every screen feels premium instead of r
 | `bloop-pregnancy.webp` | Maternal Bloop, optimized transparent WebP | Pregnancy journey | Pregnancy header and maternal insight |
 | `bloop-calm.webp` | Calm/meditation Bloop, optimized transparent WebP | Wellness and emotional check-ins | Wellness/profile/emotional support |
 | `bloop-welcome-original.png` | Warm cream droplet Bloop with glowing heart | Emotional onboarding, nurture, maternal care, nutrition warmth | Use only when Bloop feels gentle/caring, not as the main nav mascot |
-| `bloop-welcome.webp` | Optimized heart Bloop | Production version of welcome/nurture Bloop | Splash, onboarding helper cards, health setup, sanctuary-ready, nourish insight, pregnancy insight |
+| `bloop-welcome.webp` | Optimized heart Bloop | Production version of welcome/nurture Bloop | Splash, onboarding helper cards, health setup, Soul-ready, nourish insight, pregnancy insight |
 | `onboarding-cycle-guide.webp` | Friendly peach character art | Soft tutorial/guide visual, yoga/wellness editorial card | Wellness hero/featured flow, onboarding support art |
 | `onboarding-cycle-leaf.webp` | Minimal line leaf, peach editorial | Nutrition, nature, calm movement | Nourish cards, wellness movement card, profile/wellness accents |
-| `onboarding-cycle-petals.webp` | Premium sage flower, luxury sanctuary mood | Meditation, AI insights, emotional calm | Insights background cards, Bloop educational card, wellness recommendations |
+| `onboarding-cycle-petals.webp` | Premium sage flower, luxury Soul mood | Meditation, AI insights, emotional calm | Insights background cards, Bloop educational card, wellness recommendations |
 
 ## Placement Rules
 
@@ -70,7 +70,7 @@ Use for Pregnancy Journey hero and maternal AI card.
 
 Prompt:
 ```text
-Create a premium 3D Bloop AI companion for a maternal wellness sanctuary. Bloop is a soft warm droplet character holding a glowing heart close to the belly area, surrounded by subtle peach, sage, and lavender light particles, nurturing and emotionally safe, elegant Apple/Oura-inspired 3D render, no cartoon baby, no text, transparent background, 512x512.
+Create a premium 3D Bloop AI companion for a maternal wellness app. Bloop is a soft warm droplet character holding a glowing heart close to the belly area, surrounded by subtle peach, sage, and lavender light particles, nurturing and emotionally safe, elegant Apple/Oura-inspired 3D render, no cartoon baby, no text, transparent background, 512x512.
 ```
 
 ### 4. Insight Bloop
@@ -82,7 +82,7 @@ Create a futuristic premium 3D Bloop AI companion for hormone intelligence insig
 ```
 
 ### 5. Calm Bloop
-Use for breathing, emotional reset, wellness sanctuary.
+Use for breathing, emotional reset, and the Soul care space.
 
 Prompt:
 ```text

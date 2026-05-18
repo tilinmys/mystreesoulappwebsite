@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
+import { getPersonalizationDefaults } from "../../constants/onboardingAdaptation";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
@@ -191,10 +192,15 @@ const MOVEMENTS: MovementChip[] = [
 export default function PersonalizationScreen() {
   const router          = useRouter();
   const setSelectedGoals = useOnboardingStore((s) => s.setSelectedGoals);
+  const selectedGoals = useOnboardingStore((s) => s.selectedGoals);
+  const adaptation = getPersonalizationDefaults(selectedGoals);
+  const orderedWellness = adaptation.wellnessOrder
+    .map((id) => WELLNESS.find((card) => card.id === id))
+    .filter((card): card is WellnessCard => card != null);
 
-  const [selWellness,  setSelWellness ] = useState<string[]>(["better_sleep"]);
-  const [selRhythm,    setSelRhythm   ] = useState("morning");
-  const [selMovements, setSelMovements] = useState<string[]>([]);
+  const [selWellness,  setSelWellness ] = useState<string[]>(adaptation.wellness);
+  const [selRhythm,    setSelRhythm   ] = useState(adaptation.rhythm);
+  const [selMovements, setSelMovements] = useState<string[]>(adaptation.movements);
 
   // ── Animations ──────────────────────────────────────────────────────────
   const breathe  = useRef(new Animated.Value(0)).current;
@@ -242,7 +248,7 @@ export default function PersonalizationScreen() {
     );
 
   function handleCreate() {
-    setSelectedGoals(selWellness);
+    setSelectedGoals(Array.from(new Set([...selectedGoals, ...selWellness])));
     router.push("/(onboarding)/ready");
   }
 
@@ -356,12 +362,12 @@ export default function PersonalizationScreen() {
           </View>
 
           {/* ── Heading ───────────────────────────────────────────────── */}
-          <Text style={s.heading}>What helps you{"\n"}feel your best?</Text>
-          <Text style={s.headingSub}>Choose your wellness rhythm.</Text>
+          <Text style={s.heading}>{adaptation.heading}</Text>
+          <Text style={s.headingSub}>{adaptation.subheading}</Text>
 
           {/* ── Wellness rhythm 3×2 grid ──────────────────────────────── */}
           <View style={s.wellnessGrid}>
-            {WELLNESS.map((card) => {
+            {orderedWellness.map((card) => {
               const isSel = selWellness.includes(card.id);
               return (
                 <WellnessCardItem
@@ -462,7 +468,7 @@ export default function PersonalizationScreen() {
 
               {/* Center text */}
               <Text style={s.aiText}>
-                MyStree Soul is building{"\n"}your personalized wellness rhythm…
+                {adaptation.aiCopy}
               </Text>
 
               {/* Right — cosmic heart */}

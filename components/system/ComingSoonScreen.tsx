@@ -11,6 +11,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { F } from "../../constants/fonts";
 import { CachedImage } from "../CachedImage";
 
 const { width: W } = Dimensions.get("window");
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontFamily: "PlayfairDisplay_800ExtraBold",
+    fontFamily: F.luxuryExtraBold,
     fontSize: 28,
     color: "#2B2D42",
     textAlign: "center",

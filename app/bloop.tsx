@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Dimensions,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,13 +12,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
+import { F } from "../constants/fonts";
+import { useSafeBack } from "../hooks/useSafeBack";
 
 // ── Confirmed assets (all present in public/images) ────────────────────────────
 const bloopHero   = require("../public/images/bloop-welcome.webp");
 const bloopCard   = require("../public/images/bloop-voice.webp");
-const soliImage   = require("../public/images/bloop-insight.webp");
-const manchiImage = require("../public/images/bloop-learning-private.webp");
-const yogiImage   = require("../public/images/movement-yoga-flow.webp");
+const jiggyImage  = require("../public/images/companion-jiggy.webp");
+const manchiImage = require("../public/images/companion-manchi.webp");
+const yogiImage   = require("../public/images/companion-yogi.webp");
 
 const { width: W } = Dimensions.get("window");
 
@@ -72,13 +73,13 @@ const COMPANIONS: Companion[] = [
     image:    bloopCard,
   },
   {
-    id:       "soli",
-    name:     "Soli",
+    id:       "jiggy",
+    name:     "Jiggy",
     role:     "Emotional check-ins",
     status:   "premium",
     color:    C.lavender,
     gradient: ["rgba(189,178,255,0.18)", "rgba(189,178,255,0.06)"] as const,
-    image:    soliImage,
+    image:    jiggyImage,
   },
   {
     id:       "manchi",
@@ -103,8 +104,8 @@ const COMPANIONS: Companion[] = [
 // ── Screen ─────────────────────────────────────────────────────────────────────
 export default function BloopScreen() {
   const router          = useRouter();
+  const safeBack        = useSafeBack();
   const [activeChip, setActiveChip]     = useState<string | null>(null);
-  const [bloopReady, setBloopReady]     = useState(false);
 
   return (
     <SafeAreaView style={s.screen}>
@@ -112,7 +113,7 @@ export default function BloopScreen() {
       {/* ── Navigation bar ────────────────────────────────────────────────── */}
       <View style={s.navBar}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={safeBack}
           style={({ pressed }) => [s.backBtn, pressed && s.pressed]}
           hitSlop={8}
         >
@@ -157,21 +158,11 @@ export default function BloopScreen() {
             </Text>
 
             <Pressable
-              onPress={() => setBloopReady((v) => !v)}
-              style={({ pressed }) => [
-                s.heroCta,
-                bloopReady && s.heroCtaReady,
-                pressed && s.pressed,
-              ]}
+              onPress={() => router.push("/bloop-chat" as any)}
+              style={({ pressed }) => [s.heroCta, pressed && s.pressed]}
             >
-              <MaterialCommunityIcons
-                name={bloopReady ? "check-circle-outline" : "chat-outline"}
-                size={16}
-                color={bloopReady ? C.sage : "#FFF"}
-              />
-              <Text style={[s.heroCtaText, bloopReady && s.heroCtaTextReady]}>
-                {bloopReady ? "Bloop is ready ✦" : "Start with Bloop"}
-              </Text>
+              <MaterialCommunityIcons name="chat-outline" size={16} color="#FFF" />
+              <Text style={s.heroCtaText}>Start with Bloop</Text>
             </Pressable>
           </View>
 
@@ -228,7 +219,7 @@ export default function BloopScreen() {
               onPress={() =>
                 c.status === "premium"
                   ? router.push("/premium")
-                  : setBloopReady((v) => !v)
+                  : router.push("/bloop-chat" as any)
               }
             />
           ))}
@@ -342,9 +333,7 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   navTitle: {
-    fontFamily: Platform.OS === "ios"
-      ? "PlayfairDisplay_800ExtraBold"
-      : "PlayfairDisplay_700Bold",
+    fontFamily: F.luxuryExtraBold,
     fontSize:      20,
     lineHeight:    26,
     color:         C.text,
@@ -405,9 +394,7 @@ const s = StyleSheet.create({
     textTransform: "uppercase",
   },
   heroName: {
-    fontFamily: Platform.OS === "ios"
-      ? "PlayfairDisplay_800ExtraBold"
-      : "PlayfairDisplay_700Bold",
+    fontFamily: F.luxuryExtraBold,
     fontSize: 26, lineHeight: 32, color: C.text, letterSpacing: 0.2,
   },
   heroTagline: {
@@ -447,9 +434,7 @@ const s = StyleSheet.create({
 
   // ── Section label ──
   sectionLabel: {
-    fontFamily: Platform.OS === "ios"
-      ? "PlayfairDisplay_800ExtraBold"
-      : "PlayfairDisplay_700Bold",
+    fontFamily: F.luxuryExtraBold,
     fontSize: 17, lineHeight: 22,
     color: C.text, letterSpacing: 0.2,
   },
@@ -535,9 +520,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(250,249,246,0.48)",
   },
   companionName: {
-    fontFamily: Platform.OS === "ios"
-      ? "PlayfairDisplay_800ExtraBold"
-      : "PlayfairDisplay_700Bold",
+    fontFamily: F.luxuryExtraBold,
     fontSize: 16, lineHeight: 21,
     color: C.text, textAlign: "center",
   },

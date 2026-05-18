@@ -1,6 +1,6 @@
 import { ComingSoonScreen } from "../components/system/ComingSoonScreen";
 
-const bloopImage = require("../public/images/bloop-welcome.webp");
+const bloopImage = require("../public/images/bloop-fertility-glow.webp");
 
 export default function FertilityScreen() {
   return (

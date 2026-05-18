@@ -1,10 +1,11 @@
 import { useRootNavigationState, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { CachedImage } from "../components/CachedImage";
 import { preloadAppImages } from "../components/imagePreload";
+import { F } from "../constants/fonts";
 import { hasValidAuthSession, useAuthStore } from "../store/authStore";
 import { useOnboardingStore } from "../store/onboardingStore";
 
@@ -305,14 +306,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   brand: {
-    fontFamily: Platform.OS === "ios" ? "PlayfairDisplay_800ExtraBold" : "PlayfairDisplay_700Bold",
+    fontFamily: F.luxuryExtraBold,
     fontSize: 34,
     lineHeight: 40,
     color: TEXT,
     letterSpacing: 0.6,
   },
   tagline: {
-    fontFamily: "PlayfairDisplay_400Regular_Italic",
+    fontFamily: F.luxuryItalic,
     fontSize: 13,
     lineHeight: 18,
     letterSpacing: 2.2,

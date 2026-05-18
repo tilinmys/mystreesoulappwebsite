@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
+import { getEmotionalDefaults, getOnboardingPrompt } from "../../constants/onboardingAdaptation";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
@@ -164,11 +165,14 @@ export default function EmotionalWellnessScreen() {
   const setEmotionalState = useOnboardingStore((s) => s.setEmotionalState);
   const setStressLevel    = useOnboardingStore((s) => s.setStressLevel);
   const setSleepScore     = useOnboardingStore((s) => s.setSleepScore);
+  const selectedGoals     = useOnboardingStore((s) => s.selectedGoals);
+  const prompt            = getOnboardingPrompt(selectedGoals);
+  const defaults          = getEmotionalDefaults(selectedGoals);
 
-  const [selectedMood,  setSelectedMood ] = useState("calm");
+  const [selectedMood,  setSelectedMood ] = useState(defaults.mood);
   const [energy,        setEnergy       ] = useState(52);   // 0–100
   const [stress,        setStress       ] = useState(68);   // 0–100
-  const [selectedSleep, setSelectedSleep] = useState("well_rested");
+  const [selectedSleep, setSelectedSleep] = useState(defaults.sleep);
 
   // ── Hero animations ──────────────────────────────────────────────────────
   const breathe = useRef(new Animated.Value(0)).current;
@@ -302,8 +306,12 @@ export default function EmotionalWellnessScreen() {
           </View>
 
           {/* ── Heading ──────────────────────────────────────────────── */}
-          <Text style={s.heading}>How have you been{"\n"}feeling lately?</Text>
-          <Text style={s.headingSub}>There's no right answer.</Text>
+          <View style={s.focusPill}>
+            <MaterialCommunityIcons name="star-four-points" size={12} color={C.terra} />
+            <Text style={s.focusPillText}>{prompt.focusLabel}</Text>
+          </View>
+          <Text style={s.heading}>How is your Mood Today?</Text>
+          <Text style={s.headingSub}>{prompt.subheading}</Text>
 
           {/* ── 3×2 Mood grid ───────────────────────────────────────── */}
           <View style={s.moodGrid}>
@@ -830,6 +838,26 @@ const s = StyleSheet.create({
   },
 
   // Heading
+  focusPill: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.58)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.82)",
+    marginBottom: 10,
+  },
+  focusPillText: {
+    fontFamily: F.uiBlack,
+    fontSize: 10,
+    color: C.terra,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
   heading: {
     fontFamily: F.luxuryBold,
     fontSize: 34,

@@ -1,12 +1,12 @@
 /**
- * Onboarding Screen 6 — Sanctuary / Ready
+ * Onboarding Screen 6 — Soul Ready
  *
  * Cinematic transition screen. Bloop surrounded by orbiting wellness icons,
  * floating glassmorphic insight cards, cycling phrases, energy field, and a
- * glowing "Enter sanctuary" CTA that completes onboarding.
+ * glowing "Enter Soul" CTA that completes onboarding.
  *
  * No user input — purely atmospheric + emotional. Think: luxury wellness AI
- * preparing a private sanctuary.
+ * preparing a private Soul space.
  */
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -50,7 +50,7 @@ const PHRASES = [
   "Understanding your wellness rhythm…",
   "Learning your emotional patterns…",
   "Building your hormone-aware insights…",
-  "Preparing your personalized sanctuary…",
+  "Preparing your personalized Soul space…",
   "Creating your wellness space…",
 ];
 
@@ -287,7 +287,7 @@ export default function ReadyScreen() {
         <View style={s.headerRow}>
           <View>
             <Text style={s.brandName}>MyStree Soul</Text>
-            <Text style={s.brandSub}>Your wellness sanctuary</Text>
+            <Text style={s.brandSub}>Your wellness space</Text>
           </View>
           <View style={s.lotusBtn}>
             <MaterialCommunityIcons name="spa" size={20} color={C.onVariant} />
@@ -475,7 +475,7 @@ export default function ReadyScreen() {
               {/* Text */}
               <View style={s.bannerText}>
                 <Text style={s.bannerTitle}>
-                  Preparing your personalized sanctuary…
+                  Preparing your personalized Soul space…
                 </Text>
                 <Text style={s.bannerSub}>
                   {name.trim()

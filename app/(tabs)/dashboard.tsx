@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import type { ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -19,8 +20,12 @@ import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
 import { useOnboardingStore, type LifeStage } from "../../store/onboardingStore";
 
-const bloopWelcome = require("../../public/images/bloop-welcome.webp");
-const bloopCalm    = require("../../public/images/bloop-calm.webp");
+const bloopWelcome       = require("../../public/images/bloop-welcome.webp");
+const bloopCalm          = require("../../public/images/bloop-calm.webp");
+const bloopCycle         = require("../../public/images/bloop-cycle.webp");
+const companionJiggy     = require("../../public/images/companion-jiggy-cutout.webp");
+const companionManchi    = require("../../public/images/companion-manchi-cutout.webp");
+const companionYogi      = require("../../public/images/companion-yogi-cutout.webp");
 
 const { width: W } = Dimensions.get("window");
 
@@ -91,9 +96,9 @@ export default function DashboardScreen() {
   const sleepScore     = useOnboardingStore((s) => s.sleepScore);
   const emotionalState = useOnboardingStore((s) => s.emotionalState);
 
-  // Goal IDs from onboarding.tsx: "peace" | "clarity" | "grounding" | "stress"
+  // Goal IDs from adaptive onboarding and personalization.
   const hasMentalHealthGoal = selectedGoals.some((g) =>
-    ["peace", "clarity", "grounding", "stress"].includes(g)
+    ["self_love", "stress_rec", "mindful", "better_sleep"].includes(g)
   );
 
   const [logOpen, setLogOpen]           = useState(false);
@@ -164,7 +169,7 @@ export default function DashboardScreen() {
         )}
 
         {/* 9 ── Programs for you */}
-        <Text style={s.sectionLabel}>Programs for you</Text>
+        <Text style={s.sectionLabel}>Our Programs</Text>
         <ProgramsSection lifeStage={lifeStage} router={router} />
 
         {/* 10 ── Women like you also explored */}
@@ -242,7 +247,7 @@ function HeroCard({ onLog }: { onLog: () => void }) {
           onPress={onLog}
           style={({ pressed }) => [s.heroCta, pressed && s.pressed]}
         >
-          <Text style={s.heroCtaText}>Log your health</Text>
+          <Text style={s.heroCtaText}>Log today</Text>
           <Ionicons name="arrow-forward" size={15} color="#FFF" />
         </Pressable>
       </View>
@@ -270,6 +275,7 @@ function TodayGrid({
     <View style={s.todayGrid}>
       {/* LEFT — tall cycle card */}
       <View style={s.cycleCard}>
+        <CachedImage source={bloopCycle} style={s.cycleCardArt} contentFit="contain" />
         {/* header row */}
         <View style={s.cycleCardHeader}>
           <View style={s.cycleIconBubble}>
@@ -279,7 +285,7 @@ function TodayGrid({
         </View>
 
         <Text style={s.cycleDayNum}>Day 12</Text>
-        <Text style={s.cyclePhase}>Follicular phase</Text>
+        <Text style={s.cyclePhase}>Rising phase</Text>
 
         {/* Ring */}
         <View style={s.ringWrap}>
@@ -306,7 +312,7 @@ function TodayGrid({
             />
           </Svg>
           <View style={s.ringCenter} pointerEvents="none">
-            <Text style={s.ringLabel}>Next period in</Text>
+            <Text style={s.ringLabel}>Next period</Text>
             <Text style={s.ringDays}><Text style={s.ringDaysNum}>16 </Text>days</Text>
           </View>
         </View>
@@ -347,8 +353,8 @@ function TodayGrid({
             <MaterialCommunityIcons name="emoticon-happy-outline" size={20} color={C.terracotta} />
           </View>
           <View style={s.glanceText}>
-            <Text style={s.glanceTitle}>Mood</Text>
-            <Text style={s.glanceSub}>Good</Text>
+            <Text style={s.glanceTitle}>Mood today</Text>
+            <Text style={s.glanceSub}>Check in</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={C.faint} />
         </Pressable>
@@ -414,10 +420,10 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
       <View style={s.insightsBody}>
         <View style={s.insightsTextCol}>
           <Text style={s.insightsText}>
-            Your cycle has been regular for the last 3 cycles.
+            Steady rhythm. Soft win.
           </Text>
           <Text style={s.insightsCheer}>
-            Great job listening to your body!
+            Bloop says: body wisdom.
           </Text>
         </View>
         {/* Sparkline chart */}
@@ -485,8 +491,8 @@ function QuickLogSheet({
         {/* Sheet header */}
         <View style={s.sheetHeader}>
           <View>
-            <Text style={s.sheetTitle}>How are you feeling today?</Text>
-            <Text style={s.sheetSub}>Quickly log what your body is experiencing.</Text>
+            <Text style={s.sheetTitle}>How is your Mood Today?</Text>
+            <Text style={s.sheetSub}>A quick check-in for your body and mind.</Text>
           </View>
           <Pressable onPress={onClose} style={({ pressed }) => [s.closeBtn, pressed && s.pressed]}>
             <Ionicons name="close" size={22} color="rgba(240,210,225,0.72)" />
@@ -741,7 +747,7 @@ const LIFE_STAGE_DATA: Record<NonNullable<LifeStage>, LifeStageDatum> = {
   },
   pregnancy: {
     title:    "Pregnancy Care",
-    subtitle: "Week-by-week guidance for your journey",
+    subtitle: "Planned for V2",
     icon:     "baby-carriage",
     color:    C.rose,
     bg:       "rgba(215,166,161,0.13)",
@@ -792,17 +798,18 @@ function MentalHealthHubCard({ onPress }: { onPress: () => void }) {
       onPress={onPress}
       style={({ pressed }) => [s.mhCard, pressed && s.pressed]}
     >
+      <CachedImage source={bloopCalm} style={s.mhArt} contentFit="contain" />
       <View style={s.mhIconBubble}>
         <MaterialCommunityIcons name="brain" size={24} color={C.lavender} />
       </View>
       <View style={s.mhTextCol}>
         <Text style={s.mhTitle}>Mental Health Hub</Text>
         <Text style={s.mhSubtitle}>
-          Guided support unlocks with Mystii Premium
+          Guided support unlocks with Soul Premium
         </Text>
         <View style={s.mhLockRow}>
           <MaterialCommunityIcons name="lock-outline" size={11} color={C.lavender} />
-          <Text style={s.mhLockLabel}>Mystii Premium</Text>
+          <Text style={s.mhLockLabel}>Soul Premium</Text>
         </View>
       </View>
       <Ionicons name="chevron-forward" size={18} color={C.faint} />
@@ -826,7 +833,7 @@ type ProgramDatum = {
 const BASE_PROGRAMS: ProgramDatum[] = [
   {
     id:       "mojo",
-    title:    "MyStree Mojo",
+    title:    "Mystree Mojo 1",
     subtitle: "Build your rhythm and own your cycle",
     icon:     "star-four-points-outline",
     color:    C.terracotta,
@@ -834,8 +841,8 @@ const BASE_PROGRAMS: ProgramDatum[] = [
   },
   {
     id:       "reset",
-    title:    "Reset Program",
-    subtitle: "Reclaim your baseline in 7 days",
+    title:    "Safe campaign",
+    subtitle: "Feel supported, informed, and never alone",
     icon:     "restore",
     color:    C.sage,
     bg:       "rgba(129,178,154,0.12)",
@@ -893,10 +900,10 @@ function ProgramsSection({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const EXPLORED_CARDS = [
-  { id: "breathwork", title: "Breathwork",           subtitle: "4-7-8 reset for anxious moments", icon: "weather-windy",          color: C.sage       },
-  { id: "hormones",   title: "Hormone Balance",       subtitle: "What your cycle is telling you",  icon: "chart-bell-curve",       color: C.lavender   },
-  { id: "journaling", title: "Emotional Journaling",  subtitle: "Write it out with Bloop",         icon: "book-heart-outline",     color: C.terracotta },
-  { id: "sleep",      title: "Sleep Reset",           subtitle: "Night rituals that actually work",icon: "moon-waning-crescent",   color: C.peach      },
+  { id: "breathwork", title: "Calming activities",    subtitle: "4-7-8 reset for anxious moments", icon: "weather-windy",          color: C.sage       },
+  { id: "hormones",   title: "Future Her",            subtitle: "What your cycle is telling you",  icon: "chart-bell-curve",       color: C.lavender   },
+  { id: "journaling", title: "Patient Story",         subtitle: "Real journeys, softly told",      icon: "book-heart-outline",     color: C.terracotta },
+  { id: "sleep",      title: "Affirmations",          subtitle: "Words for calm and clarity",      icon: "moon-waning-crescent",   color: C.peach      },
 ] as const;
 
 function ExploredSection() {
@@ -931,13 +938,14 @@ type CompanionDatum = {
   color:  string;
   icon:   React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   locked: boolean;
+  image:  ImageSource | number;
 };
 
 const COMPANIONS: CompanionDatum[] = [
-  { id: "bloop",  name: "Bloop",  role: "Wellness",   color: C.terracotta, icon: "face-woman-shimmer-outline", locked: false },
-  { id: "soli",   name: "Soli",   role: "Emotional",  color: C.lavender,   icon: "heart-pulse",                locked: true  },
-  { id: "manchi", name: "Manchi", role: "Psychology", color: "#8B5CF6",    icon: "head-snowflake-outline",     locked: true  },
-  { id: "yogi",   name: "Yogi",   role: "Movement",   color: C.sage,       icon: "yoga",                       locked: true  },
+  { id: "bloop",  name: "Bloop",  role: "Wellness",   color: C.terracotta, icon: "face-woman-shimmer-outline", locked: false, image: bloopCalm       },
+  { id: "jiggy",  name: "Jiggy",  role: "Emotional",  color: C.lavender,   icon: "heart-pulse",                locked: true,  image: companionJiggy  },
+  { id: "manchi", name: "Manchi", role: "Psychology", color: "#8B5CF6",    icon: "head-snowflake-outline",     locked: true,  image: companionManchi },
+  { id: "yogi",   name: "Yogi",   role: "Movement",   color: C.sage,       icon: "yoga",                       locked: true,  image: companionYogi   },
 ];
 
 function CompanionsRow({
@@ -962,11 +970,7 @@ function CompanionsRow({
         >
           {/* Avatar */}
           <View style={[s.companionAvatar, { backgroundColor: `${c.color}18` }]}>
-            {c.id === "bloop" ? (
-              <CachedImage source={bloopCalm} style={s.companionBloopImage} contentFit="contain" />
-            ) : (
-              <MaterialCommunityIcons name={c.icon} size={28} color={c.color} />
-            )}
+            <CachedImage source={c.image} style={s.companionBloopImage} contentFit="contain" />
             {/* Lock badge on locked companions */}
             {c.locked && (
               <View style={s.companionLockBadge}>
@@ -1089,10 +1093,14 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: C.text,
+    backgroundColor: C.terracotta,
     borderRadius: 999,
     paddingHorizontal: 18,
     paddingVertical: 11,
+    shadowColor: C.terracotta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.24,
+    shadowRadius: 9,
   },
   heroCtaText: {
     fontFamily: F.uiExtraBold,                // Nunito ExtraBold — button label
@@ -1134,11 +1142,20 @@ const s = StyleSheet.create({
     backgroundColor: C.white,
     padding: 18,
     justifyContent: "space-between",  // spreads content evenly down the card
+    overflow: "hidden",
     shadowColor: C.terracotta,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.09,
     shadowRadius: 18,
     elevation: 3,
+  },
+  cycleCardArt: {
+    position: "absolute",
+    right: -20,
+    bottom: 56,
+    width: 96,
+    height: 96,
+    opacity: 0.18,
   },
   cycleCardHeader: {
     flexDirection: "row",
@@ -1232,6 +1249,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    overflow: "hidden",
     shadowColor: C.terracotta,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
@@ -1275,6 +1293,7 @@ const s = StyleSheet.create({
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   healthLabel: {
     fontFamily: F.uiBold,                     // Nunito Bold — health way label
@@ -1539,6 +1558,7 @@ const s = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
     gap: 8,
+    overflow: "hidden",
   },
   overviewTileLocked: {
     opacity: 0.82,
@@ -1599,6 +1619,7 @@ const s = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
     elevation: 3,
+    overflow: "hidden",
   },
   lifeStageIconBubble: {
     width: 52,
@@ -1640,6 +1661,15 @@ const s = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 14,
     elevation: 2,
+    overflow: "hidden",
+  },
+  mhArt: {
+    position: "absolute",
+    right: -10,
+    bottom: -16,
+    width: 96,
+    height: 96,
+    opacity: 0.20,
   },
   mhIconBubble: {
     width: 52,
@@ -1701,6 +1731,7 @@ const s = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 12,
     elevation: 2,
+    overflow: "hidden",
   },
   programIconBubble: {
     width: 44,
@@ -1746,6 +1777,7 @@ const s = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 2,
+    overflow: "hidden",
   },
   exploredIconBubble: {
     width: 40,

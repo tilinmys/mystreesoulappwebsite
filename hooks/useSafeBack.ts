@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 
-export function useSafeBack(fallback: "/(tabs)/dashboard" | "/login" = "/(tabs)/dashboard") {
+export function useSafeBack(fallback: string = "/(tabs)/dashboard") {
   const router = useRouter();
 
   return useCallback(() => {

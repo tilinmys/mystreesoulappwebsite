@@ -14,6 +14,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="insights" />
       <Tabs.Screen name="wellness" />
       <Tabs.Screen name="nourish" />
+      <Tabs.Screen name="sleep" />
+      <Tabs.Screen name="community" />
       <Tabs.Screen name="profile" />
     </Tabs>
   );

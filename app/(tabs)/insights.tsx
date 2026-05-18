@@ -1,15 +1,918 @@
-import { ComingSoonScreen } from "../../components/system/ComingSoonScreen";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  Circle,
+  Defs,
+  Line as SvgLine,
+  LinearGradient as SvgGradient,
+  Path,
+  RadialGradient as SvgRadialGradient,
+  Stop,
+  Svg,
+} from "react-native-svg";
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { CachedImage } from "../../components/CachedImage";
+import { F } from "../../constants/fonts";
 
-const bloopImage = require("../../public/images/bloop-insight.webp");
+// ── Assets ────────────────────────────────────────────────────────────────────
+const imgBloop = require("../../public/images/bloop-welcome.webp");
 
-export default function InsightsScreen() {
+// ── Palette ───────────────────────────────────────────────────────────────────
+const C = {
+  bg1:      "#FDF8F7",
+  bg2:      "#FFF2F0",
+  bg3:      "#F8EAF5",
+  text:     "#161C2D",
+  muted:    "#8A7A9A",
+  faint:    "#C4B8D4",
+  terra:    "#E07A5F",
+  lavender: "#9277C8",
+  pink:     "#D45C82",
+  orange:   "#F4A261",
+  sage:     "#5E9B6B",
+  navy:     "#3D4B7C",
+  white:    "#FFFFFF",
+  cardBg:   "rgba(255,255,255,0.78)",
+  cardBdr:  "rgba(255,255,255,0.90)",
+} as const;
+
+// ── Screen / graph geometry ───────────────────────────────────────────────────
+const { width: W } = Dimensions.get("window");
+const CARD_MX      = 20;           // card horizontal margin
+const CARD_PX      = 18;           // card horizontal padding
+const GRAPH_W      = W - CARD_MX * 2 - CARD_PX * 2;  // ≈ 314
+const ICON_R       = 17;           // icon circle radius
+const ICON_CY      = 4 + ICON_R;  // icon circle center y  (top-edge = 4)
+const GRAPH_TOP    = ICON_CY + ICON_R + 14;   // where wave y=0 begins in SVG
+const GRAPH_H      = 98;
+const SVG_H        = GRAPH_TOP + GRAPH_H + 6;
+
+// ── Wave data (28 values, 0-100, one per cycle day) ───────────────────────────
+const WAVE_DATA = [
+  62, 56, 46, 36, 30, 35, 44, 53, 62, 68, 75, 81, 86, 88, 90,
+  88, 81, 70, 56, 40, 30, 35, 44, 56, 66, 70, 66, 62,
+];
+
+const GRAPH_MARKERS = [
+  { idx: 3,  emoji: "🌙", bg: "rgba(146,119,200,0.15)", border: C.lavender },
+  { idx: 9,  emoji: "😊", bg: "rgba(212,92,130,0.12)",  border: C.pink     },
+  { idx: 14, emoji: "⚡", bg: "rgba(244,162,97,0.15)",  border: C.orange   },
+  { idx: 19, emoji: "🩸", bg: "rgba(212,92,130,0.15)",  border: C.pink     },
+  { idx: 24, emoji: "🌸", bg: "rgba(212,92,130,0.12)",  border: C.pink     },
+] as const;
+
+// ── SVG helpers ───────────────────────────────────────────────────────────────
+function waveY(value: number): number {
+  const pad = 5;
+  return GRAPH_TOP + GRAPH_H - pad - (value / 100) * (GRAPH_H - pad * 2);
+}
+
+function waveX(idx: number): number {
+  return idx * (GRAPH_W / (WAVE_DATA.length - 1));
+}
+
+function buildWavePath(data: number[]): string {
+  const n = data.length;
+  const pts = data.map((v, i) => ({ x: waveX(i), y: waveY(v) }));
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(n - 1, i + 2)];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+// Mountain SVG paths for AI Prediction card
+const MTN_W = 128;
+const MTN_H = 54;
+const mtn1 = `M 0 ${MTN_H} L ${MTN_W * 0.05} ${MTN_H * 0.62} Q ${MTN_W * 0.22} ${MTN_H * 0.08} ${MTN_W * 0.42} ${MTN_H * 0.48} Q ${MTN_W * 0.62} ${MTN_H * 0.78} ${MTN_W * 0.78} ${MTN_H * 0.36} L ${MTN_W} ${MTN_H * 0.52} L ${MTN_W} ${MTN_H} Z`;
+const mtn2 = `M ${MTN_W * 0.18} ${MTN_H} L ${MTN_W * 0.28} ${MTN_H * 0.44} Q ${MTN_W * 0.48} ${MTN_H * -0.04} ${MTN_W * 0.62} ${MTN_H * 0.36} Q ${MTN_W * 0.78} ${MTN_H * 0.66} ${MTN_W} ${MTN_H * 0.28} L ${MTN_W} ${MTN_H} Z`;
+
+// ── Glowing sphere component ──────────────────────────────────────────────────
+function GlowSphere() {
+  const S  = 148;
+  const cx = S * 0.52;
+  const cy = S * 0.52;
+  const r  = S * 0.36;
+  // Sine wave curves
+  const sw1 = `M ${cx - r - 22} ${cy + 8} C ${cx - r * 0.4} ${cy - 22} ${cx + r * 0.4} ${cy + 38} ${cx + r + 22} ${cy + 8}`;
+  const sw2 = `M ${cx - r - 14} ${cy - 14} C ${cx - r * 0.4} ${cy + 18} ${cx + r * 0.4} ${cy - 28} ${cx + r + 14} ${cy - 14}`;
   return (
-    <ComingSoonScreen
-      title="AI Insights"
-      description="Bloop is learning your patterns. Soon she'll surface personalised insights about your mood, sleep, and cycle — like a knowing best friend who has read all the research."
-      icon="lightbulb-on-outline"
-      iconColor="#F4A261"
-      bloopImage={bloopImage}
-    />
+    <Svg width={S} height={S}>
+      <Defs>
+        <SvgRadialGradient id="sph" cx="38%" cy="32%" r="65%" fx="38%" fy="32%">
+          <Stop offset="0%"   stopColor="#EEE0FF" stopOpacity="1" />
+          <Stop offset="42%"  stopColor="#C9A8EA" stopOpacity="1" />
+          <Stop offset="100%" stopColor="#7B50C0" stopOpacity="1" />
+        </SvgRadialGradient>
+        <SvgRadialGradient id="gl1" cx="50%" cy="50%" r="50%">
+          <Stop offset="0%"   stopColor="#C4A0E8" stopOpacity="0.38" />
+          <Stop offset="100%" stopColor="#C4A0E8" stopOpacity="0"    />
+        </SvgRadialGradient>
+        <SvgRadialGradient id="gl2" cx="50%" cy="50%" r="50%">
+          <Stop offset="0%"   stopColor="#E4D0F8" stopOpacity="0.22" />
+          <Stop offset="100%" stopColor="#E4D0F8" stopOpacity="0"    />
+        </SvgRadialGradient>
+      </Defs>
+      {/* Outer halos */}
+      <Circle cx={cx} cy={cy} r={r + 30} fill="url(#gl2)" />
+      <Circle cx={cx} cy={cy} r={r + 16} fill="url(#gl1)" />
+      {/* Sine wave traces */}
+      <Path d={sw2} stroke="rgba(255,255,255,0.30)" strokeWidth={1.2} fill="none" />
+      <Path d={sw1} stroke="rgba(255,255,255,0.42)" strokeWidth={1.6} fill="none" />
+      {/* Sphere body */}
+      <Circle cx={cx} cy={cy} r={r} fill="url(#sph)" />
+      {/* Specular highlights */}
+      <Circle cx={cx - r * 0.28} cy={cy - r * 0.30} r={r * 0.20} fill="rgba(255,255,255,0.38)" />
+      <Circle cx={cx - r * 0.18} cy={cy - r * 0.20} r={r * 0.09} fill="rgba(255,255,255,0.62)" />
+      {/* Tiny star dots */}
+      <Circle cx={cx + r * 0.55} cy={cy - r * 0.60} r={3}   fill="rgba(255,255,255,0.90)" />
+      <Circle cx={cx + r * 0.72} cy={cy - r * 0.20} r={1.8} fill="rgba(255,255,255,0.70)" />
+    </Svg>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+export default function InsightsScreen() {
+  const wavePath = buildWavePath(WAVE_DATA);
+
+  return (
+    <SafeAreaView edges={["top"]} style={styles.safe}>
+      {/* Background */}
+      <LinearGradient
+        colors={[C.bg1, C.bg2, C.bg3]}
+        locations={[0, 0.48, 1]}
+        start={{ x: 0.3, y: 0 }}
+        end={{ x: 0.7, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={[styles.blob, { top: -50,  left: -50,  backgroundColor: "rgba(146,119,200,0.09)", width: 180, height: 180 }]} />
+      <View style={[styles.blob, { top: 280,  right: -70, backgroundColor: "rgba(212,92,130,0.07)",  width: 220, height: 220 }]} />
+      <View style={[styles.blob, { bottom: 100, left: -40, backgroundColor: "rgba(244,162,97,0.07)",  width: 200, height: 200 }]} />
+
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        bounces
+      >
+        {/* ── Header ────────────────────────────────────────────────────── */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerTitle}>Insights</Text>
+            <Text style={styles.headerSub}>Your wellness patterns</Text>
+            <View style={styles.headerLine}>
+              <View style={styles.headerLineDot} />
+            </View>
+          </View>
+          <View style={styles.headerBtns}>
+            <Pressable style={styles.headerIconBtn}>
+              <MaterialCommunityIcons name="tune-variant" size={18} color={C.muted} />
+            </Pressable>
+            <Pressable>
+              <LinearGradient
+                colors={["#C4A0E8", "#9277C8"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.sparkleBtn}
+              >
+                <MaterialCommunityIcons name="shimmer" size={20} color={C.white} />
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ── AI Hero Card ──────────────────────────────────────────────── */}
+        <LinearGradient
+          colors={["#EAD9FA", "#F4E3F6", "#FCE6EE"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroLeft}>
+            <View style={styles.heroTagRow}>
+              <Text style={styles.heroTagStar}>✦</Text>
+              <Text style={styles.heroTag}>AI Insight</Text>
+            </View>
+            <Text style={styles.heroTitle}>
+              Your stress and sleep patterns may be influencing your pre-cycle anxiety.
+            </Text>
+            <Text style={styles.heroSub}>Your body is trying to tell you something. 🌸</Text>
+          </View>
+          <View style={styles.heroRight}>
+            <GlowSphere />
+          </View>
+        </LinearGradient>
+
+        {/* ── Cycle Pattern Card ───────────────────────────────────────── */}
+        <View style={styles.card}>
+          {/* Card header */}
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.cardTitle}>Your cycle pattern</Text>
+            <View style={styles.todayBadge}>
+              <Text style={styles.todayBadgeText}>Today · Day 18</Text>
+            </View>
+          </View>
+
+          {/* Wave graph */}
+          <View style={styles.graphWrap}>
+            {/* SVG layer */}
+            <Svg width={GRAPH_W} height={SVG_H}>
+              <Defs>
+                <SvgGradient
+                  id="waveGrad"
+                  x1="0"
+                  y1="0"
+                  x2={GRAPH_W}
+                  y2="0"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <Stop offset="0%"   stopColor={C.lavender} stopOpacity="1" />
+                  <Stop offset="45%"  stopColor={C.orange}   stopOpacity="1" />
+                  <Stop offset="100%" stopColor={C.pink}      stopOpacity="1" />
+                </SvgGradient>
+              </Defs>
+
+              {/* Dashed vertical drop-lines */}
+              {GRAPH_MARKERS.map((m) => {
+                const mx = waveX(m.idx);
+                const my = waveY(WAVE_DATA[m.idx]);
+                return (
+                  <SvgLine
+                    key={m.idx + "-line"}
+                    x1={mx}
+                    y1={ICON_CY + ICON_R + 4}
+                    x2={mx}
+                    y2={my - 6}
+                    stroke={C.faint}
+                    strokeWidth={1}
+                    strokeDasharray="3,3"
+                  />
+                );
+              })}
+
+              {/* Wave curve */}
+              <Path
+                d={wavePath}
+                stroke="url(#waveGrad)"
+                strokeWidth={2.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Dots on curve at marker positions */}
+              {GRAPH_MARKERS.map((m) => {
+                const dotColor =
+                  m.idx <= 13 ? C.lavender :
+                  m.idx <= 17 ? C.orange   : C.pink;
+                return (
+                  <Circle
+                    key={m.idx + "-dot"}
+                    cx={waveX(m.idx)}
+                    cy={waveY(WAVE_DATA[m.idx])}
+                    r={5}
+                    fill={C.white}
+                    stroke={dotColor}
+                    strokeWidth={2}
+                  />
+                );
+              })}
+            </Svg>
+
+            {/* Emoji icon circles — absolutely positioned over SVG */}
+            {GRAPH_MARKERS.map((m) => {
+              const mx = waveX(m.idx);
+              return (
+                <View
+                  key={m.idx + "-icon"}
+                  style={[
+                    styles.markerCircle,
+                    {
+                      left:            mx - ICON_R,
+                      top:             4,
+                      width:           ICON_R * 2,
+                      height:          ICON_R * 2,
+                      borderRadius:    ICON_R,
+                      backgroundColor: m.bg,
+                      borderColor:     m.border + "40",
+                    },
+                  ]}
+                >
+                  <Text style={styles.markerEmoji}>{m.emoji}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Phase legend */}
+          <View style={styles.phaseLegend}>
+            {[
+              { label: "Follicular", color: C.lavender },
+              { label: "Ovulation",  color: C.orange   },
+              { label: "Luteal",     color: C.pink      },
+            ].map((p) => (
+              <View key={p.label} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: p.color }]} />
+                <Text style={styles.legendLabel}>{p.label}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Key Pattern sub-card */}
+          <Pressable style={styles.keyPatternCard}>
+            <View style={styles.keyPatternIconWrap}>
+              <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={C.lavender} />
+            </View>
+            <View style={styles.keyPatternText}>
+              <Text style={styles.keyPatternTitle}>Key Pattern</Text>
+              <Text style={styles.keyPatternBody}>
+                You feel emotionally lower in the 3 days before your period.
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={C.faint} />
+          </Pressable>
+        </View>
+
+        {/* ── AI Prediction Card ───────────────────────────────────────── */}
+        <LinearGradient
+          colors={["rgba(197,173,232,0.28)", "rgba(180,155,224,0.22)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.predCard}
+        >
+          <View style={styles.predLeft}>
+            <View style={styles.predIconWrap}>
+              <MaterialCommunityIcons name="calendar-month-outline" size={22} color={C.lavender} />
+            </View>
+            <View style={styles.predText}>
+              <View style={styles.predTagRow}>
+                <Text style={styles.predTagStar}>✦</Text>
+                <Text style={styles.predTag}>AI Prediction</Text>
+              </View>
+              <Text style={styles.predTitle}>Your next energy peak{"\n"}may happen in 3 days.</Text>
+            </View>
+          </View>
+          <View style={styles.predMountains}>
+            <Svg width={MTN_W} height={MTN_H}>
+              <Path d={mtn1} fill="rgba(146,119,200,0.14)" />
+              <Path d={mtn2} fill="rgba(146,119,200,0.22)" />
+            </Svg>
+          </View>
+        </LinearGradient>
+
+        {/* ── Today's Top Insight ───────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Today's Top Insight</Text>
+          <Pressable>
+            <Text style={styles.viewAll}>View all</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.topInsightRow}>
+          {/* Sleep */}
+          <View style={[styles.insightMiniCard, { flex: 1.12 }]}>
+            <View style={[styles.insightMiniIcon, { backgroundColor: "rgba(146,119,200,0.14)" }]}>
+              <MaterialCommunityIcons name="moon-waning-crescent" size={18} color={C.lavender} />
+            </View>
+            <View>
+              <Text style={styles.insightMiniTitle}>Sleep</Text>
+              <Text style={[styles.insightMiniValue, { color: C.lavender }]}>Good</Text>
+              <Text style={styles.insightMiniSub}>7.2 hrs</Text>
+            </View>
+          </View>
+
+          {/* Mood */}
+          <View style={styles.insightMiniCard}>
+            <View style={[styles.insightMiniIcon, { backgroundColor: "rgba(212,92,130,0.12)" }]}>
+              <MaterialCommunityIcons name="emoticon-happy-outline" size={18} color={C.pink} />
+            </View>
+            <View>
+              <Text style={styles.insightMiniTitle}>Mood</Text>
+              <View style={styles.insightMiniValueRow}>
+                <Text style={[styles.insightMiniValue, { color: C.pink }]}>Calm</Text>
+                <View style={[styles.statusDot, { backgroundColor: C.pink }]} />
+              </View>
+            </View>
+          </View>
+
+          {/* Energy */}
+          <View style={styles.insightMiniCard}>
+            <View style={[styles.insightMiniIcon, { backgroundColor: "rgba(244,162,97,0.14)" }]}>
+              <MaterialCommunityIcons name="lightning-bolt" size={18} color={C.orange} />
+            </View>
+            <View>
+              <Text style={styles.insightMiniTitle}>Energy</Text>
+              <View style={styles.insightMiniValueRow}>
+                <Text style={[styles.insightMiniValue, { color: C.orange }]}>High</Text>
+                <View style={[styles.statusDot, { backgroundColor: C.orange }]} />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ── For your current phase ───────────────────────────────────── */}
+        <View style={[styles.card, styles.phaseCard]}>
+          <View style={[styles.phaseIconWrap, { backgroundColor: "rgba(94,155,107,0.14)" }]}>
+            <MaterialCommunityIcons name="sprout-outline" size={22} color={C.sage} />
+          </View>
+          <View style={styles.phaseText}>
+            <Text style={styles.phaseTitle}>For your current phase</Text>
+            <Text style={styles.phaseBody}>
+              Hydrate more and try a gentle yoga flow to support your energy.
+            </Text>
+          </View>
+          <Pressable style={styles.exploreBtn}>
+            <Text style={styles.exploreBtnText}>Explore</Text>
+            <MaterialCommunityIcons name="chevron-right" size={14} color={C.sage} />
+          </Pressable>
+        </View>
+
+        {/* ── Bloop noticed ────────────────────────────────────────────── */}
+        <Pressable style={[styles.card, styles.bloopCard]}>
+          <View style={styles.bloopImageWrap}>
+            <CachedImage source={imgBloop} style={styles.bloopImage} />
+          </View>
+          <View style={styles.bloopText}>
+            <Text style={styles.bloopTag}>Bloop noticed</Text>
+            <Text style={styles.bloopBody}>
+              Your sleep has improved this week 💜
+            </Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={C.faint} />
+        </Pressable>
+
+        {/* Spacer for FloatingTabBar */}
+        <View style={{ height: 104 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: C.bg1,
+    flex: 1,
+  },
+  scroll: {
+    paddingHorizontal: CARD_MX,
+    paddingTop: 8,
+  },
+  blob: {
+    borderRadius: 999,
+    position: "absolute",
+  },
+
+  // Header
+  header: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 18,
+    marginTop: 4,
+  },
+  headerTitle: {
+    color: C.text,
+    fontFamily: F.luxuryBold,
+    fontSize: 34,
+    letterSpacing: 0.2,
+    lineHeight: 40,
+  },
+  headerSub: {
+    color: C.muted,
+    fontFamily: F.uiRegular,
+    fontSize: 13,
+    marginTop: 1,
+  },
+  headerLine: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 5,
+  },
+  headerLineDot: {
+    backgroundColor: C.terra,
+    borderRadius: 4,
+    height: 5,
+    width: 5,
+  },
+  headerBtns: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 8,
+  },
+  headerIconBtn: {
+    alignItems: "center",
+    backgroundColor: C.cardBg,
+    borderColor: C.cardBdr,
+    borderRadius: 20,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: "center",
+    shadowColor: "#D6C3B9",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    width: 40,
+  },
+  sparkleBtn: {
+    alignItems: "center",
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    shadowColor: C.lavender,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 10,
+    width: 40,
+  },
+
+  // Hero card
+  heroCard: {
+    borderColor: "rgba(255,255,255,0.70)",
+    borderRadius: 24,
+    borderWidth: 1,
+    flexDirection: "row",
+    marginBottom: 14,
+    overflow: "hidden",
+    padding: 20,
+    shadowColor: "rgba(180,140,220,0.3)",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 20,
+  },
+  heroLeft: {
+    flex: 1,
+    justifyContent: "center",
+    paddingRight: 8,
+  },
+  heroTagRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+    marginBottom: 10,
+  },
+  heroTagStar: {
+    color: C.lavender,
+    fontSize: 11,
+  },
+  heroTag: {
+    color: C.lavender,
+    fontFamily: F.uiSemiBold,
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+  heroTitle: {
+    color: C.text,
+    fontFamily: F.luxuryBold,
+    fontSize: 18,
+    lineHeight: 26,
+    marginBottom: 10,
+  },
+  heroSub: {
+    color: "#5A4A6A",
+    fontFamily: F.bodyRegular,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  heroRight: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -10,
+    marginTop: -10,
+  },
+
+  // Generic card
+  card: {
+    backgroundColor: C.cardBg,
+    borderColor: C.cardBdr,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: 14,
+    padding: CARD_PX,
+    shadowColor: "#D6C3B9",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+  },
+  cardHeaderRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  cardTitle: {
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 15,
+  },
+  todayBadge: {
+    backgroundColor: "rgba(146,119,200,0.10)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  todayBadgeText: {
+    color: C.lavender,
+    fontFamily: F.uiSemiBold,
+    fontSize: 12,
+  },
+
+  // Wave graph
+  graphWrap: {
+    height: SVG_H,
+    position: "relative",
+    width: GRAPH_W,
+  },
+  markerCircle: {
+    alignItems: "center",
+    borderWidth: 1,
+    justifyContent: "center",
+    position: "absolute",
+  },
+  markerEmoji: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+
+  // Phase legend
+  phaseLegend: {
+    flexDirection: "row",
+    gap: 18,
+    marginTop: 10,
+    paddingHorizontal: 4,
+  },
+  legendItem: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+  },
+  legendDot: {
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  legendLabel: {
+    color: C.muted,
+    fontFamily: F.uiMedium,
+    fontSize: 12,
+  },
+
+  // Key pattern sub-card
+  keyPatternCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.65)",
+    borderColor: "rgba(255,255,255,0.88)",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 14,
+    padding: 14,
+  },
+  keyPatternIconWrap: {
+    alignItems: "center",
+    backgroundColor: "rgba(146,119,200,0.12)",
+    borderRadius: 12,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  keyPatternText: {
+    flex: 1,
+  },
+  keyPatternTitle: {
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  keyPatternBody: {
+    color: C.muted,
+    fontFamily: F.bodyRegular,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // AI Prediction card
+  predCard: {
+    alignItems: "center",
+    borderColor: "rgba(180,155,224,0.30)",
+    borderRadius: 22,
+    borderWidth: 1,
+    flexDirection: "row",
+    marginBottom: 18,
+    overflow: "hidden",
+    padding: 16,
+  },
+  predLeft: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: 12,
+  },
+  predIconWrap: {
+    alignItems: "center",
+    backgroundColor: "rgba(146,119,200,0.14)",
+    borderRadius: 14,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  },
+  predText: {
+    flex: 1,
+  },
+  predTagRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 4,
+  },
+  predTagStar: {
+    color: C.lavender,
+    fontSize: 10,
+  },
+  predTag: {
+    color: C.lavender,
+    fontFamily: F.uiSemiBold,
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  predTitle: {
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  predMountains: {
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+    marginBottom: -16,
+    marginRight: -16,
+  },
+
+  // Section header
+  sectionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 15,
+  },
+  viewAll: {
+    color: C.lavender,
+    fontFamily: F.uiSemiBold,
+    fontSize: 12,
+  },
+
+  // Top insight row
+  topInsightRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 14,
+  },
+  insightMiniCard: {
+    alignItems: "center",
+    backgroundColor: C.cardBg,
+    borderColor: C.cardBdr,
+    borderRadius: 20,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 10,
+    padding: 12,
+    shadowColor: "#D6C3B9",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+  },
+  insightMiniIcon: {
+    alignItems: "center",
+    borderRadius: 14,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  insightMiniTitle: {
+    color: C.muted,
+    fontFamily: F.uiMedium,
+    fontSize: 11,
+    marginBottom: 1,
+  },
+  insightMiniValue: {
+    fontFamily: F.uiBold,
+    fontSize: 13,
+  },
+  insightMiniSub: {
+    color: C.faint,
+    fontFamily: F.uiRegular,
+    fontSize: 10,
+    marginTop: 1,
+  },
+  insightMiniValueRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  statusDot: {
+    borderRadius: 4,
+    height: 6,
+    width: 6,
+  },
+
+  // Phase card
+  phaseCard: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+  },
+  phaseIconWrap: {
+    alignItems: "center",
+    borderRadius: 14,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  phaseText: {
+    flex: 1,
+  },
+  phaseTitle: {
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 13,
+    marginBottom: 3,
+  },
+  phaseBody: {
+    color: C.muted,
+    fontFamily: F.bodyRegular,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  exploreBtn: {
+    alignItems: "center",
+    backgroundColor: "rgba(94,155,107,0.12)",
+    borderColor: "rgba(94,155,107,0.25)",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  exploreBtnText: {
+    color: C.sage,
+    fontFamily: F.uiSemiBold,
+    fontSize: 12,
+  },
+
+  // Bloop card
+  bloopCard: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+  },
+  bloopImageWrap: {
+    height: 52,
+    width: 52,
+  },
+  bloopImage: {
+    borderRadius: 26,
+    height: 52,
+    width: 52,
+  },
+  bloopText: {
+    flex: 1,
+  },
+  bloopTag: {
+    color: C.lavender,
+    fontFamily: F.uiSemiBold,
+    fontSize: 12,
+    marginBottom: 3,
+  },
+  bloopBody: {
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+});

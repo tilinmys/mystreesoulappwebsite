@@ -29,6 +29,8 @@ artifacts/
 server.log
 expo-start.log
 expo-start.err.log
+expo-*-preview.log
+expo-*-preview.err.log
 __pycache__/
 *.pyc
 images/processed/_alpha_test.png

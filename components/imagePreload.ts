@@ -4,14 +4,24 @@ const criticalImages = [
   require("../public/images/bloop-welcome.webp"),
   require("../public/images/bloop-nav.webp"),
   require("../public/images/bloop-calm.webp"),
-  require("../public/images/bloop-voice.webp")
+  require("../public/images/bloop-voice.webp"),
+  require("../public/images/bloop-profile-meditation-cutout.webp"),
+  require("../public/images/bloop-premium-lotus.webp")
 ];
 
 const routeImages = [
   require("../public/images/bloop-cycle.webp"),
+  require("../public/images/bloop-fertility-glow.webp"),
+  require("../public/images/bloop-menopause-cooling.webp"),
+  require("../public/images/bloop-adolescence-safe.webp"),
+  require("../public/images/bloop-sleep-moon.webp"),
   require("../public/images/bloop-insight.webp"),
   require("../public/images/bloop-nourish.webp"),
   require("../public/images/bloop-pregnancy.webp"),
+  require("../public/images/companion-jiggy.webp"),
+  require("../public/images/companion-manchi.webp"),
+  require("../public/images/companion-yogi.webp"),
+  require("../public/images/profile-priya-avatar.webp"),
   require("../public/images/nourish-anti-inflammatory.webp"),
   require("../public/images/nourish-craving-support.webp"),
   require("../public/images/nourish-gentle-meals.webp"),

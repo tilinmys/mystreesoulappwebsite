@@ -6,7 +6,7 @@ export default function PregnancyScreen() {
   return (
     <ComingSoonScreen
       title="Pregnancy"
-      description="Week-by-week support, symptom tracking, and gentle nourishment guidance for every stage of your pregnancy. A companion for the most transformative journey of your life."
+      description="Pregnancy support is planned for V2, so the current app can stay focused on cycle care, emotional wellness, and daily support."
       icon="baby-carriage"
       iconColor="#D7A6A1"
       bloopImage={bloopImage}

@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
-import { LifeStage, useOnboardingStore } from "../../store/onboardingStore";
+import { CycleBasics, LifeStage, useOnboardingStore } from "../../store/onboardingStore";
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get("window");
@@ -36,6 +36,16 @@ const imgTeen     = require("../../public/images/adolescence-safe-space.webp");
 const imgCycle    = require("../../public/images/fertility-glow-visual.webp");
 const imgPreg     = require("../../public/images/pregnancy-journey-visual.webp");
 const imgMeno     = require("../../public/images/menopause-transition-visual.webp");
+
+const cycleQuestionGroups = [
+  { key: "lastPeriodStart", label: "Last period", options: ["This week", "Last week", "2+ weeks", "Not sure"] },
+  { key: "periodLength", label: "Period lasts", options: ["3 days", "5 days", "7 days", "Varies"] },
+  { key: "cycleLength", label: "Cycle length", options: ["26 days", "28 days", "30 days", "Irregular"] },
+  { key: "usualFlow", label: "Usual flow", options: ["Light", "Medium", "Heavy", "Spotting"] },
+] as const;
+
+const cycleSupportNeeds = ["Cramps", "Mood", "Energy", "Sleep"] as const;
+const fertilityOptions = ["Yes", "Maybe later", "No"] as const;
 
 // ─── Brand palette ────────────────────────────────────────────────────────────
 const C = {
@@ -57,6 +67,8 @@ type StageCard = {
   id: LifeStage;
   label: string;
   image: ReturnType<typeof require>;
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  iconBg: string;
   grad: [string, string, ...string[]];
   labelColor: string;
   gradOverlay: string;
@@ -67,6 +79,8 @@ const STAGES: StageCard[] = [
     id: "teen",
     label: "Teen",
     image: imgTeen,
+    icon: "account-heart-outline",
+    iconBg: "rgba(46,125,69,0.16)",
     grad: ["#C8E6C9", "#A5D6A7", "#E8F5E9"],
     labelColor: "#2E7D45",
     gradOverlay: "#C8E6C9",
@@ -75,6 +89,8 @@ const STAGES: StageCard[] = [
     id: "cycle_fertility",
     label: "Cycle &\nFertility",
     image: imgCycle,
+    icon: "calendar-heart",
+    iconBg: "rgba(173,62,104,0.16)",
     grad: ["#FDDDE8", "#F9C0D0", "#FBF0F4"],
     labelColor: "#AD3E68",
     gradOverlay: "#FDDDE8",
@@ -83,6 +99,8 @@ const STAGES: StageCard[] = [
     id: "pregnancy",
     label: "Pregnancy",
     image: imgPreg,
+    icon: "human-pregnant",
+    iconBg: "rgba(176,37,53,0.15)",
     grad: ["#FFCDD2", "#EF9A9A", "#FFF3F4"],
     labelColor: "#B02535",
     gradOverlay: "#FFCDD2",
@@ -91,6 +109,8 @@ const STAGES: StageCard[] = [
     id: "menopause",
     label: "Menopause",
     image: imgMeno,
+    icon: "weather-sunset",
+    iconBg: "rgba(138,90,10,0.14)",
     grad: ["#FFE082", "#FFCC02", "#FFF8E1"],
     labelColor: "#8A5A0A",
     gradOverlay: "#FFE082",
@@ -104,9 +124,13 @@ export default function HealthSetupScreen() {
   const setName    = useOnboardingStore((s) => s.setName);
   const lifeStage  = useOnboardingStore((s) => s.lifeStage);
   const setLifeStage = useOnboardingStore((s) => s.setLifeStage);
+  const selectedGoals = useOnboardingStore((s) => s.selectedGoals);
+  const cycleBasics = useOnboardingStore((s) => s.cycleBasics);
+  const setCycleBasics = useOnboardingStore((s) => s.setCycleBasics);
 
   // Pre-select "teen" on first visit
   const [selected, setSelected] = useState<LifeStage>(lifeStage ?? "teen");
+  const [cycleDraft, setCycleDraft] = useState<CycleBasics>(cycleBasics);
 
   // ── Hero animations ────────────────────────────────────────────────────────
   const breathe = useRef(new Animated.Value(0)).current;
@@ -154,8 +178,27 @@ export default function HealthSetupScreen() {
 
   function handleContinue() {
     setLifeStage(selected);
+    if (selected === "cycle_fertility" || selectedGoals.includes("cycle")) {
+      setCycleBasics(cycleDraft);
+    }
     router.push("/(onboarding)/emotional-wellness");
   }
+
+  const updateCycleDraft = (key: keyof CycleBasics, value: string) => {
+    setCycleDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const toggleCycleSupport = (value: string) => {
+    setCycleDraft((current) => {
+      const hasValue = current.supportNeeds.includes(value);
+      return {
+        ...current,
+        supportNeeds: hasValue
+          ? current.supportNeeds.filter((item) => item !== value)
+          : [...current.supportNeeds, value],
+      };
+    });
+  };
 
   return (
     <View style={s.root}>
@@ -305,6 +348,9 @@ export default function HealthSetupScreen() {
 
                     {/* Label */}
                     <View style={s.cardBottom}>
+                      <View style={[s.stageIconBadge, { backgroundColor: stage.iconBg }]}>
+                        <MaterialCommunityIcons name={stage.icon} size={16} color={stage.labelColor} />
+                      </View>
                       <Text style={[s.cardLabel, { color: stage.labelColor }]}>
                         {stage.label}
                       </Text>
@@ -323,6 +369,70 @@ export default function HealthSetupScreen() {
           </View>
 
           {/* ── Continue CTA ─────────────────────────────────────────────── */}
+          {(selected === "cycle_fertility" || selectedGoals.includes("cycle")) && (
+            <View style={s.cycleBasicsCard}>
+              <View style={s.cycleBasicsHeader}>
+                <MaterialCommunityIcons name="calendar-heart" size={18} color={C.terra} />
+                <Text style={s.cycleBasicsTitle}>Cycle basics</Text>
+              </View>
+              <View style={s.cycleQuestionGrid}>
+                {cycleQuestionGroups.map((group) => (
+                  <View key={group.key} style={s.cycleQuestionBlock}>
+                    <Text style={s.cycleQuestionLabel}>{group.label}</Text>
+                    <View style={s.cycleChipWrap}>
+                      {group.options.map((option) => {
+                        const active = cycleDraft[group.key] === option;
+                        return (
+                          <Pressable
+                            key={option}
+                            onPress={() => updateCycleDraft(group.key, option)}
+                            style={({ pressed }) => [s.cycleChip, active && s.cycleChipActive, pressed && s.pressed]}
+                          >
+                            <Text style={[s.cycleChipText, active && s.cycleChipTextActive]}>{option}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ))}
+                <View style={s.cycleQuestionBlockWide}>
+                  <Text style={s.cycleQuestionLabel}>Need support with</Text>
+                  <View style={s.cycleChipWrap}>
+                    {cycleSupportNeeds.map((option) => {
+                      const active = cycleDraft.supportNeeds.includes(option);
+                      return (
+                        <Pressable
+                          key={option}
+                          onPress={() => toggleCycleSupport(option)}
+                          style={({ pressed }) => [s.cycleChip, active && s.cycleChipActive, pressed && s.pressed]}
+                        >
+                          <Text style={[s.cycleChipText, active && s.cycleChipTextActive]}>{option}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+                <View style={s.cycleQuestionBlockWide}>
+                  <Text style={s.cycleQuestionLabel}>Fertility-aware guidance?</Text>
+                  <View style={s.cycleChipWrap}>
+                    {fertilityOptions.map((option) => {
+                      const active = cycleDraft.fertilityIntent === option;
+                      return (
+                        <Pressable
+                          key={option}
+                          onPress={() => updateCycleDraft("fertilityIntent", option)}
+                          style={({ pressed }) => [s.cycleChip, active && s.cycleChipActive, pressed && s.pressed]}
+                        >
+                          <Text style={[s.cycleChipText, active && s.cycleChipTextActive]}>{option}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
           <Pressable
             onPress={handleContinue}
             disabled={!canContinue}
@@ -671,10 +781,20 @@ const s = StyleSheet.create({
     height: 64,
   },
   cardBottom: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
     paddingHorizontal: 12,
     paddingBottom: 14,
     paddingTop: 10,
     backgroundColor: "transparent",
+  },
+  stageIconBadge: {
+    alignItems: "center",
+    borderRadius: 14,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
   },
   cardLabel: {
     fontFamily: F.uiBold,
@@ -700,6 +820,74 @@ const s = StyleSheet.create({
   },
 
   // ── CTA ───────────────────────────────────────────────────────────────────
+  cycleBasicsCard: {
+    backgroundColor: C.surface,
+    borderColor: C.border,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    marginBottom: 22,
+    marginTop: -6,
+    padding: 14,
+    shadowColor: "#8B5E6D",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  cycleBasicsHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  cycleBasicsTitle: {
+    color: C.onSurface,
+    fontFamily: F.uiBold,
+    fontSize: 15,
+  },
+  cycleQuestionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  cycleQuestionBlock: {
+    width: (W - SIDE_PAD * 2 - 28 - 10) / 2,
+  },
+  cycleQuestionBlockWide: {
+    width: "100%",
+  },
+  cycleQuestionLabel: {
+    color: C.onVariant,
+    fontFamily: F.uiSemiBold,
+    fontSize: 11,
+    marginBottom: 7,
+  },
+  cycleChipWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  cycleChip: {
+    backgroundColor: "rgba(255,255,255,0.58)",
+    borderColor: "rgba(255,255,255,0.78)",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+  cycleChipActive: {
+    backgroundColor: "rgba(224,122,95,0.16)",
+    borderColor: "rgba(224,122,95,0.36)",
+  },
+  cycleChipText: {
+    color: C.onVariant,
+    fontFamily: F.uiBold,
+    fontSize: 10.5,
+  },
+  cycleChipTextActive: {
+    color: C.terra,
+  },
+
   ctaShell: {
     borderRadius: 999,
     shadowColor: C.terra,

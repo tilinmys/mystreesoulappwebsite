@@ -1,6 +1,6 @@
 import { ComingSoonScreen } from "../components/system/ComingSoonScreen";
 
-const bloopImage = require("../public/images/bloop-calm.webp");
+const bloopImage = require("../public/images/bloop-menopause-cooling.webp");
 
 export default function MenopauseScreen() {
   return (

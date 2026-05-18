@@ -1,15 +1,19 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useState } from "react";
+import { useNetworkStore } from "../store/networkStore";
 
 export function useOfflineStatus() {
-  const [isOffline, setIsOffline] = useState(false);
+  const setOnlineStatus = useNetworkStore((state) => state.setOnlineStatus);
+  const isOnline = useNetworkStore((state) => state.isOnline);
+  const [listenerReady, setListenerReady] = useState(false);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsOffline(!(state.isConnected && state.isInternetReachable !== false));
+      setOnlineStatus(Boolean(state.isConnected && state.isInternetReachable !== false));
+      setListenerReady(true);
     });
     return unsubscribe;
-  }, []);
+  }, [setOnlineStatus]);
 
-  return { isOffline, queuedLogs: isOffline ? 3 : 0 };
+  return { isOffline: listenerReady ? !isOnline : false, queuedLogs: 0 };
 }

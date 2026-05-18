@@ -46,6 +46,15 @@ export type LifeStage =
   | "menopause"
   | null;
 
+export type CycleBasics = {
+  lastPeriodStart: string;
+  periodLength: string;
+  cycleLength: string;
+  usualFlow: string;
+  supportNeeds: string[];
+  fertilityIntent: string;
+};
+
 // ─── State interface ─────────────────────────────────────────────────────────
 
 interface OnboardingState {
@@ -72,6 +81,7 @@ interface OnboardingState {
   sleepScore: string;
   /** Dominant emotional state from the mood wheel. Default "calm". */
   emotionalState: string;
+  cycleBasics: CycleBasics;
 
   // ── Existing actions (DO NOT REMOVE) ──────────────────────────────────────
   acceptPrivacyConsent: () => void;
@@ -85,6 +95,7 @@ interface OnboardingState {
   setStressLevel: (value: number) => void;
   setSleepScore: (value: string) => void;
   setEmotionalState: (value: string) => void;
+  setCycleBasics: (value: CycleBasics) => void;
 }
 
 // ─── Default values (single source of truth for resets) ─────────────────────
@@ -98,6 +109,14 @@ const DEFAULTS = {
   stressLevel:              50,
   sleepScore:               "okay",
   emotionalState:           "calm",
+  cycleBasics:              {
+    lastPeriodStart: "",
+    periodLength: "",
+    cycleLength: "",
+    usualFlow: "",
+    supportNeeds: [] as string[],
+    fertilityIntent: "",
+  },
 } as const satisfies Omit<
   OnboardingState,
   | "acceptPrivacyConsent"
@@ -109,6 +128,7 @@ const DEFAULTS = {
   | "setStressLevel"
   | "setSleepScore"
   | "setEmotionalState"
+  | "setCycleBasics"
 >;
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -140,6 +160,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       setStressLevel:    (value)  => set({ stressLevel: value }),
       setSleepScore:     (value)  => set({ sleepScore: value }),
       setEmotionalState: (value)  => set({ emotionalState: value }),
+      setCycleBasics:    (value)  => set({ cycleBasics: value }),
     }),
     {
       name: "onboarding-storage",

@@ -32,10 +32,13 @@ import { CormorantGaramond_500Medium_Italic } from "@expo-google-fonts/cormorant
 import { CormorantGaramond_600SemiBold } from "@expo-google-fonts/cormorant-garamond/600SemiBold";
 
 import { preloadAppImages } from "../components/imagePreload";
+import { OfflineBanner } from "../components/system/OfflineBanner";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useRouteGuard } from "../hooks/useRouteGuard";
 
 export default function RootLayout() {
   useRouteGuard();
+  useNetworkStatus();
   const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
@@ -87,6 +90,7 @@ export default function RootLayout() {
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
       </Stack>
+      <OfflineBanner />
     </>
   );
 }

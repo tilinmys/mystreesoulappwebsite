@@ -17,6 +17,7 @@ import { ContextualAuraBackground } from "../components/ContextualAuraBackground
 import { F } from "../constants/fonts";
 import { useAuthStore } from "../store/authStore";
 import { useSafeBack } from "../hooks/useSafeBack";
+import { useThemeStore, type ColorMode } from "../store/themeStore";
 
 const bloop = require("../public/images/bloop-nav.webp");
 
@@ -37,6 +38,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const safeBack = useSafeBack();
   const logout = useAuthStore((state) => state.logout);
+  const colorMode = useThemeStore((state) => state.colorMode);
+  const setColorMode = useThemeStore((state) => state.setColorMode);
   const pulse = useRef(new Animated.Value(0)).current;
   const [biometricKey, setBiometricKey] = useState(true);
   const [localMode, setLocalMode] = useState(false);
@@ -122,6 +125,10 @@ export default function SettingsScreen() {
           ))}
         </SettingsIsland>
 
+        <SettingsIsland title="Appearance">
+          <AppearanceRow colorMode={colorMode} onSelect={setColorMode} />
+        </SettingsIsland>
+
         <BloopTrustCard orbScale={orbScale} />
         <Pressable
           onPress={() => {
@@ -141,7 +148,12 @@ export default function SettingsScreen() {
 function Header({ onBack }: { onBack: () => void }) {
   return (
     <View style={styles.header}>
-      <Pressable onPress={onBack} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
+      <Pressable
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        onPress={onBack}
+        style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+      >
         <Ionicons name="chevron-back" size={22} color={palette.text} />
       </Pressable>
       <View style={styles.headerCopy}>
@@ -261,6 +273,53 @@ function BloopTrustCard({ orbScale }: { orbScale: Animated.AnimatedInterpolation
   );
 }
 
+function AppearanceRow({
+  colorMode,
+  onSelect
+}: {
+  colorMode: ColorMode;
+  onSelect: (mode: ColorMode) => void;
+}) {
+  const options: { label: string; value: ColorMode; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+    { label: "Light", value: "light", icon: "white-balance-sunny" },
+    { label: "System", value: "system", icon: "theme-light-dark" },
+    { label: "Dark", value: "dark", icon: "moon-waning-crescent" },
+  ];
+  return (
+    <View style={styles.appearanceRow}>
+      <View style={styles.rowIcon}>
+        <MaterialCommunityIcons
+          name={colorMode === "dark" ? "moon-waning-crescent" : colorMode === "light" ? "white-balance-sunny" : "theme-light-dark"}
+          size={21}
+          color={palette.lavender}
+        />
+      </View>
+      <View style={styles.appearanceCopy}>
+        <Text style={styles.rowTitle}>App Theme</Text>
+        <Text style={styles.rowSub}>Choose how MyStree Soul looks</Text>
+        <View style={styles.themeSegment}>
+          {options.map((opt) => (
+            <Pressable
+              key={opt.value}
+              onPress={() => onSelect(opt.value)}
+              style={[styles.themeOption, colorMode === opt.value && styles.themeOptionActive]}
+            >
+              <MaterialCommunityIcons
+                name={opt.icon}
+                size={15}
+                color={colorMode === opt.value ? palette.terracotta : palette.muted}
+              />
+              <Text style={[styles.themeOptionText, colorMode === opt.value && styles.themeOptionTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function FloatingNav({
   onBloop,
   onDashboard,
@@ -277,21 +336,21 @@ function FloatingNav({
   return (
     <View style={styles.navWrap}>
       <View style={styles.navBar}>
-        <Pressable onPress={onDashboard} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
+        <Pressable accessibilityLabel="Open dashboard" accessibilityRole="button" onPress={onDashboard} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
           <MaterialCommunityIcons name="home-variant" size={23} color={palette.muted} />
         </Pressable>
-        <Pressable onPress={onWellness} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
+        <Pressable accessibilityLabel="Open wellness" accessibilityRole="button" onPress={onWellness} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
           <MaterialCommunityIcons name="spa-outline" size={23} color={palette.muted} />
         </Pressable>
-        <Pressable onPress={onBloop} style={({ pressed }) => [styles.aiButtonShell, pressed && styles.pressed]}>
+        <Pressable accessibilityLabel="Open Bloop chat" accessibilityRole="button" onPress={onBloop} style={({ pressed }) => [styles.aiButtonShell, pressed && styles.pressed]}>
           <LinearGradient colors={["#2B2D42", "#1B1D2B"]} style={styles.aiButton}>
             <CachedImage source={bloop} style={styles.aiButtonImage} />
           </LinearGradient>
         </Pressable>
-        <Pressable onPress={onInsights} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
+        <Pressable accessibilityLabel="Open insights" accessibilityRole="button" onPress={onInsights} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
           <MaterialCommunityIcons name="chart-donut" size={23} color={palette.muted} />
         </Pressable>
-        <Pressable onPress={onProfile} style={({ pressed }) => [styles.navButton, styles.navButtonActive, pressed && styles.pressed]}>
+        <Pressable accessibilityLabel="Open profile" accessibilityRole="button" onPress={onProfile} style={({ pressed }) => [styles.navButton, styles.navButtonActive, pressed && styles.pressed]}>
           <MaterialCommunityIcons name="shield-check-outline" size={23} color={palette.terracotta} />
           <View style={styles.navActiveDot} />
         </Pressable>
@@ -386,5 +445,50 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 17,
     fontWeight: "900"
-  }
+  },
+  // ── Appearance section ──────────────────────────────────────────────────────
+  appearanceRow: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 8,
+    alignItems: "flex-start",
+  },
+  appearanceCopy: {
+    flex: 1,
+  },
+  themeSegment: {
+    marginTop: 12,
+    minHeight: 44,
+    borderRadius: 22,
+    padding: 4,
+    flexDirection: "row",
+    backgroundColor: "rgba(107,112,141,0.09)",
+    gap: 2,
+  },
+  themeOption: {
+    flex: 1,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 5,
+    paddingVertical: 8,
+  },
+  themeOptionActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: palette.terracotta,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  themeOptionText: {
+    color: palette.muted,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "900",
+  },
+  themeOptionTextActive: {
+    color: palette.terracotta,
+  },
 });

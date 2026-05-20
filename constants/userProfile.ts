@@ -18,7 +18,6 @@ export type TabName =
   | "wellness"
   | "nourish"
   | "sleep"
-  | "community"
   | "profile";
 
 // ─── Dashboard focus ──────────────────────────────────────────────────────────
@@ -77,14 +76,8 @@ export type UserProfile = {
   /** Show goal progress bars, habit streaks, daily plan anywhere */
   showGoalContent: boolean;
 
-  /** Show Community tab and community-related cards */
-  showCommunity: boolean;
-
   /** Phase filter visible on Nourish screen */
   nourishPhaseFilterVisible: boolean;
-
-  /** Default community category tab */
-  communityDefaultCategory: "pms_mood" | "cycle" | "fertility" | "emotional" | "sleep";
 
   /** Sleep screen insight framing */
   sleepFraming: "cycle_phase" | "emotional_rest" | "productivity" | "integrated";
@@ -106,25 +99,21 @@ const JOURNEY_PROFILES: Record<NeedCombinationId, UserProfile> = {
     showCycleData: true,
     showEmotionalContent: false,
     showGoalContent: false,
-    showCommunity: false,
     nourishPhaseFilterVisible: true,
-    communityDefaultCategory: "cycle",
     sleepFraming: "cycle_phase",
     readyHeroMessage: "Your cycle is your guide.",
   },
 
   self_love: {
     journeyId: "self_love",
-    visibleTabs: ["dashboard", "wellness", "community", "sleep", "profile"],
+    visibleTabs: ["dashboard", "wellness", "sleep", "profile"],
     dashboardFocus: "affirmation",
     bloopPersonality: "empathetic",
     insightPriority: "hidden",
     showCycleData: false,
     showEmotionalContent: true,
     showGoalContent: false,
-    showCommunity: true,
     nourishPhaseFilterVisible: false,
-    communityDefaultCategory: "emotional",
     sleepFraming: "emotional_rest",
     readyHeroMessage: "You deserve to feel at home in yourself.",
   },
@@ -138,25 +127,21 @@ const JOURNEY_PROFILES: Record<NeedCombinationId, UserProfile> = {
     showCycleData: false,
     showEmotionalContent: false,
     showGoalContent: true,
-    showCommunity: false,
     nourishPhaseFilterVisible: false,
-    communityDefaultCategory: "sleep",
     sleepFraming: "productivity",
     readyHeroMessage: "Small steps. Real change.",
   },
 
   self_love_cycle: {
     journeyId: "self_love_cycle",
-    visibleTabs: ["dashboard", "cycle", "wellness", "community", "sleep", "profile"],
+    visibleTabs: ["dashboard", "cycle", "wellness", "sleep", "profile"],
     dashboardFocus: "cycle_and_mood",
     bloopPersonality: "mood_cycle",
     insightPriority: "mood_hormone",
     showCycleData: true,
     showEmotionalContent: true,
     showGoalContent: false,
-    showCommunity: true,
     nourishPhaseFilterVisible: true,
-    communityDefaultCategory: "pms_mood",
     sleepFraming: "cycle_phase",
     readyHeroMessage: "Your feelings and your cycle tell the same story.",
   },
@@ -170,25 +155,21 @@ const JOURNEY_PROFILES: Record<NeedCombinationId, UserProfile> = {
     showCycleData: true,
     showEmotionalContent: false,
     showGoalContent: true,
-    showCommunity: false,
     nourishPhaseFilterVisible: true,
-    communityDefaultCategory: "cycle",
     sleepFraming: "integrated",
     readyHeroMessage: "Your cycle is your most powerful planning tool.",
   },
 
   self_love_goal_setting: {
     journeyId: "self_love_goal_setting",
-    visibleTabs: ["dashboard", "wellness", "nourish", "community", "sleep", "profile"],
+    visibleTabs: ["dashboard", "wellness", "nourish", "sleep", "profile"],
     dashboardFocus: "affirmation_and_goal",
     bloopPersonality: "compassionate",
     insightPriority: "hidden",
     showCycleData: false,
     showEmotionalContent: true,
     showGoalContent: true,
-    showCommunity: true,
     nourishPhaseFilterVisible: false,
-    communityDefaultCategory: "emotional",
     sleepFraming: "emotional_rest",
     readyHeroMessage: "Progress that feels kind.",
   },
@@ -197,7 +178,7 @@ const JOURNEY_PROFILES: Record<NeedCombinationId, UserProfile> = {
     journeyId: "whole_rhythm",
     visibleTabs: [
       "dashboard", "cycle", "wellness", "nourish",
-      "insights", "sleep", "community", "profile",
+      "insights", "sleep", "profile",
     ],
     dashboardFocus: "all_three",
     bloopPersonality: "holistic",
@@ -205,9 +186,7 @@ const JOURNEY_PROFILES: Record<NeedCombinationId, UserProfile> = {
     showCycleData: true,
     showEmotionalContent: true,
     showGoalContent: true,
-    showCommunity: true,
     nourishPhaseFilterVisible: true,
-    communityDefaultCategory: "pms_mood",
     sleepFraming: "integrated",
     readyHeroMessage: "Your whole self, in one place.",
   },

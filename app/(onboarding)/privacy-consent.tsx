@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
+import { getNeedCombination } from "../../constants/onboardingAdaptation";
 import { useHaptics } from "../../hooks/useHaptics";
 import { useSafeBack } from "../../hooks/useSafeBack";
 import { useOnboardingStore } from "../../store/onboardingStore";
@@ -23,7 +24,7 @@ const { width: W, height: H } = Dimensions.get("window");
 const SIDE_PAD     = 20;
 const CARD_GAP     = 10;
 const TRUST_CARD_W = (W - SIDE_PAD * 2 - CARD_GAP * 2) / 3;
-const HERO_H       = Math.round(H * 0.27);
+const HERO_H       = Math.round(H * 0.24);
 const CONTAINER_W  = W - SIDE_PAD * 2;
 
 // ── Assets ────────────────────────────────────────────────────────────────────
@@ -72,16 +73,66 @@ export default function PrivacyConsentScreen() {
   const safeBack            = useSafeBack("/(onboarding)/onboarding");
   const haptics             = useHaptics();
   const acceptPrivacyConsent = useOnboardingStore((s) => s.acceptPrivacyConsent);
+  const selectedGoals        = useOnboardingStore((s) => s.selectedGoals);
+  const journeyId            = getNeedCombination(selectedGoals);
 
-  // All toggles pre-enabled — user sees everything is ON for their protection
-  const [toggles, setToggles] = useState({ health: true, ai: true, emotional: true });
+  const hasCycle = journeyId === "cycle" || journeyId === "self_love_cycle" || journeyId === "goal_setting_cycle" || journeyId === "whole_rhythm";
+  const hasGoal  = journeyId === "goal_setting" || journeyId === "self_love_goal_setting" || journeyId === "goal_setting_cycle" || journeyId === "whole_rhythm";
+
+  const headlineSub = hasCycle
+    ? "Your cycle and health data stay private."
+    : hasGoal
+    ? "Your goals and habits are yours alone."
+    : "You choose what to share.";
+
+  const emotionalToggleLabel = hasGoal && !hasCycle ? "Help me stay on track" : "Support my emotions";
+
+  // privacy = required; ai + emotional = optional, off by default
+  const [toggles, setToggles] = useState({ privacy: false, ai: false, emotional: false });
+  const [consentError, setConsentError] = useState(false);
+
+  const [privacySheetVisible, setPrivacySheetVisible] = useState(false);
+  const privacySheetAnim = useRef(new Animated.Value(0)).current;
+
+  const showPrivacySheet = () => {
+    setPrivacySheetVisible(true);
+    Animated.timing(privacySheetAnim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  };
+  const hidePrivacySheet = () => {
+    Animated.timing(privacySheetAnim, { toValue: 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => setPrivacySheetVisible(false));
+  };
 
   const flip = (key: keyof typeof toggles) => {
     haptics.selection();
-    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+    setToggles((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (key === "privacy" && !prev.privacy) setConsentError(false);
+      return next;
+    });
   };
 
+  // ── Screen entrance ────────────────────────────────────────────────────────
+  const entranceOp = useRef(new Animated.Value(0)).current;
+  const entranceY  = useRef(new Animated.Value(10)).current;
+  const cardsOp    = useRef(new Animated.Value(0)).current;
+  const cardsY     = useRef(new Animated.Value(8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(entranceOp, { toValue: 1, duration: 580, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(entranceY,  { toValue: 0, duration: 580, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+    Animated.parallel([
+      Animated.timing(cardsOp, { toValue: 1, duration: 500, delay: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(cardsY,  { toValue: 0, duration: 500, delay: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, []);
+
   const handleContinue = () => {
+    if (!toggles.privacy) {
+      setConsentError(true);
+      return;
+    }
     haptics.success();
     acceptPrivacyConsent();
     router.push("/(onboarding)/health-setup");
@@ -90,12 +141,7 @@ export default function PrivacyConsentScreen() {
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
 
-      {/* ── Ambient background (same gradient as screen 1) ── */}
-      <LinearGradient
-        colors={["#FCE0D0", "#F5DCF0", "#E8DFF8", "#FAECD4"]}
-        locations={[0, 0.30, 0.64, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Ambient blobs — atmosphere only */}
       <View style={s.blob1} pointerEvents="none" />
       <View style={s.blob2} pointerEvents="none" />
       <View style={s.blob3} pointerEvents="none" />
@@ -103,6 +149,8 @@ export default function PrivacyConsentScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
           onPress={safeBack}
           style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}
           hitSlop={10}
@@ -116,10 +164,11 @@ export default function PrivacyConsentScreen() {
         </View>
 
         <Pressable
+          onPress={showPrivacySheet}
           style={({ pressed }) => [s.iconBtn, pressed && s.pressed]}
-          accessibilityLabel="Wellness settings"
+          accessibilityLabel="How we protect your data"
         >
-          <MaterialCommunityIcons name="flower-outline" size={20} color={C.muted} />
+          <MaterialCommunityIcons name="help-circle-outline" size={20} color={C.muted} />
         </Pressable>
       </View>
 
@@ -134,20 +183,23 @@ export default function PrivacyConsentScreen() {
         <VaultHero />
 
         {/* ── "Encrypted" badge ── */}
-        <View style={s.encryptedWrap}>
-          <View style={s.encryptedBadge}>
-            <MaterialCommunityIcons name="lock-outline" size={14} color={C.gold} />
-            <Text style={s.encryptedLabel}>Safe space</Text>
+        <Animated.View style={{ opacity: entranceOp, transform: [{ translateY: entranceY }] }}>
+          <View style={s.encryptedWrap}>
+            <View style={s.encryptedBadge}>
+              <MaterialCommunityIcons name="lock-outline" size={14} color={C.gold} />
+              <Text style={s.encryptedLabel}>Safe space</Text>
+            </View>
           </View>
-        </View>
 
-        {/* ── Main headline ── */}
-        <View style={s.headlineWrap}>
-          <Text style={s.headline}>Hey No worries.{"\n"}Your secrets are safe with us!</Text>
-          <Text style={s.headlineSub}>You choose what to share.</Text>
-        </View>
+          {/* ── Main headline ── */}
+          <View style={s.headlineWrap}>
+            <Text style={s.headline}>Hey No worries.{"\n"}Your secrets are safe with us!</Text>
+            <Text style={s.headlineSub}>{headlineSub}</Text>
+          </View>
+        </Animated.View>
 
         {/* ── Trust cards (3-column) ── */}
+        <Animated.View style={[{ opacity: cardsOp, transform: [{ translateY: cardsY }] }, { alignSelf: "stretch" }]}>
         <View style={s.trustRow}>
           <TrustCard
             icon="shield-lock-outline"
@@ -176,16 +228,17 @@ export default function PrivacyConsentScreen() {
             icon="shield-check-outline"
             iconColor={C.terracotta}
             iconBg="rgba(224,122,95,0.14)"
-            label="Protect my health data"
-            value={toggles.health}
-            onToggle={() => flip("health")}
+            label="I agree to the MyStree Soul Privacy Policy."
+            value={toggles.privacy}
+            onToggle={() => flip("privacy")}
+            required
           />
           <View style={s.toggleDivider} />
           <ToggleRow
             icon="brain"
             iconColor={C.lavender}
             iconBg="rgba(146,119,200,0.14)"
-            label="Bloop can guide me"
+            label="Let Bloop personalize guidance using my wellness answers."
             value={toggles.ai}
             onToggle={() => flip("ai")}
           />
@@ -194,11 +247,20 @@ export default function PrivacyConsentScreen() {
             icon="meditation"
             iconColor={C.sage}
             iconBg="rgba(94,155,107,0.14)"
-            label="Support my emotions"
+            label={emotionalToggleLabel}
             value={toggles.emotional}
             onToggle={() => flip("emotional")}
           />
         </View>
+
+        {/* Consent validation feedback */}
+        {consentError && (
+          <Text style={s.consentError}>
+            Please review and accept the required privacy consent to continue.
+          </Text>
+        )}
+
+        </Animated.View>
 
         {/* Bottom spacer for CTA */}
         <View style={{ height: 140 }} />
@@ -230,6 +292,11 @@ export default function PrivacyConsentScreen() {
           ))}
         </View>
       </View>
+
+      {/* ── Privacy info sheet ── */}
+      {privacySheetVisible && (
+        <PrivacySheet sheetAnim={privacySheetAnim} onClose={hidePrivacySheet} />
+      )}
 
     </SafeAreaView>
   );
@@ -421,7 +488,7 @@ function TrustCard({
 // ── ToggleRow ─────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 function ToggleRow({
-  icon, iconColor, iconBg, label, value, onToggle,
+  icon, iconColor, iconBg, label, value, onToggle, required,
 }: {
   icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   iconColor: string;
@@ -429,8 +496,8 @@ function ToggleRow({
   label: string;
   value: boolean;
   onToggle: () => void;
+  required?: boolean;
 }) {
-  // Smooth thumb slide
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
   useEffect(() => {
     Animated.timing(anim, {
@@ -441,18 +508,27 @@ function ToggleRow({
     }).start();
   }, [value]);
 
-  const thumbX   = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
-  const trackBg  = anim.interpolate({ inputRange: [0, 1], outputRange: ["#E4D4CC", "#E07A5F"] });
+  const thumbX  = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
+  const trackBg = anim.interpolate({ inputRange: [0, 1], outputRange: ["#E4D4CC", "#E07A5F"] });
 
   return (
     <View style={s.toggleRow}>
-      {/* Icon */}
       <View style={[s.toggleIconBubble, { backgroundColor: iconBg }]}>
         <MaterialCommunityIcons name={icon} size={20} color={iconColor} />
       </View>
-      {/* Label */}
-      <Text style={s.toggleLabel}>{label}</Text>
-      {/* Custom toggle switch */}
+      <View style={s.toggleLabelArea}>
+        <Text style={s.toggleLabel}>{label}</Text>
+        {required && (
+          <View style={s.requiredPill}>
+            <Text style={s.requiredPillText}>Required</Text>
+          </View>
+        )}
+        {!required && (
+          <View style={s.optionalPill}>
+            <Text style={s.optionalPillText}>Optional</Text>
+          </View>
+        )}
+      </View>
       <Pressable onPress={onToggle} hitSlop={10} accessibilityRole="switch" accessibilityState={{ checked: value }}>
         <Animated.View style={[s.trackOuter, { backgroundColor: trackBg }]}>
           <Animated.View style={[s.trackThumb, { transform: [{ translateX: thumbX }] }]} />
@@ -463,27 +539,85 @@ function ToggleRow({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── PrivacySheet — explains how data is protected ─────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+function PrivacySheet({
+  sheetAnim,
+  onClose,
+}: {
+  sheetAnim: Animated.Value;
+  onClose: () => void;
+}) {
+  const translateY = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [400, 0] });
+  const overlayOp  = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.45] });
+
+  return (
+    <>
+      <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#000", opacity: overlayOp }]}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Dismiss" />
+      </Animated.View>
+
+      <Animated.View style={[s.privacySheet, { transform: [{ translateY }] }]}>
+        <View style={s.sheetHandle} />
+        <View style={s.sheetIconBubble}>
+          <MaterialCommunityIcons name="shield-check" size={28} color={C.terracotta} />
+        </View>
+        <Text style={s.sheetTitle}>How we protect your data</Text>
+
+        <View style={s.sheetPoints}>
+          {[
+            { icon: "lock-outline" as const,           text: "Your health data is encrypted and never sold." },
+            { icon: "eye-off-outline" as const,         text: "Only you can see your entries." },
+            { icon: "robot-happy-outline" as const,     text: "Bloop's guidance runs privately and doesn't leave your account." },
+            { icon: "account-cancel-outline" as const,  text: "You can delete everything, any time." },
+          ].map(({ icon, text }) => (
+            <View key={text} style={s.sheetPoint}>
+              <MaterialCommunityIcons name={icon} size={18} color={C.terracotta} />
+              <Text style={s.sheetPointText}>{text}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Pressable
+          onPress={onClose}
+          style={({ pressed }) => [s.sheetCloseBtn, pressed && s.pressed]}
+        >
+          <LinearGradient
+            colors={[C.peach, C.terracotta]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={s.sheetCloseBtnGrad}
+          >
+            <Text style={s.sheetCloseBtnText}>Got it</Text>
+          </LinearGradient>
+        </Pressable>
+      </Animated.View>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ── Styles ────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
 
-  screen: { flex: 1, overflow: "hidden" },
+  screen: { flex: 1, overflow: "hidden", backgroundColor: "#FFFFFF" },
 
-  // ── Ambient blobs (same as screen 1) ──────────────────────────────────────
+  // ── Ambient blobs — atmosphere only, 8-10% opacity ─────────────────────────
   blob1: {
-    position: "absolute", top: -100, left: -80,
-    width: 280, height: 280, borderRadius: 140,
-    backgroundColor: "rgba(252,195,175,0.38)",
+    position: "absolute", top: -120, left: -100,
+    width: 360, height: 360, borderRadius: 180,
+    backgroundColor: "rgba(255,183,183,0.10)",
   },
   blob2: {
-    position: "absolute", top: 160, right: -110,
-    width: 260, height: 260, borderRadius: 130,
-    backgroundColor: "rgba(189,172,255,0.26)",
+    position: "absolute", top: 200, right: -140,
+    width: 340, height: 340, borderRadius: 170,
+    backgroundColor: "rgba(189,172,255,0.08)",
   },
   blob3: {
-    position: "absolute", bottom: 60, left: -70,
-    width: 220, height: 220, borderRadius: 110,
-    backgroundColor: "rgba(244,162,97,0.16)",
+    position: "absolute", bottom: 40, left: -100,
+    width: 300, height: 300, borderRadius: 150,
+    backgroundColor: "rgba(162,202,178,0.08)",
   },
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -516,12 +650,12 @@ const s = StyleSheet.create({
   },
   iconBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.68)",
+    backgroundColor: "rgba(248,244,248,0.96)",
     alignItems: "center", justifyContent: "center",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.88)",
+    borderWidth: 1, borderColor: "rgba(232,225,230,0.70)",
     shadowColor: C.muted,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10, shadowRadius: 10, elevation: 2,
+    shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
   },
 
   // ── Scroll ────────────────────────────────────────────────────────────────
@@ -748,12 +882,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.68)",
+    backgroundColor: "rgba(248,244,248,0.98)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.88)",
+    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: C.gold,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14, shadowRadius: 10, elevation: 3,
+    shadowOpacity: 0.10, shadowRadius: 10, elevation: 3,
   },
   encryptedLabel: {
     fontFamily: F.uiSemiBold,              // Nunito SemiBold
@@ -797,14 +931,14 @@ const s = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.80)",
+    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#9E7080",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.09, shadowRadius: 14, elevation: 3,
   },
   trustCardGrad: {
-    padding: 9,
-    minHeight: 102,
+    padding: 10,
+    minHeight: 108,
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
@@ -834,13 +968,13 @@ const s = StyleSheet.create({
   // ── Toggle section ────────────────────────────────────────────────────────
   toggleCard: {
     marginHorizontal: SIDE_PAD,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: "rgba(250,247,250,0.98)",
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.88)",
+    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#9E7080",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08, shadowRadius: 20, elevation: 3,
+    shadowOpacity: 0.07, shadowRadius: 20, elevation: 3,
     overflow: "hidden",
   },
   toggleRow: {
@@ -861,10 +995,10 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   toggleLabel: {
-    fontFamily: F.uiMedium,                // Nunito Medium — toggle label
+    fontFamily: F.uiMedium,
     fontSize: 12.5,
     color: C.text,
-    flex: 1,
+    lineHeight: 18,
   },
 
   // Custom toggle switch
@@ -892,9 +1026,9 @@ const s = StyleSheet.create({
     paddingBottom: 32,
     gap: 10,
     alignItems: "center",
-    backgroundColor: "rgba(251,240,230,0.90)",
+    backgroundColor: "rgba(255,255,255,0.96)",
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.72)",
+    borderTopColor: "rgba(232,225,230,0.60)",
   },
   ctaShell: {
     width: "100%",
@@ -935,6 +1069,139 @@ const s = StyleSheet.create({
   dotActive: {
     width: 26, height: 8, borderRadius: 4,
     backgroundColor: C.terracotta,
+  },
+
+  // ── Toggle label area ─────────────────────────────────────────────────────
+  toggleLabelArea: {
+    flex: 1,
+    gap: 4,
+  },
+  requiredPill: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(224,122,95,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(224,122,95,0.30)",
+  },
+  requiredPillText: {
+    fontFamily: F.uiBold,
+    fontSize: 9,
+    color: C.terracotta,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  optionalPill: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(200,190,210,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(200,190,210,0.30)",
+  },
+  optionalPillText: {
+    fontFamily: F.uiBold,
+    fontSize: 9,
+    color: C.muted,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+
+  // ── Consent error ─────────────────────────────────────────────────────────
+  consentError: {
+    fontFamily: F.uiMedium,
+    fontSize: 12.5,
+    color: "#C05555",
+    textAlign: "center",
+    marginHorizontal: SIDE_PAD,
+    marginTop: 10,
+    lineHeight: 18,
+  },
+
+  // ── Privacy info sheet ────────────────────────────────────────────────────
+  privacySheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 48,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.10,
+    shadowRadius: 24,
+    elevation: 20,
+    zIndex: 100,
+  },
+  sheetHandle: {
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    marginBottom: 20,
+  },
+  sheetIconBubble: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "rgba(224,122,95,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(224,122,95,0.26)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  sheetTitle: {
+    fontFamily: F.luxuryBold,
+    fontSize: 20,
+    color: C.text,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  sheetPoints: {
+    width: "100%",
+    gap: 12,
+    marginBottom: 24,
+  },
+  sheetPoint: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  sheetPointText: {
+    flex: 1,
+    fontFamily: F.uiRegular,
+    fontSize: 13.5,
+    color: C.text,
+    lineHeight: 20,
+  },
+  sheetCloseBtn: {
+    width: "100%",
+    borderRadius: 999,
+    shadowColor: C.terracotta,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.20,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  sheetCloseBtnGrad: {
+    height: 52,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetCloseBtnText: {
+    fontFamily: F.uiBlack,
+    fontSize: 15,
+    color: "#FFFFFF",
+    letterSpacing: 0.4,
   },
 
   // ── Shared ────────────────────────────────────────────────────────────────

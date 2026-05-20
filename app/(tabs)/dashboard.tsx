@@ -1,11 +1,13 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Easing,
   Platform,
   Pressable,
   ScrollView,
@@ -14,11 +16,17 @@ import {
   TextInput,
   View
 } from "react-native";
+// Note: react-native-reanimated 4.x requires a dev-client build and cannot run
+// in Expo Go. All entrance animations are handled with React Native's built-in
+// Animated API instead.
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
+import { DailyLogSheet } from "../../components/cycle/DailyLogSheet";
 import { F } from "../../constants/fonts";
+import { useColorMode } from "../../hooks/useColorMode";
 import { useOnboardingStore, type LifeStage } from "../../store/onboardingStore";
+import { useDailyLogStore } from "../../store/dailyLogStore";
 
 const bloopWelcome       = require("../../public/images/bloop-welcome.webp");
 const bloopCalm          = require("../../public/images/bloop-calm.webp");
@@ -28,6 +36,11 @@ const companionManchi    = require("../../public/images/companion-manchi-cutout.
 const companionYogi      = require("../../public/images/companion-yogi-cutout.webp");
 
 const { width: W } = Dimensions.get("window");
+const DASHBOARD_HERO_DISMISSED_KEY = "mystree.dashboard.hero.dismissed";
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -79,7 +92,6 @@ const healthWay = [
   { label: "Symptoms\ntracker",  icon: "heart",               iconColor: C.lavender,   bg: "rgba(189,178,255,0.15)" },
   { label: "Wellness",           icon: "flower-outline",      iconColor: C.peach,      bg: "rgba(244,162,97,0.13)" },
   { label: "Health\ninsights",   icon: "chart-bubble",        iconColor: C.sage,       bg: "rgba(129,178,154,0.15)" },
-  { label: "Privacy &\nsafety",  icon: "shield-check-outline",iconColor: C.rose,       bg: "rgba(215,166,161,0.13)" },
 ] as const;
 
 // ── Animated circle helper ────────────────────────────────────────────────────
@@ -88,6 +100,7 @@ const AnimCircle = Animated.createAnimatedComponent(Circle);
 // ── Root screen ───────────────────────────────────────────────────────────────
 export default function DashboardScreen() {
   const router   = useRouter();
+  const { isDark } = useColorMode();
 
   // ── Personalisation data from onboarding ─────────────────────────────────
   const selectedGoals  = useOnboardingStore((s) => s.selectedGoals);
@@ -103,6 +116,36 @@ export default function DashboardScreen() {
 
   const [logOpen, setLogOpen]           = useState(false);
   const [activeQuickLog, setActiveLog]  = useState("mood");
+  // nudge: null = loading, "logged" | "nudge" | "dismissed"
+  const [nudgeState, setNudgeState] = useState<"loading" | "logged" | "nudge" | "dismissed">("loading");
+
+  const hasLoggedToday = useDailyLogStore((s) => s.hasLoggedToday);
+
+  // ── Premium gate sheet ────────────────────────────────────────────────────
+  const [premiumSheetVisible, setPremiumSheetVisible] = useState(false);
+  const [premiumFeature, setPremiumFeature] = useState<{ title: string; desc: string }>({
+    title: "", desc: "",
+  });
+  const premiumSheetAnim = useRef(new Animated.Value(0)).current;
+
+  function showPremiumSheet(title: string, desc: string) {
+    setPremiumFeature({ title, desc });
+    setPremiumSheetVisible(true);
+    Animated.timing(premiumSheetAnim, {
+      toValue: 1, duration: 340,
+      easing: Easing.out(Easing.cubic), useNativeDriver: true,
+    }).start();
+  }
+
+  function hidePremiumSheet(andNavigate?: boolean) {
+    Animated.timing(premiumSheetAnim, {
+      toValue: 0, duration: 220, useNativeDriver: true,
+    }).start(() => {
+      setPremiumSheetVisible(false);
+      if (andNavigate) router.push("/premium");
+    });
+  }
+
   const ringProgress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -111,25 +154,60 @@ export default function DashboardScreen() {
     }).start();
   }, []);
 
+  useEffect(() => {
+    // Check if already logged today first (fast Zustand read), then check dismissed flag.
+    if (hasLoggedToday()) {
+      setNudgeState("logged");
+      return;
+    }
+    SecureStore.getItemAsync(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`)
+      .then((value) => setNudgeState(value === "true" ? "dismissed" : "nudge"))
+      .catch(() => setNudgeState("nudge"));
+  }, []);
+
+  function dismissNudge() {
+    setNudgeState("dismissed");
+    SecureStore.setItemAsync(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`, "true").catch(() => undefined);
+  }
+
+  function onLogSaved() {
+    setLogOpen(false);
+    setNudgeState("logged");
+  }
+
   // Cycle ring: 73% filled = Day 12 of ~16-day window
-  const CIRC = 2 * Math.PI * 54;
+  const CIRC = 2 * Math.PI * 66;
   const ringOffset = ringProgress.interpolate({
     inputRange:  [0, 1],
     outputRange: [CIRC, CIRC * 0.27],
   });
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView edges={["top"]} style={[s.screen, isDark && s.screenDark]}>
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
-        bounces
+        bounces={false}
+        overScrollMode="never"
+        style={[s.scrollView, isDark && s.scrollViewDark]}
       >
         {/* 1 ── Header */}
         <Header onNotifications={() => router.push("/notifications")} />
 
-        {/* 2 ── Hero card */}
-        <HeroCard onLog={() => setLogOpen(true)} />
+        {/* 2 ── Daily log nudge */}
+        {nudgeState === "nudge" ? (
+          <AnimatedSlideUp>
+            <LogNudgeCard onDismiss={dismissNudge} onLog={() => setLogOpen(true)} />
+          </AnimatedSlideUp>
+        ) : nudgeState === "logged" ? (
+          <AnimatedFadeIn>
+            <LogSuccessStrip />
+          </AnimatedFadeIn>
+        ) : nudgeState === "dismissed" ? (
+          <AnimatedFadeIn duration={320}>
+            <LogPillNudge onLog={() => setLogOpen(true)} />
+          </AnimatedFadeIn>
+        ) : null}
 
         {/* 3 ── Today at a glance */}
         <Text style={s.sectionLabel}>Today at a glance</Text>
@@ -137,8 +215,6 @@ export default function DashboardScreen() {
           ringOffset={ringOffset}
           AnimCircle={AnimCircle}
           CIRC={CIRC}
-          onSymptoms={() => {}}
-          onMood={() => { setActiveLog("mood"); setLogOpen(true); }}
           onCalendar={() => router.navigate("/(tabs)/cycle")}
         />
 
@@ -155,7 +231,12 @@ export default function DashboardScreen() {
           emotionalState={emotionalState}
           sleepScore={sleepScore}
           stressLevel={stressLevel}
-          onPremium={() => router.push("/premium")}
+          onPremium={() =>
+            showPremiumSheet(
+              "AI Insights",
+              "Personalised hormone and mood pattern analysis, powered by Bloop. Unlocks with Soul Premium."
+            )
+          }
         />
 
         {/* 7 ── Life stage module — only when a stage is stored */}
@@ -163,14 +244,21 @@ export default function DashboardScreen() {
           <LifeStageModuleCard lifeStage={lifeStage} router={router} />
         )}
 
-        {/* 8 ── Mental Health Hub — only when at least one MH goal was selected */}
+        {/* 8 ── Mental Health Hub — support / safety, never gated */}
         {hasMentalHealthGoal && (
-          <MentalHealthHubCard onPress={() => router.push("/premium")} />
+          <MentalHealthHubCard
+            onPress={() => router.push("/grounding")}
+            onBloop={() => router.push("/bloop-chat")}
+          />
         )}
 
         {/* 9 ── Programs for you */}
         <Text style={s.sectionLabel}>Our Programs</Text>
-        <ProgramsSection lifeStage={lifeStage} router={router} />
+        <ProgramsSection
+          lifeStage={lifeStage}
+          router={router}
+          onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
+        />
 
         {/* 10 ── Women like you also explored */}
         <Text style={s.sectionLabel}>Women like you also explored</Text>
@@ -179,18 +267,26 @@ export default function DashboardScreen() {
         {/* 11 ── Your companions */}
         <Text style={s.sectionLabel}>Your companions</Text>
         <CompanionsRow
-          onPremium={() => router.push("/premium")}
+          onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
           router={router}
         />
 
-        <View style={{ height: 110 }} />
+        <View style={{ height: 12 }} />
       </ScrollView>
 
-      {logOpen && (
-        <QuickLogSheet
-          activeQuickLog={activeQuickLog}
-          onClose={() => setLogOpen(false)}
-          onSave={() => setLogOpen(false)}
+      <DailyLogSheet
+        visible={logOpen}
+        onClose={() => setLogOpen(false)}
+        onSave={onLogSaved}
+      />
+
+      {premiumSheetVisible && (
+        <PremiumSheet
+          sheetAnim={premiumSheetAnim}
+          title={premiumFeature.title}
+          desc={premiumFeature.desc}
+          onClose={() => hidePremiumSheet(false)}
+          onExplore={() => hidePremiumSheet(true)}
         />
       )}
     </SafeAreaView>
@@ -214,9 +310,11 @@ function Header({ onNotifications }: { onNotifications: () => void }) {
         </Text>
         <Text style={s.greetingSub}>Take care of yourself today and every day.</Text>
       </View>
-      <Pressable
-        onPress={onNotifications}
-        style={({ pressed }) => [s.bellWrap, pressed && s.pressed]}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Open notifications"
+      onPress={onNotifications}
+      style={({ pressed }) => [s.bellWrap, pressed && s.pressed]}
       >
         <Ionicons name="notifications-outline" size={22} color={C.text} />
         <View style={s.bellDot} />
@@ -225,30 +323,71 @@ function Header({ onNotifications }: { onNotifications: () => void }) {
   );
 }
 
-// ── 2. Hero card ──────────────────────────────────────────────────────────────
-function HeroCard({ onLog }: { onLog: () => void }) {
+// ── Animated entrance helpers (Expo Go-safe, no Reanimated worklets) ─────────
+function AnimatedSlideUp({ children }: { children: React.ReactNode }) {
+  const translateY = useRef(new Animated.Value(40)).current;
+  const opacity    = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(translateY, { toValue: 0, tension: 80, friction: 14, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }, []);
   return (
-    <View style={s.heroCard}>
-      {/* subtle lavender-peach wash behind the card */}
+    <Animated.View style={{ transform: [{ translateY }], opacity }}>
+      {children}
+    </Animated.View>
+  );
+}
+
+function AnimatedFadeIn({ children, duration = 450 }: { children: React.ReactNode; duration?: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(opacity, { toValue: 1, duration, useNativeDriver: true }).start();
+  }, []);
+  return <Animated.View style={{ opacity }}>{children}</Animated.View>;
+}
+
+// ── 2a. Full log nudge card (not logged + not dismissed) ──────────────────────
+function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () => void }) {
+  return (
+    <View style={s.nudgeCard}>
+      {/* Glowing gradient wash */}
       <LinearGradient
-        colors={["rgba(189,178,255,0.18)", "rgba(244,162,97,0.10)"]}
+        colors={["rgba(212,92,130,0.14)", "rgba(189,178,255,0.18)", "rgba(244,162,97,0.10)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      {/* Glow ring accent */}
+      <View style={s.nudgeGlowRing} pointerEvents="none" />
 
       {/* Left text */}
       <View style={s.heroLeft}>
-        <Text style={s.heroHeadline}>
-          {"You're in control\nof your health"}
-        </Text>
-        <Text style={s.heroSub}>Small steps today,{"\n"}big changes tomorrow.</Text>
+        <Pressable
+          accessibilityLabel="Dismiss logging reminder for today"
+          accessibilityRole="button"
+          hitSlop={12}
+          onPress={onDismiss}
+          style={({ pressed }) => [s.heroCloseBtn, pressed && s.pressed]}
+        >
+          <Ionicons name="close" size={16} color={C.muted} />
+        </Pressable>
+        <Text style={s.nudgeHeadline}>{"Log today,\nstay in tune ✨"}</Text>
+        <Text style={s.heroSub}>A tiny check-in helps your cycle insights feel more like you.</Text>
         <Pressable
           onPress={onLog}
-          style={({ pressed }) => [s.heroCta, pressed && s.pressed]}
+          style={({ pressed }) => [s.nudgeCta, pressed && s.pressed]}
         >
-          <Text style={s.heroCtaText}>Log today</Text>
-          <Ionicons name="arrow-forward" size={15} color="#FFF" />
+          <LinearGradient
+            colors={["#E07A5F", "#D45C82"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={s.nudgeCtaGradient}
+          >
+            <Text style={s.nudgeCtaText}>Log today</Text>
+            <Ionicons name="arrow-forward" size={15} color="#FFF" />
+          </LinearGradient>
         </Pressable>
       </View>
 
@@ -260,21 +399,67 @@ function HeroCard({ onLog }: { onLog: () => void }) {
   );
 }
 
+// ── 2b. Compact success strip (logged today) ──────────────────────────────────
+function LogSuccessStrip() {
+  return (
+    <View style={s.successStrip}>
+      <LinearGradient
+        colors={["rgba(94,155,107,0.14)", "rgba(129,178,154,0.10)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={s.successIconWrap}>
+        <MaterialCommunityIcons name="check-circle-outline" size={22} color="#5E9B6B" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.successTitle}>You're all caught up today 🌿</Text>
+        <Text style={s.successSub}>Your log has been saved. See you tomorrow!</Text>
+      </View>
+    </View>
+  );
+}
+
+// ── 2c. Minimal pill nudge (dismissed but not logged) ────────────────────────
+function LogPillNudge({ onLog }: { onLog: () => void }) {
+  return (
+    <Pressable
+      onPress={onLog}
+      style={({ pressed }) => [s.pillNudge, pressed && s.pressed]}
+      accessibilityLabel="Log your daily check-in"
+      accessibilityRole="button"
+    >
+      <MaterialCommunityIcons name="pencil-plus-outline" size={16} color={C.terracotta} />
+      <Text style={s.pillNudgeText}>Add today's check-in</Text>
+      <Ionicons name="chevron-forward" size={14} color={C.muted} />
+    </Pressable>
+  );
+}
+
 // ── 3. Today at a glance ──────────────────────────────────────────────────────
 function TodayGrid({
-  ringOffset, AnimCircle, CIRC, onSymptoms, onMood, onCalendar
+  ringOffset, AnimCircle, CIRC, onCalendar
 }: {
   ringOffset: Animated.AnimatedInterpolation<number | string>;
   AnimCircle: ReturnType<typeof Animated.createAnimatedComponent<typeof Circle>>;
   CIRC: number;
-  onSymptoms: () => void;
-  onMood:     () => void;
   onCalendar: () => void;
 }) {
   return (
     <View style={s.todayGrid}>
       {/* LEFT — tall cycle card */}
-      <View style={s.cycleCard}>
+      <Pressable
+        onPress={onCalendar}
+        style={({ pressed }) => [s.cycleCard, pressed && s.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Open cycle tracker"
+      >
+        <LinearGradient
+          colors={["rgba(255,248,245,0.98)", "rgba(255,231,214,0.78)", "rgba(232,241,231,0.72)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         <CachedImage source={bloopCycle} style={s.cycleCardArt} contentFit="contain" />
         {/* header row */}
         <View style={s.cycleCardHeader}>
@@ -289,26 +474,26 @@ function TodayGrid({
 
         {/* Ring */}
         <View style={s.ringWrap}>
-          <Svg width={120} height={120} viewBox="0 0 120 120">
+          <Svg width={150} height={150} viewBox="0 0 150 150">
             {/* track */}
             <Circle
-              cx={60} cy={60} r={54}
+              cx={75} cy={75} r={66}
               fill="transparent"
               stroke={`rgba(224,122,95,0.15)`}
-              strokeWidth={9}
+              strokeWidth={11}
             />
             {/* fill */}
             <AnimCircle
-              cx={60} cy={60} r={54}
+              cx={75} cy={75} r={66}
               fill="transparent"
               stroke={C.terracotta}
-              strokeWidth={9}
+              strokeWidth={11}
               strokeDasharray={CIRC}
               strokeDashoffset={ringOffset}
               strokeLinecap="round"
               rotation="-90"
-              originX={60}
-              originY={60}
+              originX={75}
+              originY={75}
             />
           </Svg>
           <View style={s.ringCenter} pointerEvents="none">
@@ -318,47 +503,13 @@ function TodayGrid({
         </View>
 
         {/* View calendar button */}
-        <Pressable
-          onPress={onCalendar}
-          style={({ pressed }) => [s.viewCalBtn, pressed && s.pressed]}
-        >
+        <View style={s.viewCalBtn}>
           <Text style={s.viewCalText}>View calendar</Text>
           <Ionicons name="chevron-forward" size={14} color={C.muted} />
-        </Pressable>
-      </View>
+        </View>
+      </Pressable>
 
       {/* RIGHT — two stacked cards */}
-      <View style={s.rightCol}>
-        {/* Symptoms card */}
-        <Pressable
-          onPress={onSymptoms}
-          style={({ pressed }) => [s.glanceCard, pressed && s.pressed]}
-        >
-          <View style={[s.glanceIconBubble, { backgroundColor: "rgba(129,178,154,0.14)" }]}>
-            <MaterialCommunityIcons name="flower-outline" size={20} color={C.sage} />
-          </View>
-          <View style={s.glanceText}>
-            <Text style={s.glanceTitle}>Symptoms</Text>
-            <Text style={s.glanceSub}>2 logged today</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={C.faint} />
-        </Pressable>
-
-        {/* Mood card */}
-        <Pressable
-          onPress={onMood}
-          style={({ pressed }) => [s.glanceCard, pressed && s.pressed]}
-        >
-          <View style={[s.glanceIconBubble, { backgroundColor: "rgba(224,122,95,0.12)" }]}>
-            <MaterialCommunityIcons name="emoticon-happy-outline" size={20} color={C.terracotta} />
-          </View>
-          <View style={s.glanceText}>
-            <Text style={s.glanceTitle}>Mood today</Text>
-            <Text style={s.glanceSub}>Check in</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={C.faint} />
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -370,7 +521,6 @@ function HealthWayRow({ router }: { router: ReturnType<typeof useRouter> }) {
     "/(tabs)/cycle",
     "/(tabs)/wellness",
     "/(tabs)/insights",
-    "/settings",
   ] as const;
 
   return (
@@ -643,6 +793,86 @@ function SheetSlider({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── Premium Gate Sheet ───────────────────────────────────────────────────────
+// Shows before routing to /premium so users know what they're unlocking.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PremiumSheet({
+  sheetAnim,
+  title,
+  desc,
+  onClose,
+  onExplore,
+}: {
+  sheetAnim: Animated.Value;
+  title: string;
+  desc: string;
+  onClose: () => void;
+  onExplore: () => void;
+}) {
+  const translateY = sheetAnim.interpolate({
+    inputRange: [0, 1], outputRange: [300, 0],
+  });
+  const overlayOp = sheetAnim.interpolate({
+    inputRange: [0, 1], outputRange: [0, 1],
+  });
+
+  return (
+    <View style={ps.overlay}>
+      <Animated.View style={[StyleSheet.absoluteFill, ps.scrim, { opacity: overlayOp }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+
+      <Animated.View style={[ps.sheet, { transform: [{ translateY }] }]}>
+        <View style={ps.grabber} />
+
+        {/* Crown icon */}
+        <View style={ps.crownRow}>
+          <View style={ps.crownCircle}>
+            <MaterialCommunityIcons name="crown-outline" size={28} color={C.terracotta} />
+          </View>
+        </View>
+
+        <Text style={ps.sheetTitle}>{title}</Text>
+        <Text style={ps.sheetDesc}>{desc}</Text>
+
+        <View style={ps.benefitRow}>
+          {[
+            { icon: "check-circle-outline" as const, text: "Personalised to your cycle" },
+            { icon: "check-circle-outline" as const, text: "Powered by Bloop AI" },
+            { icon: "check-circle-outline" as const, text: "Private & encrypted" },
+          ].map((b) => (
+            <View key={b.text} style={ps.benefitItem}>
+              <MaterialCommunityIcons name={b.icon} size={15} color={C.sage} />
+              <Text style={ps.benefitText}>{b.text}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Explore CTA */}
+        <Pressable
+          onPress={onExplore}
+          style={({ pressed }) => [ps.exploreShell, pressed && s.pressed]}
+        >
+          <LinearGradient
+            colors={[C.terracotta, C.peach]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={ps.exploreBtn}
+          >
+            <MaterialCommunityIcons name="crown-outline" size={16} color="#FFF" />
+            <Text style={ps.exploreBtnText}>Explore Soul Premium</Text>
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable onPress={onClose} hitSlop={12} style={ps.laterBtn}>
+          <Text style={ps.laterText}>Maybe later</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ── 6. Health Overview Strip ─────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -792,28 +1022,48 @@ function LifeStageModuleCard({
 // ── 8. Mental Health Hub — locked premium card ───────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MentalHealthHubCard({ onPress }: { onPress: () => void }) {
+function MentalHealthHubCard({
+  onPress,
+  onBloop,
+}: {
+  onPress: () => void;
+  onBloop: () => void;
+}) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [s.mhCard, pressed && s.pressed]}
-    >
+    <View style={s.mhCard}>
       <CachedImage source={bloopCalm} style={s.mhArt} contentFit="contain" />
-      <View style={s.mhIconBubble}>
-        <MaterialCommunityIcons name="brain" size={24} color={C.lavender} />
-      </View>
-      <View style={s.mhTextCol}>
-        <Text style={s.mhTitle}>Mental Health Hub</Text>
-        <Text style={s.mhSubtitle}>
-          Guided support unlocks with Soul Premium
-        </Text>
-        <View style={s.mhLockRow}>
-          <MaterialCommunityIcons name="lock-outline" size={11} color={C.lavender} />
-          <Text style={s.mhLockLabel}>Soul Premium</Text>
+
+      {/* Main content row */}
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [s.mhMainRow, pressed && s.pressed]}
+      >
+        <View style={s.mhIconBubble}>
+          <MaterialCommunityIcons name="brain" size={24} color={C.lavender} />
         </View>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={C.faint} />
-    </Pressable>
+        <View style={s.mhTextCol}>
+          <Text style={s.mhTitle}>Mental Health Hub</Text>
+          <Text style={s.mhSubtitle}>
+            Breathing, grounding, and Bloop support
+          </Text>
+          <View style={s.mhSupportRow}>
+            <MaterialCommunityIcons name="leaf" size={11} color={C.sage} />
+            <Text style={s.mhSupportLabel}>Grounding exercises</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.faint} />
+      </Pressable>
+
+      {/* Quick-access Bloop button */}
+      <Pressable
+        onPress={onBloop}
+        style={({ pressed }) => [s.mhBloopBtn, pressed && s.pressed]}
+        accessibilityLabel="Talk to Bloop"
+      >
+        <MaterialCommunityIcons name="chat-processing-outline" size={14} color={C.lavender} />
+        <Text style={s.mhBloopText}>Talk to Bloop</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -859,9 +1109,11 @@ const LIFE_STAGE_PROGRAMS: Record<NonNullable<LifeStage>, ProgramDatum> = {
 function ProgramsSection({
   lifeStage,
   router,
+  onPremiumPress,
 }: {
   lifeStage: LifeStage;
   router: ReturnType<typeof useRouter>;
+  onPremiumPress: (title: string, desc: string) => void;
 }) {
   const programs: ProgramDatum[] = [
     ...BASE_PROGRAMS,
@@ -878,7 +1130,12 @@ function ProgramsSection({
       {programs.map((prog) => (
         <Pressable
           key={prog.id}
-          onPress={() => router.push("/premium")}
+          onPress={() =>
+            onPremiumPress(
+              prog.title,
+              `${prog.subtitle}. This program is part of Soul Premium.`
+            )
+          }
           style={({ pressed }) => [s.programCard, pressed && s.pressed]}
         >
           <View style={[s.programIconBubble, { backgroundColor: prog.bg }]}>
@@ -887,6 +1144,7 @@ function ProgramsSection({
           <Text style={s.programTitle}>{prog.title}</Text>
           <Text style={s.programSubtitle}>{prog.subtitle}</Text>
           <View style={[s.programTag, { backgroundColor: prog.bg }]}>
+            <MaterialCommunityIcons name="crown-outline" size={10} color={prog.color} />
             <Text style={[s.programTagText, { color: prog.color }]}>Coming soon</Text>
           </View>
         </Pressable>
@@ -949,10 +1207,10 @@ const COMPANIONS: CompanionDatum[] = [
 ];
 
 function CompanionsRow({
-  onPremium,
+  onPremiumPress,
   router,
 }: {
-  onPremium: () => void;
+  onPremiumPress: (title: string, desc: string) => void;
   router: ReturnType<typeof useRouter>;
 }) {
   return (
@@ -965,7 +1223,14 @@ function CompanionsRow({
       {COMPANIONS.map((c) => (
         <Pressable
           key={c.id}
-          onPress={() => (c.locked ? onPremium() : router.push("/bloop"))}
+          onPress={() =>
+            c.locked
+              ? onPremiumPress(
+                  c.name,
+                  `Chat with ${c.name}, your ${c.role.toLowerCase()} companion. Available with Soul Premium.`
+                )
+              : router.push("/bloop")
+          }
           style={({ pressed }) => [s.companionCard, pressed && s.pressed]}
         >
           {/* Avatar */}
@@ -1006,7 +1271,10 @@ const SHEET_CARD = "rgba(255,220,240,0.07)";
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },
-  scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, gap: 20 },
+  screenDark: { backgroundColor: "#111827" },
+  scrollView: { flex: 1, backgroundColor: "transparent" },
+  scrollViewDark: { backgroundColor: "#111827" },
+  scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, paddingBottom: 28, gap: 20, flexGrow: 1 },
 
   // ── Header ──
   header: {
@@ -1017,19 +1285,19 @@ const s = StyleSheet.create({
   },
   headerLeft: { flex: 1, paddingRight: 12 },
   greetingName: {
-    fontFamily: F.handwrittenBold,      // Caveat Bold — warm personal greeting
-    fontSize: 28,
-    lineHeight: 34,
-    color: C.text,
-    letterSpacing: 0.2,
+    fontFamily: F.luxuryBold,           // Fraunces SemiBold — warm serif H1 greeting
+    fontSize: 30,
+    lineHeight: 36,
+    color: "#1C1528",
+    letterSpacing: -0.3,
   },
   greetingEmoji: { fontSize: 22 },
   greetingSub: {
-    fontFamily: F.uiRegular,            // Nunito Regular — soft subtitle
+    fontFamily: F.uiRegular,            // Inter Regular — clean readable subtitle
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 20,
     color: C.muted,
-    marginTop: 3,
+    marginTop: 4,
   },
   bellWrap: {
     width: 44,
@@ -1056,91 +1324,183 @@ const s = StyleSheet.create({
     borderColor: C.white,
   },
 
-  // ── Hero card ──
-  heroCard: {
+  // ── Log nudge cards ──
+  nudgeCard: {
     borderRadius: CARD_RADIUS + 4,
-    minHeight: 180,
+    minHeight: 148,
     flexDirection: "row",
     alignItems: "center",
     overflow: "hidden",
-    backgroundColor: C.white,
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
-    shadowRadius: 24,
-    elevation: 4,
-    paddingLeft: 22,
-    paddingVertical: 22,
+    backgroundColor: "rgba(255,253,252,0.96)",
+    borderWidth: 1,
+    borderColor: "rgba(212,92,130,0.18)",
+    shadowColor: "#D45C82",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.13,
+    shadowRadius: 28,
+    elevation: 5,
+    paddingLeft: 20,
+    paddingVertical: 18,
+  },
+  nudgeGlowRing: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(212,92,130,0.06)",
+    top: -80,
+    right: -40,
   },
   heroLeft: { flex: 1, paddingRight: 8 },
-  heroHeadline: {
-    fontFamily: F.handwrittenBold,            // Caveat Bold — warm personal hero headline
-    fontSize: 22,
-    lineHeight: 28,
+  heroCloseBtn: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderRadius: 14,
+    height: 28,
+    justifyContent: "center",
+    position: "absolute",
+    right: 0,
+    top: -6,
+    width: 28,
+    zIndex: 3,
+  },
+  nudgeHeadline: {
+    fontFamily: F.handwrittenBold,
+    fontSize: 21,
+    lineHeight: 26,
     color: C.text,
     letterSpacing: 0.2,
+    marginTop: 4,
   },
   heroSub: {
-    fontFamily: F.uiMedium,                   // Nunito Medium — soft subtitle
-    fontSize: 13,
-    lineHeight: 19,
+    fontFamily: F.uiMedium,
+    fontSize: 12.5,
+    lineHeight: 18,
     color: C.muted,
     marginTop: 8,
   },
-  heroCta: {
-    marginTop: 18,
+  nudgeCta: {
+    marginTop: 14,
     alignSelf: "flex-start",
+    borderRadius: 999,
+    shadowColor: "#D45C82",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 4,
+    overflow: "hidden",
+  },
+  nudgeCtaGradient: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: C.terracotta,
     borderRadius: 999,
     paddingHorizontal: 18,
     paddingVertical: 11,
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.24,
-    shadowRadius: 9,
   },
-  heroCtaText: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — button label
+  nudgeCtaText: {
+    fontFamily: F.uiExtraBold,
     color: "#FFFFFF",
     fontSize: 13,
     letterSpacing: 0.3,
   },
   heroRight: {
-    width: 140,
-    height: 180,
+    width: 112,
+    height: 138,
     alignItems: "center",
     justifyContent: "flex-end",
   },
   heroImage: {
-    width: 140,
-    height: 160,
+    width: 112,
+    height: 130,
+  },
+  // ── Success strip (logged today) ──
+  successStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: CARD_RADIUS,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(94,155,107,0.22)",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    shadowColor: "#5E9B6B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  successIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(94,155,107,0.12)",
+  },
+  successTitle: {
+    fontFamily: F.uiExtraBold,
+    fontSize: 13.5,
+    lineHeight: 18,
+    color: C.text,
+  },
+  successSub: {
+    fontFamily: F.uiMedium,
+    fontSize: 12,
+    lineHeight: 17,
+    color: C.muted,
+    marginTop: 2,
+  },
+  // ── Pill nudge (dismissed) ──
+  pillNudge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    backgroundColor: "rgba(255,255,255,0.90)",
+    borderWidth: 1,
+    borderColor: "rgba(224,122,95,0.22)",
+    shadowColor: C.terracotta,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pillNudgeText: {
+    fontFamily: F.uiBold,
+    fontSize: 13,
+    color: C.text,
+    flex: 1,
   },
 
-  // ── Section label ──
+  // ── Section label — Montserrat SemiBold, ALL-CAPS, wide tracking (Proxima Nova role) ──
   sectionLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold — section header
-    fontSize: 17,
-    lineHeight: 22,
-    color: C.text,
-    letterSpacing: 0.2,
+    fontFamily: F.bodySemiBold,               // Montserrat SemiBold
+    fontSize: 11,
+    lineHeight: 16,
+    color: C.muted,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginBottom: -8,                         // tighten gap to the card below
   },
 
   // ── Today grid ──
   todayGrid: {
-    flexDirection: "row",
-    gap: COL_GAP,
-    alignItems: "stretch",   // both columns grow to the tallest child's height
+    alignItems: "stretch",
   },
 
   // Left cycle card — drives the row height; right column stretches to match
   cycleCard: {
-    width: LEFT_COL,
+    width: "100%",
+    minHeight: 328,
     borderRadius: CARD_RADIUS,
     backgroundColor: C.white,
-    padding: 18,
+    padding: 22,
     justifyContent: "space-between",  // spreads content evenly down the card
     overflow: "hidden",
     shadowColor: C.terracotta,
@@ -1151,11 +1511,11 @@ const s = StyleSheet.create({
   },
   cycleCardArt: {
     position: "absolute",
-    right: -20,
-    bottom: 56,
-    width: 96,
-    height: 96,
-    opacity: 0.18,
+    right: -18,
+    bottom: 44,
+    width: 144,
+    height: 144,
+    opacity: 0.14,
   },
   cycleCardHeader: {
     flexDirection: "row",
@@ -1172,32 +1532,40 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   cycleCardLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold — card label
+    fontFamily: F.uiSemiBold,
     fontSize: 13,
-    color: C.muted,
+    color: C.text,                            // promoted from muted → full text for legibility
+    opacity: 0.70,
   },
   cycleDayNum: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — large metric number
-    fontSize: 32,
-    lineHeight: 38,
-    color: C.text,
-    letterSpacing: 0.2,
+    fontFamily: F.luxuryBold,                 // Fraunces SemiBold — warm serif for the hero number
+    fontSize: 44,
+    lineHeight: 50,
+    color: "#1C1528",                         // deepest plum — max contrast, never fades
+    letterSpacing: -0.5,
+    fontWeight: "600",                        // explicit weight guard for Inter fallback path
   },
   cyclePhase: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold — phase label
-    fontSize: 12,
-    color: C.muted,
-    marginTop: 2,
+    fontFamily: F.bodySemiBold,               // Montserrat SemiBold — structural subhead
+    fontSize: 11,
+    color: C.terracotta,
+    marginTop: 4,
+    textTransform: "uppercase",
+    letterSpacing: 1.1,
   },
   ringWrap: {
     alignItems: "center",
+    alignSelf: "center",
     justifyContent: "center",
-    marginTop: 16,
-    marginBottom: 4,
+    marginTop: 18,
+    marginBottom: 8,
   },
   ringCenter: {
     position: "absolute",
     alignItems: "center",
+    justifyContent: "center",
+    width: 150,
+    height: 150,
   },
   ringLabel: {
     fontFamily: F.uiBold,                     // Nunito Bold — ring inner label
@@ -1650,10 +2018,8 @@ const s = StyleSheet.create({
   mhCard: {
     backgroundColor: "rgba(189,178,255,0.10)",
     borderRadius: CARD_RADIUS,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
+    paddingTop: 4,
+    paddingBottom: 14,
     borderWidth: 1,
     borderColor: "rgba(189,178,255,0.24)",
     shadowColor: C.lavender,
@@ -1670,6 +2036,14 @@ const s = StyleSheet.create({
     width: 96,
     height: 96,
     opacity: 0.20,
+  },
+  // pressable inner row — icon + text + chevron
+  mhMainRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
   },
   mhIconBubble: {
     width: 52,
@@ -1696,17 +2070,37 @@ const s = StyleSheet.create({
     color: C.muted,
     lineHeight: 20,
   },
-  mhLockRow: {
+  mhSupportRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     marginTop: 4,
   },
-  mhLockLabel: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — premium label
+  mhSupportLabel: {
+    fontFamily: F.uiSemiBold,
     fontSize: 11,
+    color: C.sage,
+    letterSpacing: 0.2,
+  },
+  // "Talk to Bloop" pill under the main row
+  mhBloopBtn: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginLeft: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(189,178,255,0.38)",
+    backgroundColor: "rgba(189,178,255,0.10)",
+  },
+  mhBloopText: {
+    fontFamily: F.uiBold,
+    fontSize: 12,
     color: C.lavender,
-    letterSpacing: 0.4,
+    letterSpacing: 0.2,
   },
 
   // ── Shared horizontal scroll ───────────────────────────────────────────────
@@ -1754,6 +2148,9 @@ const s = StyleSheet.create({
   },
   programTag: {
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1867,4 +2264,110 @@ const s = StyleSheet.create({
   },
 
   pressed: { transform: [{ scale: 0.96 }] },
+});
+
+// ── Premium Sheet styles ───────────────────────────────────────────────────────
+const ps = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 40,
+    justifyContent: "flex-end",
+  },
+  scrim: {
+    backgroundColor: "rgba(43,45,66,0.52)",
+  },
+  sheet: {
+    backgroundColor: "#FDFCFB",
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.70)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -12 },
+    shadowOpacity: 0.14,
+    shadowRadius: 28,
+    elevation: 16,
+  },
+  grabber: {
+    width: 42, height: 5, borderRadius: 999,
+    alignSelf: "center",
+    marginTop: 12, marginBottom: 20,
+    backgroundColor: "rgba(43,45,66,0.12)",
+  },
+  crownRow: {
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  crownCircle: {
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: "rgba(224,122,95,0.10)",
+    borderWidth: 1, borderColor: "rgba(224,122,95,0.20)",
+    alignItems: "center", justifyContent: "center",
+  },
+  sheetTitle: {
+    fontFamily: F.uiBold,
+    fontSize: 20,
+    lineHeight: 26,
+    color: C.text,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  sheetDesc: {
+    fontFamily: F.bodyRegular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: C.muted,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  benefitRow: {
+    gap: 10,
+    marginBottom: 24,
+  },
+  benefitItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  benefitText: {
+    fontFamily: F.uiMedium,
+    fontSize: 14,
+    color: C.text,
+    flex: 1,
+  },
+  exploreShell: {
+    borderRadius: 999,
+    shadowColor: C.terracotta,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
+    elevation: 6,
+    marginBottom: 14,
+  },
+  exploreBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 54,
+    borderRadius: 999,
+  },
+  exploreBtnText: {
+    fontFamily: F.uiBlack,
+    color: "#FFFFFF",
+    fontSize: 13,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  laterBtn: {
+    alignSelf: "center",
+    paddingVertical: 8,
+  },
+  laterText: {
+    fontFamily: F.uiBold,
+    fontSize: 13,
+    color: C.muted,
+  },
 });

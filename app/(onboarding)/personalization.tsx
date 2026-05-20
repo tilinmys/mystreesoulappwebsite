@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Easing,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,8 +29,8 @@ import { useOnboardingStore } from "../../store/onboardingStore";
 const { width: W } = Dimensions.get("window");
 const SIDE_PAD  = 20;
 const CARD_GAP  = 9;
-const CARD_W    = (W - SIDE_PAD * 2 - CARD_GAP * 2) / 3;
-const CARD_H    = Math.round(CARD_W * 1.52);
+const CARD_W    = (W - SIDE_PAD * 2 - CARD_GAP) / 2;
+const CARD_H    = Math.round(CARD_W * 0.88);
 const RHYTHM_W  = (W - SIDE_PAD * 2 - CARD_GAP * 3) / 4;
 const RHYTHM_H  = Math.round(RHYTHM_W * 1.35);
 
@@ -202,6 +203,12 @@ export default function PersonalizationScreen() {
   const [selRhythm,    setSelRhythm   ] = useState(adaptation.rhythm);
   const [selMovements, setSelMovements] = useState<string[]>(adaptation.movements);
 
+  // ── Screen entrance ────────────────────────────────────────────────────────
+  const entranceOp = useRef(new Animated.Value(0)).current;
+  const entranceY  = useRef(new Animated.Value(10)).current;
+  const cardsOp    = useRef(new Animated.Value(0)).current;
+  const cardsY     = useRef(new Animated.Value(8)).current;
+
   // ── Animations ──────────────────────────────────────────────────────────
   const breathe  = useRef(new Animated.Value(0)).current;
   const floatY   = useRef(new Animated.Value(0)).current;
@@ -228,6 +235,16 @@ export default function PersonalizationScreen() {
       ...orbitDrifts.map((d, i) => mkLoop(d, 3000 + i * 340, 0, 1)),
     ];
     anims.forEach((a) => a.start());
+
+    Animated.parallel([
+      Animated.timing(entranceOp, { toValue: 1, duration: 580, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(entranceY,  { toValue: 0, duration: 580, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+    Animated.parallel([
+      Animated.timing(cardsOp, { toValue: 1, duration: 520, delay: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(cardsY,  { toValue: 0, duration: 520, delay: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+
     return () => anims.forEach((a) => a.stop());
   }, [breathe, floatY, auraOp, aiPulse, orbitDrifts]);
 
@@ -254,13 +271,7 @@ export default function PersonalizationScreen() {
 
   return (
     <View style={s.root}>
-      {/* Gradient canvas */}
-      <LinearGradient
-        colors={["#FCE0D0", "#F5DCF0", "#E8DFF8", "#FAECD4"]}
-        locations={[0, 0.30, 0.64, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Ambient blobs */}
+      {/* Ambient blobs — atmosphere only */}
       <View pointerEvents="none" style={s.blob1} />
       <View pointerEvents="none" style={s.blob2} />
       <View pointerEvents="none" style={s.blob3} />
@@ -269,12 +280,29 @@ export default function PersonalizationScreen() {
 
         {/* ── Header ────────────────────────────────────────────────── */}
         <View style={s.headerRow}>
-          <View>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={20} color={C.onVariant} />
+          </Pressable>
+          <View style={s.headerCenter}>
             <Text style={s.brandName}>MyStree Soul</Text>
             <Text style={s.brandSub}>Built around your rhythm.</Text>
           </View>
-          <View style={s.lotusBtn}>
-            <MaterialCommunityIcons name="spa" size={20} color={C.onVariant} />
+          {/* Step 4/4+ badge — personalization is the final setup step */}
+          <View style={s.progressRingOuter}>
+            <LinearGradient
+              colors={["#E07A5F", "#F4A27D"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.progressRing}
+            >
+              <Text style={s.progressNum}>4</Text>
+              <Text style={s.progressSlash}>/</Text>
+              <Text style={s.progressDenom}>4</Text>
+            </LinearGradient>
           </View>
         </View>
 
@@ -362,10 +390,23 @@ export default function PersonalizationScreen() {
           </View>
 
           {/* ── Heading ───────────────────────────────────────────────── */}
-          <Text style={s.heading}>{adaptation.heading}</Text>
-          <Text style={s.headingSub}>{adaptation.subheading}</Text>
+          <Animated.View style={{ opacity: entranceOp, transform: [{ translateY: entranceY }], alignSelf: "stretch" }}>
+            <Text style={s.heading}>{adaptation.heading}</Text>
+            <Text style={s.headingSub}>{adaptation.subheading}</Text>
+          </Animated.View>
 
-          {/* ── Wellness rhythm 3×2 grid ──────────────────────────────── */}
+          {/* ── Auto-selection notice ─────────────────────────────────── */}
+          {adaptation.wellness.length > 0 && (
+            <View style={s.autoSelectBanner}>
+              <MaterialCommunityIcons name="magic-staff" size={14} color={C.terra} />
+              <Text style={s.autoSelectText}>
+                Based on your goals, we selected a few starting points. You can change them.
+              </Text>
+            </View>
+          )}
+
+          {/* ── Wellness 2×3 grid ─────────────────────────────────────── */}
+          <Animated.View style={{ opacity: cardsOp, transform: [{ translateY: cardsY }], alignSelf: "stretch" }}>
           <View style={s.wellnessGrid}>
             {orderedWellness.map((card) => {
               const isSel = selWellness.includes(card.id);
@@ -379,6 +420,8 @@ export default function PersonalizationScreen() {
               );
             })}
           </View>
+
+          </Animated.View>
 
           {/* ── Daily rhythm section ──────────────────────────────────── */}
           <View style={s.glassCard}>
@@ -502,13 +545,9 @@ export default function PersonalizationScreen() {
 
           {/* ── Page dots ─────────────────────────────────────────────── */}
           <View style={s.dotsRow}>
-            {[0, 1, 2, 3, 4, 5].map((i) =>
-              i === 4 ? (
-                <View key={i} style={s.dotActive} />
-              ) : (
-                <View key={i} style={s.dot} />
-              )
-            )}
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <View key={i} style={[s.dot, i === 4 && s.dotActive]} />
+            ))}
           </View>
 
           <View style={{ height: 32 }} />
@@ -575,9 +614,9 @@ function WellnessCardItem({
               ]}
             >
               {card.iconLib === "ion" ? (
-                <Ionicons name={card.icon as any} size={38} color={card.iconColor} />
+                <Ionicons name={card.icon as any} size={32} color={card.iconColor} />
               ) : (
-                <MaterialCommunityIcons name={card.icon as any} size={38} color={card.iconColor} />
+                <MaterialCommunityIcons name={card.icon as any} size={32} color={card.iconColor} />
               )}
             </View>
             {/* Decorative sparkle dots */}
@@ -608,35 +647,55 @@ function WellnessCardItem({
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FCE0D0",
+    backgroundColor: "#FFFFFF",
   },
   safe: { flex: 1 },
 
-  // Blobs
+  // Blobs — atmosphere only, 8-10% opacity
   blob1: {
-    position: "absolute", top: -160, left: -120,
-    width: 420, height: 420, borderRadius: 210,
-    backgroundColor: "rgba(240,190,200,0.34)",
+    position: "absolute", top: -140, left: -110,
+    width: 400, height: 400, borderRadius: 200,
+    backgroundColor: "rgba(255,183,183,0.10)",
   },
   blob2: {
-    position: "absolute", top: 300, right: -180,
-    width: 400, height: 400, borderRadius: 200,
-    backgroundColor: "rgba(214,174,230,0.22)",
+    position: "absolute", top: 320, right: -160,
+    width: 380, height: 380, borderRadius: 190,
+    backgroundColor: "rgba(189,172,255,0.08)",
   },
   blob3: {
-    position: "absolute", bottom: -100, left: -80,
-    width: 360, height: 360, borderRadius: 180,
-    backgroundColor: "rgba(198,228,200,0.18)",
+    position: "absolute", bottom: -80, left: -90,
+    width: 340, height: 340, borderRadius: 170,
+    backgroundColor: "rgba(162,202,178,0.08)",
   },
 
   // Header
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: SIDE_PAD,
     paddingTop: 8,
     paddingBottom: 6,
+    gap: 10,
+  },
+  headerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(248,244,248,0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.70)",
+    shadowColor: C.onVariant,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+    flexShrink: 0,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
   },
   brandName: {
     fontFamily: F.luxuryBold,
@@ -650,14 +709,40 @@ const s = StyleSheet.create({
     color: C.onVariant,
     marginTop: 1,
   },
+  progressRingOuter: {
+    shadowColor: "#E07A5F",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 6,
+    borderRadius: 28,
+  },
+  progressRing: {
+    width: 56, height: 56, borderRadius: 28,
+    alignItems: "center", justifyContent: "center",
+    flexDirection: "row", gap: 1,
+  },
+  progressNum: {
+    fontFamily: F.uiExtraBold,
+    fontSize: 18, color: "#FFF", lineHeight: 22,
+  },
+  progressSlash: {
+    fontFamily: F.uiLight,
+    fontSize: 14, color: "rgba(255,255,255,0.70)", lineHeight: 22,
+  },
+  progressDenom: {
+    fontFamily: F.uiMedium,
+    fontSize: 13, color: "rgba(255,255,255,0.80)", lineHeight: 22,
+  },
   lotusBtn: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
-    backgroundColor: C.surface,
-    borderWidth: 1.5, borderColor: C.border,
+    backgroundColor: "rgba(248,244,248,0.96)",
+    borderWidth: 1, borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#8B5E6D",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10, shadowRadius: 10, elevation: 2,
+    shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    flexShrink: 0,
   },
 
   // ScrollView
@@ -796,8 +881,8 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.70)",
     alignItems: "center",
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   wellnessIconArea: {
     flex: 1,
@@ -806,23 +891,23 @@ const s = StyleSheet.create({
     width: "100%",
   },
   wellnessIconCircle: {
-    width: 72, height: 72, borderRadius: 36,
+    width: 58, height: 58, borderRadius: 29,
     alignItems: "center", justifyContent: "center",
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.60)",
   },
   wellnessLabelArea: {
-    paddingHorizontal: 8,
-    paddingBottom: 4,
+    paddingHorizontal: 10,
+    paddingBottom: 2,
     width: "100%",
     alignItems: "center",
   },
   wellnessLabel: {
     fontFamily: F.uiBold,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     textAlign: "center",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   wellnessBadge: {
     position: "absolute",
@@ -838,11 +923,11 @@ const s = StyleSheet.create({
   glassCard: {
     borderRadius: 28,
     padding: 18,
-    backgroundColor: C.surface,
-    borderWidth: 1, borderColor: C.border,
+    backgroundColor: "rgba(250,247,249,0.98)",
+    borderWidth: 1, borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#8B5E6D",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08, shadowRadius: 22, elevation: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07, shadowRadius: 20, elevation: 3,
     alignSelf: "stretch",
     marginBottom: 14,
   },
@@ -886,8 +971,8 @@ const s = StyleSheet.create({
   },
   rhythmLabel: {
     fontFamily: F.uiBold,
-    fontSize: 9,
-    lineHeight: 12,
+    fontSize: 10,
+    lineHeight: 13,
     textAlign: "center",
     letterSpacing: 0.1,
     paddingHorizontal: 4,
@@ -916,12 +1001,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: "rgba(248,244,248,0.98)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.86)",
+    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#8B5E6D",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
   },
   chipSelected: {
     backgroundColor: "rgba(224,122,95,0.12)",
@@ -1040,6 +1125,28 @@ const s = StyleSheet.create({
   dot: {
     width: 8, height: 8, borderRadius: 4,
     backgroundColor: "rgba(224,122,95,0.28)",
+  },
+
+  // Auto-select notice
+  autoSelectBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    alignSelf: "stretch",
+    backgroundColor: "rgba(224,122,95,0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(224,122,95,0.22)",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  autoSelectText: {
+    flex: 1,
+    fontFamily: F.uiMedium,
+    fontSize: 12.5,
+    color: C.onVariant,
+    lineHeight: 18,
   },
 
   // Misc

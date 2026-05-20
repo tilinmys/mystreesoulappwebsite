@@ -207,12 +207,13 @@ export default function JournalScreen() {
             </View>
 
             {/* Calendar */}
-            <Pressable
-              style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
-              accessibilityLabel="View calendar"
+            <View
+              style={s.headerBtn}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
             >
               <MaterialCommunityIcons name="calendar-month-outline" size={20} color={C.muted} />
-            </Pressable>
+            </View>
 
           </View>
 
@@ -318,21 +319,24 @@ export default function JournalScreen() {
               <View style={s.inputBottom}>
                 <View style={s.inputActions}>
                   <Pressable
+                    onPress={() => setEntryText((current) => `${current}${current ? " " : ""}💗`)}
                     style={({ pressed }) => [s.inputAction, pressed && s.pressed]}
                     accessibilityLabel="Add emoji"
                   >
                     <MaterialCommunityIcons name="emoticon-happy-outline" size={22} color={C.muted} />
                   </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [s.inputAction, pressed && s.pressed]}
-                    accessibilityLabel="Attach image"
+                  <View
+                    style={s.inputAction}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
                   >
                     <MaterialCommunityIcons name="image-outline" size={22} color={C.muted} />
-                  </Pressable>
+                  </View>
                 </View>
 
                 {/* Quill / save button */}
                 <Pressable
+                  onPress={() => setEntryText("")}
                   style={({ pressed }) => [s.quillBtn, pressed && s.pressed]}
                   accessibilityLabel="Save entry"
                 >
@@ -419,12 +423,9 @@ export default function JournalScreen() {
             {/* ──────────────── REFLECTION PROMPTS ──────────────── */}
             <View style={s.sectionHeader}>
               <Text style={s.sectionTitle}>Reflection prompts</Text>
-              <Pressable
-                style={({ pressed }) => [pressed && s.pressed]}
-                accessibilityLabel="See all prompts"
-              >
+              <View>
                 <Text style={s.sectionLink}>See all →</Text>
-              </Pressable>
+              </View>
             </View>
 
             <ScrollView
@@ -435,6 +436,7 @@ export default function JournalScreen() {
               {PROMPTS.map((p) => (
                 <Pressable
                   key={p.id}
+                  onPress={() => setEntryText(p.text)}
                   style={({ pressed }) => [s.promptCard, pressed && s.pressed]}
                   accessibilityLabel={p.text}
                 >
@@ -454,12 +456,9 @@ export default function JournalScreen() {
             {/* ──────────────── JOURNAL TIMELINE ──────────────── */}
             <View style={s.sectionHeader}>
               <Text style={s.sectionTitle}>Your journal timeline</Text>
-              <Pressable
-                style={({ pressed }) => [pressed && s.pressed]}
-                accessibilityLabel="View all journal entries"
-              >
+              <View>
                 <Text style={s.sectionLink}>View all →</Text>
-              </Pressable>
+              </View>
             </View>
 
             <View style={s.timelineWrap}>
@@ -472,17 +471,18 @@ export default function JournalScreen() {
                 contentContainerStyle={s.timelineRow}
               >
                 {TIMELINE.map((day, i) => (
-                  <Pressable
+                  <View
                     key={i}
-                    style={({ pressed }) => [s.timelineItem, pressed && s.pressed]}
-                    accessibilityLabel={`${day.mood} on ${day.date} ${day.month}`}
+                    style={s.timelineItem}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
                   >
                     <View style={[s.timelineDot, { backgroundColor: day.bg, borderColor: day.border }]}>
                       <Text style={s.timelineEmoji}>{day.mood}</Text>
                     </View>
                     <Text style={s.timelineDate}>{day.date}</Text>
                     <Text style={s.timelineMonth}>{day.month}</Text>
-                  </Pressable>
+                  </View>
                 ))}
               </ScrollView>
             </View>
@@ -499,6 +499,7 @@ export default function JournalScreen() {
         <View style={s.actionsCard}>
 
           <Pressable
+            onPress={() => setEntryText("")}
             style={({ pressed }) => [s.actionBtn, pressed && s.pressed]}
             accessibilityLabel="Save entry"
           >
@@ -526,6 +527,7 @@ export default function JournalScreen() {
           <View style={s.actionDivider} />
 
           <Pressable
+            onPress={() => setSelectedMood("sensitive")}
             style={({ pressed }) => [s.actionBtn, pressed && s.pressed]}
             accessibilityLabel="Add mood tag"
           >

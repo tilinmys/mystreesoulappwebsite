@@ -6,7 +6,17 @@ export default function TabsLayout() {
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
-        headerShown: false
+        headerShown: false,
+        sceneStyle: {
+          backgroundColor: "transparent",
+        },
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: {
+          backgroundColor: "transparent",
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
       }}
     >
       <Tabs.Screen name="dashboard" />
@@ -15,9 +25,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="wellness" />
       <Tabs.Screen name="nourish" />
       <Tabs.Screen name="sleep" />
-      <Tabs.Screen name="community" />
       <Tabs.Screen name="profile" />
     </Tabs>
   );
 }
-

@@ -1,9 +1,8 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useRootNavigationState, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Dimensions, Easing, Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
-import { CachedImage } from "../components/CachedImage";
 import { preloadAppImages } from "../components/imagePreload";
 import { F } from "../constants/fonts";
 import { hasValidAuthSession, useAuthStore } from "../store/authStore";
@@ -11,36 +10,50 @@ import { useOnboardingStore } from "../store/onboardingStore";
 
 void preloadAppImages();
 
-// Light warm-white background — logo strokes and text fully visible
-const BG      = "#FBF8F5";   // warm off-white, matches app background
-const BG_CARD = "#FFFFFF";   // pure white card so logo sits crisp
-const CORAL   = "#E07A5F";   // terracotta accent (unchanged)
-const TEXT    = "#2B2D42";   // dark charcoal for wordmark
-const MUTED   = "#8A7B72";   // warm grey for tagline
+const { width: W } = Dimensions.get("window");
+
+const C = {
+  bgTop: "#FFF8F4",
+  bgMid: "#F7E6DE",
+  bgBottom: "#F4EFE8",
+  ink: "#241C1D",
+  muted: "rgba(107,76,85,0.55)",
+  coral: "#E07A5F",
+  peach: "#F4A261",
+  sage: "#81B29A",
+  lavender: "#BDB2FF",
+};
 
 const logo = require("../public/images/mystreelogo.webp");
 
 export default function SplashScreen() {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
-  const hasCompletedOnboarding = useOnboardingStore((state) => state.hasCompletedOnboarding);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const sessionExpiresAt = useAuthStore((state) => state.sessionExpiresAt);
   const [hydrated, setHydrated] = useState(
     () => useOnboardingStore.persist.hasHydrated() && useAuthStore.persist.hasHydrated()
   );
 
-  // Animation values
-  const logoOpacity  = useRef(new Animated.Value(0)).current;
-  const logoScale    = useRef(new Animated.Value(0.7)).current;
-  const beatScale    = useRef(new Animated.Value(1)).current;
-  const textOpacity  = useRef(new Animated.Value(0)).current;
-  const textSlide    = useRef(new Animated.Value(28)).current;
-  const heartOpacity = useRef(new Animated.Value(0)).current;
-  const heartScale   = useRef(new Animated.Value(0.3)).current;
-  const tagOpacity   = useRef(new Animated.Value(0)).current;
-  const dotsOpacity  = useRef(new Animated.Value(0)).current;
+  // ── Animation values ────────────────────────────────────────────────────
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale   = useRef(new Animated.Value(0.6)).current;
+  const logoRotate  = useRef(new Animated.Value(0)).current;
 
+  const brandOpacity = useRef(new Animated.Value(0)).current;
+  const brandY       = useRef(new Animated.Value(24)).current;
+  const wordSoulOp   = useRef(new Animated.Value(0)).current;
+
+  const taglineOp    = useRef(new Animated.Value(0)).current;
+  const lineScale    = useRef(new Animated.Value(0)).current;
+
+  const aura         = useRef(new Animated.Value(0)).current;
+  const dotsOpacity  = useRef(new Animated.Value(0)).current;
+  const dotA         = useRef(new Animated.Value(0.35)).current;
+  const dotB         = useRef(new Animated.Value(0.35)).current;
+  const dotC         = useRef(new Animated.Value(0.35)).current;
+
+  // ── Hydration sync ──────────────────────────────────────────────────────
   useEffect(() => {
     const syncHydration = () =>
       setHydrated(
@@ -52,287 +65,311 @@ export default function SplashScreen() {
     return () => { u1(); u2(); };
   }, []);
 
+  // ── Choreographed entrance ──────────────────────────────────────────────
   useEffect(() => {
-    // 1. Logo fades + springs in
-    Animated.parallel([
-      Animated.timing(logoOpacity, {
-        toValue: 1, duration: 520, delay: 180,
-        easing: Easing.out(Easing.cubic), useNativeDriver: true,
+    Animated.sequence([
+      // 1. Logo pops in with a gentle spin
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 720,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(logoScale, {
+          toValue: 1,
+          tension: 30,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoRotate, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      // 2. "MyStree Soul" wordmark slides up
+      Animated.parallel([
+        Animated.timing(brandOpacity, {
+          toValue: 1,
+          duration: 640,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(brandY, {
+          toValue: 0,
+          duration: 640,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      // 3. "Soul" word emphasis fade-in (handled by wordSoulOp)
+      Animated.timing(wordSoulOp, {
+        toValue: 1,
+        duration: 480,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
       }),
-      Animated.spring(logoScale, {
-        toValue: 1, delay: 180, tension: 52, friction: 8, useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // 2. Double heartbeat
+      // 4. Underline + tagline together
+      Animated.parallel([
+        Animated.timing(lineScale, {
+          toValue: 1,
+          duration: 540,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(taglineOp, {
+          toValue: 1,
+          duration: 540,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(dotsOpacity, {
+          toValue: 1,
+          duration: 460,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+
+    // Ambient aura loop
+    const auraLoop = Animated.loop(
       Animated.sequence([
-        // Beat 1
-        Animated.timing(beatScale, { toValue: 1.24, duration: 200, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(beatScale, { toValue: 0.94, duration: 160, easing: Easing.in(Easing.quad),  useNativeDriver: true }),
-        Animated.timing(beatScale, { toValue: 1.14, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(beatScale, { toValue: 1.00, duration: 280, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.delay(260),
-        // Beat 2
-        Animated.timing(beatScale, { toValue: 1.18, duration: 190, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(beatScale, { toValue: 0.96, duration: 150, easing: Easing.in(Easing.quad),  useNativeDriver: true }),
-        Animated.timing(beatScale, { toValue: 1.00, duration: 260, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ]).start(() => {
-        // 3. Wordmark slides up
-        Animated.parallel([
-          Animated.timing(textOpacity, {
-            toValue: 1, duration: 460,
-            easing: Easing.out(Easing.cubic), useNativeDriver: true,
-          }),
-          Animated.timing(textSlide, {
-            toValue: 0, duration: 460,
-            easing: Easing.out(Easing.cubic), useNativeDriver: true,
-          }),
-        ]).start();
+        Animated.timing(aura, { toValue: 1, duration: 4200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(aura, { toValue: 0, duration: 4200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
 
-        // 4. Heart pops in
+    const dotLoop = (dot: Animated.Value, delay: number) =>
+      Animated.loop(
         Animated.sequence([
-          Animated.delay(200),
-          Animated.parallel([
-            Animated.timing(heartOpacity, {
-              toValue: 1, duration: 320,
-              easing: Easing.out(Easing.cubic), useNativeDriver: true,
-            }),
-            Animated.spring(heartScale, {
-              toValue: 1, tension: 90, friction: 5, useNativeDriver: true,
-            }),
-          ]),
-        ]).start();
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 1,    duration: 520, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0.35, duration: 520, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ])
+      );
 
-        // 5. Tagline + dots
-        Animated.sequence([
-          Animated.delay(440),
-          Animated.timing(tagOpacity, {
-            toValue: 1, duration: 400,
-            easing: Easing.out(Easing.cubic), useNativeDriver: true,
-          }),
-          Animated.timing(dotsOpacity, {
-            toValue: 1, duration: 300,
-            easing: Easing.out(Easing.cubic), useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
+    const loops = [auraLoop, dotLoop(dotA, 0), dotLoop(dotB, 180), dotLoop(dotC, 360)];
+    loops.forEach((loop) => loop.start());
+    return () => loops.forEach((loop) => loop.stop());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Routing ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!rootNavigationState?.key || !hydrated) return;
     const timer = setTimeout(() => {
       const sessionValid = hasValidAuthSession({ isAuthenticated, sessionExpiresAt });
-      if (sessionValid && hasCompletedOnboarding) {
-        router.replace("/(tabs)/dashboard");
-      } else {
-        // Not authenticated OR mid-onboarding → always show welcome first
-        router.replace("/welcome");
-      }
-    }, 3400);
+      router.replace(sessionValid ? "/(tabs)/dashboard" : "/welcome");
+    }, 3200);
     return () => clearTimeout(timer);
-  }, [hasCompletedOnboarding, hydrated, isAuthenticated, rootNavigationState?.key, router, sessionExpiresAt]);
+  }, [hydrated, isAuthenticated, rootNavigationState?.key, router, sessionExpiresAt]);
+
+  const auraScale  = aura.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1.08] });
+  const auraY      = aura.interpolate({ inputRange: [0, 1], outputRange: [0, -12] });
+  const reverseY   = aura.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
+  const logoSpin   = logoRotate.interpolate({ inputRange: [0, 1], outputRange: ["-12deg", "0deg"] });
 
   return (
-    <SafeAreaView style={styles.screen}>
-      {/* Subtle radial depth behind logo */}
-      <View style={styles.glowOuter} />
-      <View style={styles.glowInner} />
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+      <LinearGradient
+        colors={[C.bgTop, C.bgMid, C.bgBottom]}
+        locations={[0, 0.54, 1]}
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Logo */}
-      <Animated.View
-        style={[
-          styles.logoWrap,
-          {
-            opacity: logoOpacity,
-            transform: [
-              { scale: Animated.multiply(logoScale, beatScale) },
-            ],
-          },
-        ]}
-      >
-        <View style={styles.logoRingOuter} />
-        <View style={styles.logoRingInner} />
-        <View style={styles.logoCard}>
-          <CachedImage
-            source={logo}
-            style={styles.logoImage}
-            priority="high"
-          />
-        </View>
-      </Animated.View>
+      <Animated.View style={[styles.washOne, { transform: [{ scale: auraScale }, { translateY: auraY }] }]} />
+      <Animated.View style={[styles.washTwo, { transform: [{ translateY: reverseY }, { rotate: "-16deg" }] }]} />
+      <Animated.View style={[styles.washThree, { transform: [{ translateY: auraY }, { rotate: "14deg" }] }]} />
+      <View style={styles.softGrainA} />
+      <View style={styles.softGrainB} />
 
-      {/* Brand wordmark */}
-      <Animated.View
-        style={[
-          styles.wordmarkRow,
-          { opacity: textOpacity, transform: [{ translateY: textSlide }] },
-        ]}
-      >
-        <Text style={styles.brand}>MyStree Soul</Text>
+      <View style={styles.center}>
+        {/* MyStree Logo */}
         <Animated.View
-          style={{
-            opacity: heartOpacity,
-            transform: [{ scale: heartScale }],
-            marginLeft: 6,
-            marginTop: 3,
-          }}
+          style={[
+            styles.logoWrap,
+            {
+              opacity: logoOpacity,
+              transform: [{ scale: logoScale }, { rotate: logoSpin }],
+            },
+          ]}
         >
-          <HeartSvg size={20} />
+          <View style={styles.logoHalo} />
+          <Image
+            source={logo}
+            style={styles.logoImg}
+            resizeMode="contain"
+          />
         </Animated.View>
-      </Animated.View>
 
-      {/* Tagline */}
-      <Animated.Text style={[styles.tagline, { opacity: tagOpacity }]}>
-        your rhythm, understood
-      </Animated.Text>
+        {/* Wordmark */}
+        <Animated.View
+          style={[
+            styles.wordmarkBlock,
+            {
+              opacity: brandOpacity,
+              transform: [{ translateY: brandY }],
+            },
+          ]}
+        >
+          <View style={styles.brandRow}>
+            <Text
+              style={styles.brand}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              MyStree{" "}
+              <Animated.Text style={[styles.brandSoul, { opacity: wordSoulOp }]}>
+                Soul
+              </Animated.Text>
+            </Text>
+          </View>
+          <Animated.View style={[styles.brandLine, { transform: [{ scaleX: lineScale }] }]} />
+          <Animated.Text style={[styles.tagline, { opacity: taglineOp }]}>
+            For every stage of you.
+          </Animated.Text>
+        </Animated.View>
+      </View>
 
-      {/* Loading dots */}
       <Animated.View style={[styles.dotsWrap, { opacity: dotsOpacity }]}>
-        <PulseDots />
+        <Animated.View style={[styles.dot, { opacity: dotA }]} />
+        <Animated.View style={[styles.dot, { opacity: dotB }]} />
+        <Animated.View style={[styles.dot, { opacity: dotC }]} />
       </Animated.View>
     </SafeAreaView>
-  );
-}
-
-function HeartSvg({ size = 20 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-        fill={CORAL}
-      />
-    </Svg>
-  );
-}
-
-function PulseDots() {
-  const dots = [useRef(new Animated.Value(0.35)).current,
-                useRef(new Animated.Value(0.35)).current,
-                useRef(new Animated.Value(0.35)).current];
-
-  useEffect(() => {
-    const loops = dots.map((dot, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 220),
-          Animated.timing(dot, { toValue: 1,    duration: 500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0.35, duration: 500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        ])
-      )
-    );
-    loops.forEach((l) => l.start());
-    return () => loops.forEach((l) => l.stop());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <View style={styles.dots}>
-      {dots.map((dot, i) => (
-        <Animated.View key={i} style={[styles.dot, { opacity: dot }]} />
-      ))}
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: BG,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    backgroundColor: C.bgTop,
   },
-  glowOuter: {
+  washOne: {
     position: "absolute",
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    backgroundColor: "rgba(224,122,95,0.06)",
+    width: 320, height: 320, borderRadius: 160,
+    backgroundColor: "rgba(224,122,95,0.12)",
+    top: "20%",
   },
-  glowInner: {
+  washTwo: {
     position: "absolute",
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    backgroundColor: "rgba(224,122,95,0.09)",
+    width: 390, height: 160, borderRadius: 90,
+    backgroundColor: "rgba(189,178,255,0.13)",
+    left: -80, top: "38%",
   },
+  washThree: {
+    position: "absolute",
+    width: 360, height: 150, borderRadius: 90,
+    backgroundColor: "rgba(129,178,154,0.11)",
+    right: -90, bottom: "26%",
+  },
+  softGrainA: {
+    position: "absolute",
+    width: 180, height: 180, borderRadius: 90,
+    backgroundColor: "rgba(244,162,97,0.09)",
+    top: 76, left: -54,
+  },
+  softGrainB: {
+    position: "absolute",
+    width: 210, height: 210, borderRadius: 105,
+    backgroundColor: "rgba(255,255,255,0.22)",
+    bottom: 86, right: -68,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    width: "100%",
+  },
+  // ── Logo ─────────────────────────────────────────────────────────────
   logoWrap: {
-    width: 210,
-    height: 210,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  logoRingOuter: {
+  logoHalo: {
     position: "absolute",
-    width: 210,
-    height: 210,
-    borderRadius: 105,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1,
-    borderColor: "rgba(43,45,66,0.08)",
-  },
-  logoRingInner: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.22)",
-  },
-  logoCard: {
-    width: 164,
-    height: 164,
-    borderRadius: 50,
-    backgroundColor: BG_CARD,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.12)",
-    shadowColor: CORAL,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.14,
-    shadowRadius: 32,
+    borderColor: "rgba(224,122,95,0.18)",
+    shadowColor: C.coral,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
     elevation: 6,
-    overflow: "hidden",
   },
-  logoImage: {
-    width: 148,
-    height: 148,
+  logoImg: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
   },
-  wordmarkRow: {
+  // ── Wordmark ─────────────────────────────────────────────────────────
+  wordmarkBlock: {
+    alignItems: "center",
+    width: "100%",
+  },
+  brandRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    justifyContent: "center",
+    width: "100%",
   },
   brand: {
     fontFamily: F.luxuryExtraBold,
-    fontSize: 34,
-    lineHeight: 40,
-    color: TEXT,
-    letterSpacing: 0.6,
+    fontSize: Math.min(36, W * 0.085),
+    lineHeight: Math.min(44, W * 0.105),
+    color: C.ink,
+    textAlign: "center",
+    letterSpacing: 0.2,
+    includeFontPadding: false,
+  },
+  brandSoul: {
+    fontFamily: F.luxuryExtraBold,
+    color: C.coral,
+    fontStyle: "italic",
+  },
+  brandLine: {
+    width: 96,
+    height: 2,
+    borderRadius: 999,
+    backgroundColor: C.coral,
+    marginTop: 14,
+    opacity: 0.68,
   },
   tagline: {
-    fontFamily: F.luxuryItalic,
-    fontSize: 13,
-    lineHeight: 18,
-    letterSpacing: 2.2,
-    color: MUTED,
+    fontFamily: F.bodyRegularItalic,
+    fontSize: 14,
+    lineHeight: 20,
+    color: C.muted,
+    marginTop: 10,
     textAlign: "center",
+    letterSpacing: 0.2,
   },
   dotsWrap: {
     position: "absolute",
-    bottom: 52,
-  },
-  dots: {
+    bottom: 54,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 9,
   },
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: CORAL,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: C.coral,
   },
 });

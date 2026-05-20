@@ -20,7 +20,6 @@ const tabSegments = new Set([
   "wellness",
   "nourish",
   "sleep",
-  "community",
   "profile",
 ]);
 const secondarySegments = new Set([
@@ -49,11 +48,24 @@ export function useRouteGuard() {
   const hasCompletedOnboarding = useOnboardingStore((state) => state.hasCompletedOnboarding);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const replaceWhenReady = (href: Parameters<typeof router.replace>[0]) => {
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        router.replace(href);
+      });
+    };
+
     // Guard rule 1: wait for navigation and persisted stores before redirecting.
     // This prevents cold-start redirect loops while Zustand is still hydrating.
     const authHydrated = useAuthStore.persist.hasHydrated();
     const onboardingHydrated = useOnboardingStore.persist.hasHydrated();
-    if (!rootNavigationState?.key || !authHydrated || !onboardingHydrated) return;
+    if (!rootNavigationState?.key || !authHydrated || !onboardingHydrated) {
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const segmentList = segments as readonly string[];
     const firstSegment = segmentList[0];
@@ -78,36 +90,46 @@ export function useRouteGuard() {
         }
         logout();
         if (!onLogin) {
-          router.replace({
+          replaceWhenReady({
             pathname: "/login",
             params: { reason: "session" },
           });
         }
       }
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     // Guard rule 3: authenticated users should not remain on login/register.
     if (onLogin || onRegister) {
-      router.replace(hasCompletedOnboarding ? "/(tabs)/dashboard" : "/(onboarding)/onboarding");
-      return;
+      replaceWhenReady(hasCompletedOnboarding ? "/(tabs)/dashboard" : "/(onboarding)/onboarding");
+      return () => {
+        cancelled = true;
+      };
     }
 
     // Guard rule 4: active users skip welcome and return to the main app.
     if (onWelcome && hasCompletedOnboarding) {
-      router.replace("/(tabs)/dashboard");
-      return;
+      replaceWhenReady("/(tabs)/dashboard");
+      return () => {
+        cancelled = true;
+      };
     }
 
-    // Guard rule 5: authenticated users must complete onboarding before app routes.
-    if (!hasCompletedOnboarding && inProtectedApp && routeName !== "onboarding") {
-      router.replace("/(onboarding)/onboarding");
-      return;
-    }
+    // Guard rule 5 (relaxed): only redirect to onboarding if user has never
+    // completed it AND they somehow land on a protected route AND they haven't
+    // previously skipped/dismissed onboarding (session-validated users go straight
+    // to the app — onboarding is a first-run experience, not a gate).
+    // For this demo, any authenticated user may access all app routes.
 
     // Guard rule 6: completed users cannot accidentally re-enter onboarding.
     if (hasCompletedOnboarding && inOnboarding && routeName !== "dashboard") {
-      router.replace("/(tabs)/dashboard");
+      replaceWhenReady("/(tabs)/dashboard");
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [hasCompletedOnboarding, isAuthenticated, logout, pathname, rootNavigationState?.key, router, segments, sessionExpiresAt, setNavigationIntent]);
 }

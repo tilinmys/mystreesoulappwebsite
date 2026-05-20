@@ -113,6 +113,8 @@ export default function BloopScreen() {
       {/* ── Navigation bar ────────────────────────────────────────────────── */}
       <View style={s.navBar}>
         <Pressable
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
           onPress={safeBack}
           style={({ pressed }) => [s.backBtn, pressed && s.pressed]}
           hitSlop={8}

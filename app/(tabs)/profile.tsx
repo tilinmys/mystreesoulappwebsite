@@ -1,13 +1,17 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
+import { EditProfileModal } from "../../components/EditProfileModal";
 import { F } from "../../constants/fonts";
+import { useColorMode } from "../../hooks/useColorMode";
 import { useAuthStore } from "../../store/authStore";
 import { useOnboardingStore } from "../../store/onboardingStore";
+import { useThemeStore, type ColorMode } from "../../store/themeStore";
 
 const profileAvatar = require("../../public/images/profile-priya-avatar.webp");
 const bloopImage = require("../../public/images/bloop-profile-meditation-cutout.webp");
@@ -26,10 +30,10 @@ const identityChips = [
 ] as const;
 
 const quickAccess = [
-  { label: "Health Records", icon: "folder-heart-outline", color: "#E07A5F", route: "/settings" },
+  { label: "Health Records", icon: "folder-heart-outline", color: "#E07A5F", route: "/health-records" },
   { label: "Privacy & Security", icon: "shield-lock-outline", color: "#8B6FE8", route: "/settings" },
   { label: "Notifications", icon: "bell-outline", color: "#F4A261", route: "/notifications" },
-  { label: "Saved Programs", icon: "book-heart-outline", color: "#E8795F", route: "/(tabs)/wellness" },
+  { label: "Saved Programs", icon: "book-heart-outline", color: "#E8795F", route: "/saved-programs" },
   { label: "Companion Settings", icon: "robot-happy-outline", color: "#9B7DEB", route: "/bloop" },
   { label: "Premium Access", icon: "crown-outline", color: "#D99235", route: "/premium" }
 ] as const;
@@ -41,17 +45,13 @@ const summary = [
   { label: "Cycle rhythm", value: "Stable", icon: "flower-outline", color: "#E07A5F", progress: 0.76 }
 ] as const;
 
-const supportItems = [
-  { label: "Help & Support", icon: "headphones" },
-  { label: "Emergency SOS", icon: "alarm-light-outline" },
-  { label: "Care Team", icon: "account-heart-outline" }
-] as const;
-
 export default function ProfileScreen() {
   const router = useRouter();
+  const { isDark } = useColorMode();
   const logout = useAuthStore((state) => state.logout);
   const storedName = useOnboardingStore((state) => state.name);
   const profileName = storedName?.trim() || "Priya Sharma";
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -59,24 +59,27 @@ export default function ProfileScreen() {
   };
 
   return (
-    <LinearGradient colors={["#FCF6F5", "#FFF0EA"]} style={styles.screenGradient}>
-      <SafeAreaView style={styles.screen}>
+    <LinearGradient colors={isDark ? ["#111827", "#231B2C"] : ["#FCF6F5", "#FFF0EA"]} style={styles.screenGradient}>
+      <SafeAreaView edges={["top"]} style={[styles.screen, isDark && styles.screenDark]}>
         <View style={styles.auraPeach} />
         <View style={styles.auraLavender} />
         <View style={styles.auraSage} />
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never" style={styles.scrollView}>
           <Header onNotifications={() => router.push("/notifications")} onSettings={() => router.push("/settings")} />
-          <HeroCard name={profileName} onEdit={() => router.push("/settings")} />
+          <HeroCard name={profileName} onEdit={() => setEditModalOpen(true)} />
           <IdentityChips />
           <QuickAccessGrid onNavigate={(route) => router.push(route as never)} />
           <WellnessSummary />
-          <SupportCard
-            onCare={() => router.push("/(tabs)/community")}
-            onSos={() => router.push("/grounding")}
-          />
+          <ThemeCard />
           <PremiumCard onPress={() => router.push("/premium")} />
           <LogoutButton onLogout={handleLogout} />
         </ScrollView>
+
+        {/* Edit Profile Modal */}
+        <EditProfileModal
+          visible={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -93,9 +96,9 @@ function Header({ onNotifications, onSettings }: { onNotifications: () => void; 
         </View>
       </View>
       <View style={styles.headerActions}>
-        <IconButton icon="settings-outline" onPress={onSettings} />
+        <IconButton accessibilityLabel="Open settings" icon="settings-outline" onPress={onSettings} />
         <View>
-          <IconButton icon="notifications-outline" onPress={onNotifications} />
+          <IconButton accessibilityLabel="Open notifications" icon="notifications-outline" onPress={onNotifications} />
           <View style={styles.unreadDot} />
         </View>
       </View>
@@ -188,32 +191,6 @@ function WellnessSummary() {
   );
 }
 
-function SupportCard({ onCare, onSos }: { onCare: () => void; onSos: () => void }) {
-  return (
-    <View style={styles.supportCard}>
-      <View style={styles.supportHeader}>
-        <View style={styles.supportTitleRow}>
-          <MaterialCommunityIcons name="heart-outline" size={19} color={palette.peach} />
-          <Text style={styles.supportTitle}>Support & care</Text>
-        </View>
-        <Text style={styles.supportSub}>We're here for you</Text>
-      </View>
-      <View style={styles.supportRow}>
-        {supportItems.map((item) => (
-          <Pressable
-            key={item.label}
-            onPress={item.label.includes("SOS") ? onSos : onCare}
-            style={({ pressed }) => [styles.supportItem, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons name={item.icon} size={19} color={item.label.includes("SOS") ? palette.terracotta : palette.muted} />
-            <Text ellipsizeMode="tail" numberOfLines={2} style={styles.supportText} textBreakStrategy="balanced">{item.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
 function ProgressRing({
   color,
   icon,
@@ -251,6 +228,58 @@ function ProgressRing({
   );
 }
 
+function ThemeCard() {
+  const colorMode = useThemeStore((s) => s.colorMode);
+  const setColorMode = useThemeStore((s) => s.setColorMode);
+
+  const options: Array<{ id: ColorMode; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string }> = [
+    { id: "light",  label: "Light",  icon: "white-balance-sunny", color: "#F4A261" },
+    { id: "dark",   label: "Dark",   icon: "moon-waning-crescent", color: "#6E86D8" },
+    { id: "system", label: "Auto",   icon: "theme-light-dark", color: "#9277C8" },
+  ];
+
+  return (
+    <View style={styles.themeCard}>
+      <View style={styles.themeHeaderRow}>
+        <MaterialCommunityIcons name="palette-outline" size={18} color={palette.lavender} />
+        <View style={styles.themeHeaderCopy}>
+          <Text style={styles.themeTitle}>Appearance</Text>
+          <Text style={styles.themeSub}>Pick how MyStree feels on your screen.</Text>
+        </View>
+      </View>
+      <View style={styles.themeRow}>
+        {options.map((opt) => {
+          const active = colorMode === opt.id;
+          return (
+            <Pressable
+              key={opt.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Set theme to ${opt.label}`}
+              accessibilityState={active ? { selected: true } : {}}
+              onPress={() => setColorMode(opt.id)}
+              style={({ pressed }) => [
+                styles.themeOption,
+                active && [styles.themeOptionActive, { borderColor: opt.color, backgroundColor: `${opt.color}14` }],
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={[styles.themeIconBubble, { backgroundColor: active ? `${opt.color}26` : "rgba(255,255,255,0.78)" }]}>
+                <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
+              </View>
+              <Text style={[styles.themeOptionLabel, active && { color: opt.color }]}>{opt.label}</Text>
+              {active ? (
+                <View style={[styles.themeCheck, { backgroundColor: opt.color }]}>
+                  <Ionicons name="checkmark" size={11} color="#FFF" />
+                </View>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function PremiumCard({ onPress }: { onPress: () => void }) {
   return (
     <LinearGradient colors={["#D4C4F8", "#F3CCEB"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.premiumCard}>
@@ -279,9 +308,9 @@ function LogoutButton({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-function IconButton({ icon, onPress }: { icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
+function IconButton({ accessibilityLabel, icon, onPress }: { accessibilityLabel: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
+    <Pressable accessibilityLabel={accessibilityLabel} accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
       <Ionicons name={icon} size={22} color={palette.deepCharcoal} />
     </Pressable>
   );
@@ -303,10 +332,12 @@ const palette = {
 const styles = StyleSheet.create({
   screenGradient: { flex: 1 },
   screen: { flex: 1, backgroundColor: "transparent" },
+  screenDark: { backgroundColor: "transparent" },
+  scrollView: { flex: 1, backgroundColor: "transparent" },
   auraPeach: { position: "absolute", top: -80, right: -90, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(244,162,97,0.18)" },
   auraLavender: { position: "absolute", top: 220, left: -110, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(189,178,255,0.18)" },
   auraSage: { position: "absolute", bottom: 120, right: -120, width: 280, height: 280, borderRadius: 140, backgroundColor: "rgba(129,178,154,0.13)" },
-  content: { paddingHorizontal: SIDE, paddingTop: 8, paddingBottom: 124, gap: 10 },
+  content: { paddingHorizontal: SIDE, paddingTop: 8, paddingBottom: 28, gap: 10, flexGrow: 1 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
   headerTitle: { color: palette.ink, fontFamily: F.luxuryExtraBold, fontSize: 34, lineHeight: 38 },
   headerSubRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
@@ -347,14 +378,17 @@ const styles = StyleSheet.create({
   ringIcon: { position: "absolute" },
   summaryLabel: { color: palette.ink, fontFamily: F.uiSemiBold, fontSize: 9.5, lineHeight: 12, marginTop: 6, minHeight: 24, textAlign: "center", flexShrink: 1 },
   summaryValue: { fontFamily: F.uiBold, fontSize: 10, lineHeight: 13, marginTop: 3, maxWidth: "100%", textAlign: "center" },
-  supportCard: { borderRadius: 24, padding: 14, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.20, shadowRadius: 22, elevation: 1 },
-  supportHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  supportTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  supportTitle: { color: palette.ink, fontFamily: F.luxuryBold, fontSize: 19, lineHeight: 24 },
-  supportSub: { color: palette.softMuted, fontFamily: F.uiMedium, fontSize: 11, lineHeight: 14 },
-  supportRow: { flexDirection: "row", gap: 8 },
-  supportItem: { flex: 1, minWidth: 0, minHeight: 50, borderRadius: 20, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingHorizontal: 5, backgroundColor: "rgba(255,255,255,0.56)" },
-  supportText: { flex: 1, flexShrink: 1, minWidth: 0, color: palette.ink, fontFamily: F.uiSemiBold, fontSize: 9, lineHeight: 12, textAlign: "center" },
+  themeCard: { borderRadius: 26, padding: 16, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2, gap: 14 },
+  themeHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  themeHeaderCopy: { flex: 1 },
+  themeTitle: { color: palette.ink, fontFamily: F.luxuryBold, fontSize: 15, lineHeight: 20 },
+  themeSub: { color: palette.muted, fontFamily: F.uiMedium, fontSize: 11.5, lineHeight: 15, marginTop: 2 },
+  themeRow: { flexDirection: "row", gap: 10 },
+  themeOption: { flex: 1, minHeight: 92, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.62)", borderWidth: 1.5, borderColor: "rgba(232,225,230,0.70)" },
+  themeOptionActive: { borderWidth: 1.5 },
+  themeIconBubble: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  themeOptionLabel: { color: palette.ink, fontFamily: F.uiBold, fontSize: 12, lineHeight: 16 },
+  themeCheck: { position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   premiumCard: { minHeight: 96, borderRadius: 26, padding: 14, flexDirection: "row", alignItems: "center", gap: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: "#D6C3B9", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2 },
   premiumLotus: { width: 56, height: 56, borderRadius: 28, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.22)" },
   premiumLotusImage: { width: 56, height: 56 },

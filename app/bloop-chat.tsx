@@ -6,8 +6,8 @@
  */
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -243,6 +243,154 @@ const CHIP_REPLIES: Record<string, string> = {
   emotional: "Soft reboot time. You are not too much, your body is just asking for care."
 };
 
+type BloopRouteParams = {
+  prompt?: string | string[];
+  source?: string | string[];
+  autoSend?: string | string[];
+  message?: string | string[];
+  initialMessage?: string | string[];
+};
+
+function firstParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function isTruthyParam(value?: string) {
+  return value === "true" || value === "1" || value === "yes";
+}
+
+function formatSourceLabel(source?: string) {
+  if (!source) return "";
+
+  const knownSources: Record<string, string> = {
+    sleep: "From Sleep",
+    "emotional-wellness": "From Emotional Wellness",
+    emotionalWellness: "From Emotional Wellness",
+    cycle: "From Cycle",
+    wellness: "From Care Space",
+    nourish: "From Nourish",
+    insights: "From Insights",
+  };
+
+  if (knownSources[source]) return knownSources[source];
+
+  const label = source
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  return `From ${label}`;
+}
+
+// ── Rich auto-reply engine — keyword-matched, warm, specific ─────────────────
+function getBloopReply(text: string, sourceLabel = ""): string {
+  const t = text.toLowerCase();
+  const from = sourceLabel ? `${sourceLabel.replace("From ", "from ")}. ` : "";
+
+  // Greetings / small talk
+  if (/^(hi|hey|hello|hii|heyyy|sup|yo)\b/.test(t))
+    return "Hey you 💜 I'm right here. How are you feeling in your body today — any tension, tiredness, or something on your mind?";
+
+  if (t.includes("how are you") || t.includes("how r u"))
+    return "I'm fully present for you right now 🌸 More importantly — how are *you*? What does your body need today?";
+
+  if (/\b(good|great|fine|okay|ok|well)\b/.test(t) && t.length < 20)
+    return "So glad to hear that 🌿 Even on good days, checking in with yourself is powerful. Anything you'd like to notice or celebrate today?";
+
+  // Anxiety / stress
+  if (t.includes("anxious") || t.includes("anxiety") || t.includes("panic") || t.includes("nervous"))
+    return `${from}Anxiety often lives in the body before it reaches the mind. Right now: unclench your jaw, drop your shoulders, and take one slow exhale through your mouth. You don't have to fix anything in this moment — just soften one thing. What's sitting heaviest right now?`;
+
+  if (t.includes("stress") || t.includes("stressed") || t.includes("overwhelm"))
+    return `${from}Your nervous system is asking for a pause. When stress piles up, even 90 seconds of slow breathing can shift your body out of fight-or-flight. Would you like a quick 4-7-8 breath guide, or do you just need to talk it out?`;
+
+  // Mood / emotional
+  if (t.includes("sad") || t.includes("upset") || t.includes("cry") || t.includes("crying"))
+    return "Tears are data, not weakness 💙 Your body knows something that needs to move. I'm here — tell me what's going on. You don't need to summarise it neatly.";
+
+  if (t.includes("happy") || t.includes("excited") || t.includes("joy"))
+    return "This is beautiful — your nervous system is in a safe, open state right now 🌟 This is actually the best time to set an intention or log what made today feel good. Want to capture this feeling?";
+
+  if (t.includes("tired") || t.includes("exhausted") || t.includes("fatigue") || t.includes("energy"))
+    return `${from}Tiredness can mean so many different things — physical depletion, emotional heaviness, or hormonal shifts. Where does it feel most in your body? I can suggest something specific based on where you are in your cycle.`;
+
+  if (t.includes("angry") || t.includes("frustrat") || t.includes("irritat"))
+    return "That fire you're feeling is valid 🔥 Progesterone and estrogen shifts in the late luteal phase can amplify irritability significantly. When did it start? Knowing your cycle day can help us figure out if this is hormonal — or something to address differently.";
+
+  if (t.includes("lonely") || t.includes("alone") || t.includes("nobody"))
+    return "I hear you, and I want you to know — reaching out here counts 💜 Loneliness often peaks in the luteal phase when your body naturally craves more rest and connection. What would feel most comforting right now — talking, a calming activity, or something gentle to do?";
+
+  // Sleep
+  if (t.includes("sleep") || t.includes("insomnia") || t.includes("can't sleep") || t.includes("wake up"))
+    return `${from}Sleep and hormones are deeply connected. Progesterone has a natural sedative quality, but when it drops before your period, sleep quality often dips. Try this tonight: keep your room at 18°C, avoid screens for 20 min before bed, and try 4-7-8 breathing. What time do you usually wind down?`;
+
+  if (t.includes("nightmare") || t.includes("dream"))
+    return "Vivid dreams and nightmares often spike in the luteal phase when progesterone peaks then drops. Your brain is more emotionally active. Journaling before sleep can reduce the intensity — it gives your brain somewhere to 'file' things. Want me to guide you through a short evening release?";
+
+  // Cycle / hormones
+  if (t.includes("period") || t.includes("menstrual") || t.includes("bleed"))
+    return `${from}Your period is actually a fifth vital sign — it tells us so much about your overall health. Is it arriving on time, or has the timing or flow changed? Tell me more and I can help you decode what your body's signalling.`;
+
+  if (t.includes("cramp") || t.includes("pain") || t.includes("ache"))
+    return "Cramps are caused by prostaglandins — the same chemicals that help your uterus shed its lining. Omega-3 foods like salmon and walnuts, heat therapy, and magnesium glycinate can all help. How intense is the pain on a scale of 1-10, and where exactly are you feeling it?";
+
+  if (t.includes("pcos") || t.includes("endometriosis") || t.includes("endo"))
+    return `${from}I see you 💜 Living with PCOS or endometriosis means your body needs extra care, not extra pressure. Tracking patterns — energy, pain, mood — helps you predict flare-ups and advocate for yourself with doctors. What's happening today that you'd like to understand better?`;
+
+  if (t.includes("ovulat") || t.includes("fertile") || t.includes("fertility"))
+    return `${from}Ovulation is your body's monthly power surge — energy, confidence, and libido often peak here because estrogen and LH are highest. Your fertile window is typically 5 days before ovulation plus ovulation day itself. Would you like to understand how to track it more precisely?`;
+
+  if (t.includes("cycle") || t.includes("hormone") || t.includes("phase"))
+    return `${from}Your cycle has four distinct phases — menstrual, follicular, ovulatory, and luteal — and each one affects your energy, mood, focus, and appetite differently. Which phase do you want to understand better? Or tell me your cycle day and I'll decode exactly where you are.`;
+
+  // Nutrition / nourish
+  if (t.includes("food") || t.includes("eat") || t.includes("diet") || t.includes("nourish") || t.includes("nutrition"))
+    return `${from}What you eat genuinely shifts your hormones. During your follicular phase, cruciferous vegetables support estrogen metabolism. In the luteal phase, magnesium-rich dark chocolate and leafy greens reduce PMS. What phase are you in right now, and what does your body seem to be craving?`;
+
+  if (t.includes("water") || t.includes("hydrat") || t.includes("drink"))
+    return "Hydration is underrated for hormonal health 💧 Even mild dehydration amplifies fatigue, brain fog, and cramps. Your target: roughly 2.7 litres daily, more in the luteal phase and around your period. Are you managing to hit that most days?";
+
+  if (t.includes("weight") || t.includes("bloat"))
+    return "Cycle-related weight fluctuations of 1-3kg are completely normal — especially before your period when progesterone causes water retention. This isn't fat gain; it resolves within a few days of your period starting. Are you tracking this across your cycle, or does it feel unpredictable?";
+
+  // Movement / yoga
+  if (t.includes("exercise") || t.includes("workout") || t.includes("gym") || t.includes("yoga") || t.includes("move"))
+    return `${from}Your best workouts actually depend on your cycle phase. Follicular and ovulatory phases are ideal for high-intensity training. Luteal phase is better for strength and moderate effort. Your period is designed for rest and gentle movement. Which phase are you in — I can give you a specific recommendation.`;
+
+  // Skin / body
+  if (t.includes("skin") || t.includes("acne") || t.includes("breakout"))
+    return "Hormonal acne typically appears around the jaw and chin, and spikes in the week before your period as progesterone surges. Reducing dairy and refined sugar, staying hydrated, and a consistent skincare routine all help. When in your cycle do you notice it most?";
+
+  // Gratitude / journaling
+  if (t.includes("gratitude") || t.includes("journal") || t.includes("reflect"))
+    return "Journalling is one of the most evidence-backed tools for emotional regulation 📝 Just three things you're grateful for can measurably shift cortisol levels. Would you like a guided prompt for today, or do you prefer to free-write?";
+
+  // Meditation / breathing
+  if (t.includes("meditat") || t.includes("breath") || t.includes("calm") || t.includes("relax"))
+    return "Let's do this together 🌬️ Try box breathing: breathe in for 4 counts, hold for 4, out for 4, hold for 4. Repeat three times. Your heart rate and cortisol will measurably drop. Want me to guide you through a full 2-minute reset right now?";
+
+  // Questions / help
+  if (t.includes("help") || t.includes("what should") || t.includes("what do") || t.includes("how do"))
+    return `${from}I'm here to help you figure this out gently 🌸 Can you tell me a bit more? The more specific you are, the more personalised I can make this for you — whether it's your cycle phase, a symptom you're noticing, or an emotion you're sitting with.`;
+
+  // Thanks
+  if (t.includes("thank") || t.includes("thanks") || t.includes("thx"))
+    return "Always here for you 💜 You deserve support that actually understands your body. Is there anything else on your mind today?";
+
+  // Fallback — warm and open-ended
+  const fallbacks = [
+    `${from}I hear you 💜 Tell me more — what does your body feel like right now, and how long have you been feeling this way?`,
+    `${from}That makes sense to sit with. Your feelings are valid data about what your body and mind need. What would feel most supportive right now?`,
+    `${from}I'm with you. Let's take this one gentle step at a time. What feels like the heaviest thing to carry today?`,
+    `${from}Your wellbeing matters deeply. Can you tell me a little more so I can give you something truly useful, not just generic advice?`,
+  ];
+  return fallbacks[Math.abs(text.length) % fallbacks.length];
+}
+
+// Keep for route-context replies (already good, now also used internally)
+function getContextualReply(prompt: string, sourceLabel: string) {
+  return getBloopReply(prompt, sourceLabel);
+}
+
 const BOTTOM_ACTIONS = [
   { key: "ground", label: "Grounding", icon: "sprout-outline"        as const },
   { key: "breath", label: "Breath",    icon: "equalizer-outline"     as const, lib: "ion" },
@@ -256,13 +404,48 @@ const WAVE_PHASES = Array.from({ length: WAVE_BARS * 2 }, (_, i) => i * 0.45);
 // ─────────────────────────────────────────────────────────────────────────────
 export default function BloopChatScreen() {
   const router    = useRouter();
+  const params    = useLocalSearchParams<BloopRouteParams>();
   const safeBack  = useSafeBack();
   const scrollRef = useRef<ScrollView>(null);
+  const handledPromptRef = useRef<string | null>(null);
 
-  const [inputText,   setInputText]   = useState("");
-  const [isTalking,   setIsTalking]   = useState(false);
-  const [activeChip,  setActiveChip]  = useState<string | null>(null);
-  const [messages,    setMessages]    = useState(INITIAL_MESSAGES);
+  const [inputText,    setInputText]    = useState("");
+  const [isTalking,    setIsTalking]    = useState(false);
+  const [activeChip,   setActiveChip]   = useState<string | null>(null);
+  const [messages,     setMessages]     = useState(INITIAL_MESSAGES);
+  const [insightOpen,  setInsightOpen]  = useState(false);
+  const [bloopTyping,  setBloopTyping]  = useState(false);
+
+  const routePrompt =
+    firstParam(params.prompt) ??
+    firstParam(params.message) ??
+    firstParam(params.initialMessage) ??
+    "";
+  const sourceLabel = formatSourceLabel(firstParam(params.source));
+  const shouldAutoSend = isTruthyParam(firstParam(params.autoSend));
+
+  useEffect(() => {
+    const prompt = routePrompt.trim();
+    if (!prompt) return;
+
+    const key = `${prompt}|${sourceLabel}|${shouldAutoSend}`;
+    if (handledPromptRef.current === key) return;
+    handledPromptRef.current = key;
+
+    if (shouldAutoSend) {
+      const now = Date.now();
+      setMessages((prev) => [
+        ...prev,
+        { id: `${now}-route-user`, role: "user", text: prompt, time: "Just now", read: false },
+        { id: `${now}-route-bloop`, role: "bloop", text: getContextualReply(prompt, sourceLabel), time: null, read: false },
+      ]);
+      setInputText("");
+    } else {
+      setInputText(prompt);
+    }
+
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 140);
+  }, [routePrompt, shouldAutoSend, sourceLabel]);
 
   const toggleTalk = () => {
     setIsTalking((v) => !v);
@@ -270,13 +453,33 @@ export default function BloopChatScreen() {
 
   const sendMessage = () => {
     const trimmed = inputText.trim();
-    if (!trimmed) return;
+    if (!trimmed || bloopTyping) return;
+
+    const userId = `${Date.now()}-user`;
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), role: "user", text: trimmed, time: "Just now", read: false },
+      { id: userId, role: "user", text: trimmed, time: "Just now", read: false },
     ]);
     setInputText("");
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+
+    // Show typing indicator then deliver reply
+    setBloopTyping(true);
+    const delay = 800 + Math.min(trimmed.length * 18, 1200); // 0.8-2s based on message length
+    setTimeout(() => {
+      setBloopTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-bloop`,
+          role: "bloop",
+          text: getBloopReply(trimmed),
+          time: null,
+          read: false,
+        },
+      ]);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+    }, delay);
   };
 
   const addEmoji = () => {
@@ -312,6 +515,8 @@ export default function BloopChatScreen() {
         {/* ── Header ──────────────────────────────────────────────────── */}
         <View style={styles.header}>
           <Pressable
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
             onPress={safeBack}
             style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
           >
@@ -322,7 +527,7 @@ export default function BloopChatScreen() {
             <Text style={styles.headerName}>Bloop</Text>
             <View style={styles.headerStatusRow}>
               <View style={styles.onlineDot} />
-              <Text style={styles.headerStatus}>Listening gently</Text>
+              <Text style={styles.headerStatus}>{sourceLabel || "Listening gently"}</Text>
             </View>
           </View>
 
@@ -349,10 +554,20 @@ export default function BloopChatScreen() {
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
         >
-          {/* Hero mascot */}
+          {/* Hero mascot — squircle-framed, centered, impactful */}
           <View style={styles.heroSection}>
+            {/* Outer ambient glow */}
             <View style={styles.heroGlowRing} />
-            <BloopMascot />
+            {/* Squircle card that gives Bloop a professional "product image" crop */}
+            <View style={styles.heroMascotFrame}>
+              <LinearGradient
+                colors={["rgba(228,213,255,0.60)", "rgba(180,144,224,0.28)", "rgba(255,240,255,0.08)"]}
+                start={{ x: 0.2, y: 0 }}
+                end={{ x: 0.8, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <BloopMascot />
+            </View>
           </View>
 
           {/* Messages */}
@@ -390,6 +605,22 @@ export default function BloopChatScreen() {
             )
           )}
 
+          {/* Bloop typing indicator */}
+          {bloopTyping && (
+            <View style={styles.bloopRow}>
+              <View style={styles.bloopAvatar}>
+                <Text style={styles.bloopAvatarStar}>✦</Text>
+              </View>
+              <View style={[styles.bloopBubble, styles.typingBubble]}>
+                <View style={styles.typingDots}>
+                  <View style={[styles.typingDot, { opacity: 1.0 }]} />
+                  <View style={[styles.typingDot, { opacity: 0.60 }]} />
+                  <View style={[styles.typingDot, { opacity: 0.30 }]} />
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Suggestion chips */}
           <View style={styles.chipsWrap}>
             {SUGGESTION_CHIPS.map((chip) => {
@@ -418,7 +649,12 @@ export default function BloopChatScreen() {
           </View>
 
           {/* Insight card */}
-          <View style={styles.insightCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={insightOpen ? "Collapse insight for you" : "Expand insight for you"}
+            onPress={() => setInsightOpen((current) => !current)}
+            style={({ pressed }) => [styles.insightCard, pressed && styles.pressed]}
+          >
             <View style={styles.insightOrbWrap}>
               <InsightOrb />
               {/* Decorative constellation dots */}
@@ -434,9 +670,23 @@ export default function BloopChatScreen() {
               <Text style={styles.insightBody}>
                 Your sleep and stress patterns may be connected this week. Let's take small steps together.
               </Text>
+              {insightOpen ? (
+                <View style={styles.insightExpanded}>
+                  <Text style={styles.insightExpandedText}>
+                    When stress stays high, your nervous system can make sleep feel lighter and cycle symptoms feel louder. Try one small reset tonight: slow exhales, warm water, and a softer bedtime cue.
+                  </Text>
+                  <Text style={styles.insightExpandedHint}>
+                    Ask Bloop: "Help me calm my body before sleep."
+                  </Text>
+                </View>
+              ) : null}
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={C.faint} />
-          </View>
+            <MaterialCommunityIcons
+              name={insightOpen ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={C.faint}
+            />
+          </Pressable>
 
           <View style={{ height: 12 }} />
         </ScrollView>
@@ -461,6 +711,8 @@ export default function BloopChatScreen() {
 
           {/* Mic button */}
           <Pressable
+            accessibilityLabel={isTalking ? "Stop voice mode" : "Start voice mode"}
+            accessibilityRole="button"
             onPress={toggleTalk}
             style={({ pressed }) => [styles.micBtnShell, pressed && styles.pressed]}
           >
@@ -517,8 +769,11 @@ export default function BloopChatScreen() {
               <MaterialCommunityIcons name="emoticon-happy-outline" size={20} color={C.faint} />
             </Pressable>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
               onPress={sendMessage}
-              style={({ pressed }) => [styles.sendBtn, pressed && styles.pressed]}
+              disabled={bloopTyping}
+              style={({ pressed }) => [styles.sendBtn, pressed && styles.pressed, bloopTyping && { opacity: 0.38 }]}
             >
               <LinearGradient
                 colors={["#C4A0E8", "#8B63D6"]}
@@ -552,7 +807,7 @@ export default function BloopChatScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push("/(tabs)/community" as any)}
+            onPress={() => router.push("/grounding" as any)}
             style={({ pressed }) => [styles.actionItem, pressed && styles.pressed]}
           >
             <MaterialCommunityIcons name="heart-circle-outline" size={16} color={C.muted} />
@@ -598,10 +853,10 @@ const styles = StyleSheet.create({
     flex:       1,
   },
   headerName: {
-    color:      C.text,
-    fontFamily: F.luxuryBold,
-    fontSize:   22,
-    letterSpacing: 0.3,
+    color:         C.text,
+    fontFamily:    F.luxuryBold,    // Fraunces SemiBold — premium H1 for Bloop's name
+    fontSize:      24,
+    letterSpacing: -0.2,
   },
   headerStatusRow: {
     alignItems:    "center",
@@ -617,8 +872,9 @@ const styles = StyleSheet.create({
   },
   headerStatus: {
     color:      C.muted,
-    fontFamily: F.uiRegular,
-    fontSize:   12,
+    fontFamily: F.uiRegular,        // Inter Regular — clean caption
+    fontSize:   11,
+    letterSpacing: 0.1,
   },
   headerRight: {
     alignItems:    "center",
@@ -629,24 +885,43 @@ const styles = StyleSheet.create({
   // Chat
   chatScroll: {
     flex: 1,
+    backgroundColor: "transparent",
   },
   chatContent: {
     paddingBottom: 8,
   },
 
-  // Hero mascot
+  // Hero mascot — squircle framed, perfectly centered
   heroSection: {
     alignItems:     "center",
     justifyContent: "center",
-    paddingVertical: 16,
+    paddingTop:     24,
+    paddingBottom:  8,
     position:       "relative",
   },
   heroGlowRing: {
-    backgroundColor:  "rgba(228,213,255,0.32)",
+    // Ambient halo behind the squircle
+    backgroundColor:  "rgba(212,180,255,0.22)",
     borderRadius:     999,
-    height:           200,
+    height:           240,
     position:         "absolute",
-    width:            200,
+    width:            240,
+  },
+  heroMascotFrame: {
+    // Squircle crop — 48px border-radius gives organic "squircle" shape
+    alignItems:     "center",
+    borderRadius:   52,
+    borderWidth:    1.5,
+    borderColor:    "rgba(180,144,224,0.40)",
+    height:         200,
+    justifyContent: "center",
+    overflow:       "hidden",
+    width:          200,
+    shadowColor:    "#9277C8",
+    shadowOffset:   { width: 0, height: 8 },
+    shadowOpacity:  0.28,
+    shadowRadius:   24,
+    elevation:      10,
   },
 
   // Bloop bubble
@@ -687,9 +962,9 @@ const styles = StyleSheet.create({
   },
   bloopText: {
     color:      C.text,
-    fontFamily: F.uiMedium,
-    fontSize:   14,
-    lineHeight: 22,
+    fontFamily: F.uiRegular,        // Inter Regular 400 — optimal for conversational body
+    fontSize:   14.5,
+    lineHeight: 23,                 // 1.6x line-height for readability
   },
 
   // User bubble
@@ -723,6 +998,24 @@ const styles = StyleSheet.create({
     fontFamily: F.uiRegular,
     fontSize:   10,
     opacity:    0.80,
+  },
+
+  // Typing indicator
+  typingBubble: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    minWidth: 64,
+  },
+  typingDots: {
+    flexDirection: "row",
+    alignItems:    "center",
+    gap:           6,
+  },
+  typingDot: {
+    width:           9,
+    height:          9,
+    borderRadius:    5,
+    backgroundColor: "#9277C8",
   },
 
   // Suggestion chips
@@ -808,6 +1101,27 @@ const styles = StyleSheet.create({
     fontFamily: F.uiMedium,
     fontSize:   12,
     lineHeight: 18,
+  },
+  insightExpanded: {
+    backgroundColor: "rgba(146,119,200,0.08)",
+    borderColor:     "rgba(146,119,200,0.12)",
+    borderRadius:    16,
+    borderWidth:     1,
+    marginTop:       10,
+    padding:         10,
+  },
+  insightExpandedText: {
+    color:      C.text,
+    fontFamily: F.uiRegular,
+    fontSize:   12,
+    lineHeight: 18,
+  },
+  insightExpandedHint: {
+    color:      C.purple,
+    fontFamily: F.uiSemiBold,
+    fontSize:   11,
+    lineHeight: 16,
+    marginTop:  8,
   },
 
   // Voice panel

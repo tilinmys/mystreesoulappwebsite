@@ -26,6 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CachedImage } from "../CachedImage";
 import { F } from "../../constants/fonts";
+import { useDailyLogStore } from "../../store/dailyLogStore";
 
 const imgBloop = require("../../public/images/bloop-welcome.webp");
 
@@ -63,10 +64,10 @@ const MOODS = [
 ] as const;
 
 const FLOWS = [
-  { key: "light",    label: "Light",    drops: 1, color: "#FFBCA6" },
-  { key: "medium",   label: "Medium",   drops: 2, color: C.terracotta },
-  { key: "heavy",    label: "Heavy",    drops: 3, color: "#B84040" },
-  { key: "spotting", label: "Spotting", drops: 0, color: C.faint },
+  { key: "spotting", label: "Spotting", fill: 0.18, color: "#F2A58E" },
+  { key: "light",    label: "Light",    fill: 0.38, color: "#E9856B" },
+  { key: "medium",   label: "Medium",   fill: 0.68, color: C.terracotta },
+  { key: "heavy",    label: "Heavy",    fill: 1.00, color: "#B84040" },
 ] as const;
 
 const SYMPTOMS = [
@@ -74,10 +75,12 @@ const SYMPTOMS = [
   { key: "bloating",    label: "Bloating",    icon: "water-plus-outline"        as const, color: C.peach     },
   { key: "headache",    label: "Headache",    icon: "head-dots-horizontal"      as const, color: C.navy      },
   { key: "acne",        label: "Acne",        icon: "face-woman-shimmer-outline" as const, color: C.pink     },
-  { key: "mood_swings", label: "Mood Swings", icon: "emoticon-sad-outline"      as const, color: C.pink      },
   { key: "fatigue",     label: "Fatigue",     icon: "battery-low"               as const, color: C.muted     },
-  { key: "anxiety",     label: "Anxiety",     icon: "heart-pulse"               as const, color: C.terracotta},
   { key: "back_pain",   label: "Back Pain",   icon: "human-handsdown"           as const, color: C.gold      },
+  { key: "tenderness",  label: "Tenderness",  icon: "heart-pulse"               as const, color: C.terracotta},
+  { key: "cravings",    label: "Cravings",    icon: "food-croissant"            as const, color: C.peach     },
+  { key: "mood_swings", label: "Mood Swings", icon: "emoticon-sad-outline"      as const, color: C.pink      },
+  { key: "anxiety",     label: "Anxiety",     icon: "heart-pulse"               as const, color: C.terracotta},
 ] as const;
 
 const BODY_SIGNALS = [
@@ -218,6 +221,15 @@ function Droplet({ color, size = 14 }: { color: string; size?: number }) {
   );
 }
 
+function FlowDrop({ color, fill, active }: { color: string; fill: number; active: boolean }) {
+  return (
+    <View style={[styles.flowDropShell, active && { borderColor: color }]}>
+      <View style={[styles.flowBloodFill, { backgroundColor: color, height: `${Math.round(fill * 100)}%` as any }]} />
+      <View style={styles.flowDropShine} />
+    </View>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 export type DailyLogPayload = {
   date:         string;
@@ -239,6 +251,7 @@ type Props = {
 // ─────────────────────────────────────────────────────────────────────────────
 export function DailyLogSheet({ visible, onClose, onSave }: Props) {
   const insets = useSafeAreaInsets();
+  const saveLog = useDailyLogStore((s) => s.saveLog);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -320,6 +333,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
       bodySignals:  Object.fromEntries(BODY_SIGNALS.map(b => [b.key, b.value])),
       journalEntry: journalText.trim(),
     };
+    saveLog(payload);
     onSave?.(payload);
     setShowSuccess(true);
 
@@ -425,7 +439,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
               {/* ── Flow ─────────────────────────────────────────────────── */}
               <View style={styles.sectionHeader}>
                 <Droplet color={C.terracotta} size={13} />
-                <Text style={styles.sectionTitle}>Flow</Text>
+                <Text style={styles.sectionTitle}>Period flow</Text>
               </View>
               <View style={styles.flowGrid}>
                 {FLOWS.map((f) => {
@@ -440,16 +454,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
                         pressed && styles.pressed,
                       ]}
                     >
-                      <View style={styles.flowDropsRow}>
-                        {f.drops === 0
-                          ? Array.from({ length: 3 }, (_, i) => (
-                              <View key={i} style={[styles.flowDropOutline, { borderColor: f.color }]} />
-                            ))
-                          : Array.from({ length: f.drops }, (_, i) => (
-                              <Droplet key={i} color={f.color} size={12} />
-                            ))
-                        }
-                      </View>
+                      <FlowDrop color={f.color} fill={f.fill} active={active} />
                       <Text style={[styles.flowLabel, active && { color: f.color, fontFamily: F.uiSemiBold }]}>
                         {f.label}
                       </Text>
@@ -704,6 +709,36 @@ const styles = StyleSheet.create({
     height: 80,
     justifyContent: "center",
     gap: 8,
+  },
+  flowDropShell: {
+    backgroundColor: "rgba(255,245,242,0.88)",
+    borderColor: "rgba(224,122,95,0.22)",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 5,
+    borderWidth: 1.4,
+    height: 34,
+    overflow: "hidden",
+    position: "relative",
+    transform: [{ rotate: "45deg" }],
+    width: 34,
+  },
+  flowBloodFill: {
+    bottom: 0,
+    left: 0,
+    opacity: 0.96,
+    position: "absolute",
+    right: 0,
+  },
+  flowDropShine: {
+    backgroundColor: "rgba(255,255,255,0.58)",
+    borderRadius: 5,
+    height: 10,
+    left: 9,
+    position: "absolute",
+    top: 7,
+    width: 5,
   },
   flowDropsRow: {
     alignItems: "flex-end",

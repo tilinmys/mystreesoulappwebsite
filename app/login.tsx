@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
 import { AuraBackground } from "../components/system/AuraBackground";
+import { ValidationToast } from "../components/ValidationToast";
 import { spacing } from "../constants/spacing";
 import { typography } from "../constants/typography";
 import { useColorMode } from "../hooks/useColorMode";
@@ -40,9 +41,25 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      haptics.error();
+      setError("Please enter your email.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      haptics.error();
+      setError("That doesn't look like a valid email address.");
+      return;
+    }
+    if (!password) {
+      haptics.error();
+      setError("Please enter your password.");
+      return;
+    }
     setLoading(true);
     setError("");
-    const result = await login(email, password);
+    const result = await login(trimmedEmail, password);
     setLoading(false);
 
     if (!result.ok) {
@@ -63,6 +80,11 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
       <AuraBackground variant="bloop" />
+      <ValidationToast
+        message={error ? error : null}
+        onDismiss={() => setError("")}
+        top={50}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.brandLockup}>

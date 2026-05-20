@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Easing,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
+import { getUserProfile } from "../../constants/userProfile";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
 // ─── Geometry ─────────────────────────────────────────────────────────────────
@@ -45,14 +47,15 @@ const MC_H = 100;   // center card height
 // ─── Assets ───────────────────────────────────────────────────────────────────
 const imgBloop = require("../../public/images/bloop-welcome.webp");
 
-// ─── Cycling phrases ──────────────────────────────────────────────────────────
-const PHRASES = [
-  "Understanding your wellness rhythm…",
-  "Learning your emotional patterns…",
-  "Building your hormone-aware insights…",
-  "Preparing your personalized Soul space…",
-  "Creating your wellness space…",
-];
+// ─── Fading wellness quotes carousel ─────────────────────────────────────────
+const BASE_PHRASES = [
+  '"Your body tells its own beautiful story."',
+  '"Every cycle is a new beginning."',
+  '"Wellness is how you move through each day."',
+  '"Honor the energy you have right now."',
+  '"Your feelings are data, not weakness."',
+  '"Rest is productive. Rest is power."',
+] as const;
 
 // ─── Orbit badges ─────────────────────────────────────────────────────────────
 type OBadge = {
@@ -61,15 +64,20 @@ type OBadge = {
   icon:      string;
   iconColor: string;
   bg:        string;
+  label:     string;
+  // undefined = same as primary CTA (dashboard); string = specific route
+  route:     string;
+  // optional params for routes that need context
+  bloopMsg?: string;
 };
 
 const ORBIT_BADGES: OBadge[] = [
-  { angleDeg: -90,  iconLib: "ion", icon: "moon",          iconColor: "#7040C0", bg: "#D8C8F4" },
-  { angleDeg: -15,  iconLib: "mci", icon: "flower",        iconColor: "#C04870", bg: "#FFD4E8" },
-  { angleDeg:  30,  iconLib: "ion", icon: "water",         iconColor: "#2878C0", bg: "#C8E4F8" },
-  { angleDeg:  90,  iconLib: "ion", icon: "sunny",         iconColor: "#B08000", bg: "#FEF0C0" },
-  { angleDeg: 150,  iconLib: "mci", icon: "meditation",    iconColor: "#387848", bg: "#C8E8D0" },
-  { angleDeg: 210,  iconLib: "ion", icon: "heart",         iconColor: "#C04870", bg: "#FDDDE8" },
+  { angleDeg: -90, iconLib: "ion", icon: "moon",             iconColor: "#7040C0", bg: "#D8C8F4", label: "Sleep",    route: "/(tabs)/dashboard" },
+  { angleDeg: -30, iconLib: "mci", icon: "spa",              iconColor: "#C04870", bg: "#FFD4E8", label: "Wellness", route: "/(tabs)/dashboard" },
+  { angleDeg:  30, iconLib: "mci", icon: "leaf",             iconColor: "#287870", bg: "#C8E4DC", label: "Nourish",  route: "/(tabs)/dashboard" },
+  { angleDeg:  90, iconLib: "mci", icon: "star-four-points", iconColor: "#A07000", bg: "#FEF0C0", label: "Insights", route: "/(tabs)/dashboard" },
+  { angleDeg: 150, iconLib: "mci", icon: "meditation",       iconColor: "#387848", bg: "#C8E8D0", label: "Wellness", route: "/(tabs)/dashboard" },
+  { angleDeg: 210, iconLib: "ion", icon: "heart",            iconColor: "#C04870", bg: "#FDDDE8", label: "Support",  route: "/bloop-chat", bloopMsg: "I need emotional support right now." },
 ];
 
 function badgePos(a: OBadge) {
@@ -169,9 +177,16 @@ export default function ReadyScreen() {
   const router            = useRouter();
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
   const name              = useOnboardingStore((s) => s.name);
+  const selectedGoals     = useOnboardingStore((s) => s.selectedGoals);
+  const profile           = getUserProfile(selectedGoals);
+  const PHRASES           = [...BASE_PHRASES, profile.readyHeroMessage];
 
   const [error,     setError    ] = useState("");
   const [phraseIdx, setPhraseIdx] = useState(0);
+
+  // ── Screen entrance ────────────────────────────────────────────────────────
+  const entranceOp = useRef(new Animated.Value(0)).current;
+  const entranceY  = useRef(new Animated.Value(10)).current;
 
   // ── Animations ──────────────────────────────────────────────────────────
   const breathe    = useRef(new Animated.Value(0)).current;
@@ -209,8 +224,10 @@ export default function ReadyScreen() {
 
     // Entrance animations
     Animated.parallel([
-      Animated.timing(bannerIn, { toValue: 1, duration: 900, delay: 400, useNativeDriver: true }),
-      Animated.timing(glowIn,   { toValue: 1, duration: 1200, delay: 200, useNativeDriver: true }),
+      Animated.timing(bannerIn,   { toValue: 1, duration: 900, delay: 400, useNativeDriver: true }),
+      Animated.timing(glowIn,     { toValue: 1, duration: 1200, delay: 200, useNativeDriver: true }),
+      Animated.timing(entranceOp, { toValue: 1, duration: 600, delay: 100, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(entranceY,  { toValue: 0, duration: 600, delay: 100, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
 
     // Cycling phrase text
@@ -240,7 +257,22 @@ export default function ReadyScreen() {
   const driftAY = driftA.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
   const driftBY = driftB.interpolate({ inputRange: [0, 1], outputRange: [0,  7] });
 
-  // ── CTA ─────────────────────────────────────────────────────────────────
+  // ── Auto-redirect after 2.8 s ────────────────────────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setError("");
+      void completeOnboarding()
+        .then((ok) => {
+          if (ok) router.replace("/(tabs)/dashboard");
+          else setError("Something did not save gently. Please try again.");
+        })
+        .catch(() => setError("Something did not save gently. Please try again."));
+    }, 2800);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── CTA (kept as instant fallback if user taps before timer fires) ────────
   function handleEnter() {
     setError("");
     void completeOnboarding()
@@ -251,16 +283,24 @@ export default function ReadyScreen() {
       .catch(() => setError("Something did not save gently. Please try again."));
   }
 
+  // ── Orbit badge press ────────────────────────────────────────────────────
+  function handleBadgePress(badge: OBadge) {
+    setError("");
+    void completeOnboarding()
+      .then((ok) => {
+        if (!ok) { setError("Something did not save gently. Please try again."); return; }
+        if (badge.bloopMsg) {
+          router.replace({ pathname: badge.route as any, params: { message: badge.bloopMsg } });
+        } else {
+          router.replace(badge.route as any);
+        }
+      })
+      .catch(() => setError("Something did not save gently. Please try again."));
+  }
+
   return (
     <View style={s.root}>
-      {/* ── Atmospheric background ─────────────────────────────────────── */}
-      <LinearGradient
-        colors={["#CCBAE8", "#D8C4EC", "#EDD4E4", "#F8E4D2"]}
-        locations={[0, 0.28, 0.62, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Blobs */}
+      {/* Ambient blobs — atmosphere only */}
       <View pointerEvents="none" style={s.blob1} />
       <View pointerEvents="none" style={s.blob2} />
       <View pointerEvents="none" style={s.blob3} />
@@ -351,25 +391,41 @@ export default function ReadyScreen() {
               ]}
             />
 
-            {/* Orbital badge nodes */}
+            {/* Orbital badge nodes — tappable shortcuts */}
             {ORBIT_BADGES.map((badge, i) => {
-              const pos    = badgePos(badge);
-              const drift  = (i % 2 === 0 ? driftAY : driftBY);
+              const pos   = badgePos(badge);
+              const drift = (i % 2 === 0 ? driftAY : driftBY);
               return (
                 <Animated.View
                   key={i}
-                  pointerEvents="none"
                   style={[
-                    s.orbitBadge,
-                    { left: pos.left, top: pos.top, backgroundColor: badge.bg },
+                    s.orbitBadgeWrap,
+                    { left: pos.left, top: pos.top },
                     { transform: [{ translateY: drift }] },
                   ]}
                 >
-                  {badge.iconLib === "ion" ? (
-                    <Ionicons name={badge.icon as any} size={22} color={badge.iconColor} />
-                  ) : (
-                    <MaterialCommunityIcons name={badge.icon as any} size={22} color={badge.iconColor} />
-                  )}
+                  <Pressable
+                    onPress={() => handleBadgePress(badge)}
+                    style={({ pressed }) => [
+                      s.orbitBadge,
+                      { backgroundColor: badge.bg },
+                      pressed && s.pressed,
+                    ]}
+                    accessibilityLabel={badge.label}
+                    accessibilityRole="button"
+                  >
+                    {badge.iconLib === "ion" ? (
+                      <Ionicons name={badge.icon as any} size={22} color={badge.iconColor} />
+                    ) : (
+                      <MaterialCommunityIcons name={badge.icon as any} size={22} color={badge.iconColor} />
+                    )}
+                  </Pressable>
+                  <Text
+                    style={[s.orbitLabel, { color: badge.iconColor }]}
+                    numberOfLines={1}
+                  >
+                    {badge.label}
+                  </Text>
                 </Animated.View>
               );
             })}
@@ -410,6 +466,7 @@ export default function ReadyScreen() {
           </View>
 
           {/* ── Cycling phrase text ──────────────────────────────────── */}
+          <Animated.View style={{ opacity: entranceOp, transform: [{ translateY: entranceY }], alignSelf: "stretch" }}>
           <View style={s.phraseSection}>
             <Animated.Text style={[s.phraseText, { opacity: phraseAnim }]}>
               {PHRASES[phraseIdx]}
@@ -419,6 +476,7 @@ export default function ReadyScreen() {
               <Ionicons name="heart-outline" size={14} color={C.onVariant} />
             </Text>
           </View>
+          </Animated.View>
 
           {/* ── Energy field visual ──────────────────────────────────── */}
           <View style={s.energyField}>
@@ -466,7 +524,7 @@ export default function ReadyScreen() {
             ]}
           >
             <LinearGradient
-              colors={["rgba(255,255,255,0.52)", "rgba(255,255,255,0.38)"]}
+              colors={["rgba(250,247,252,0.98)", "rgba(248,244,252,0.98)"]}
               style={s.bannerGrad}
             >
               {/* Portal illustration */}
@@ -475,17 +533,19 @@ export default function ReadyScreen() {
               {/* Text */}
               <View style={s.bannerText}>
                 <Text style={s.bannerTitle}>
-                  Preparing your personalized Soul space…
+                  {profile.readyHeroMessage}
                 </Text>
                 <Text style={s.bannerSub}>
                   {name.trim()
-                    ? `Welcome, ${name.trim().split(" ")[0]}. Entering your dashboard…`
-                    : "Entering your personalized dashboard…"}
+                    ? `Welcome, ${name.trim().split(" ")[0]}. Your space is almost ready…`
+                    : "Your personalized space is almost ready…"}
                 </Text>
               </View>
 
               {/* Chevron CTA */}
               <Pressable
+                accessibilityLabel="Enter Soul"
+                accessibilityRole="button"
                 onPress={handleEnter}
                 style={({ pressed }) => [s.chevronShell, pressed && s.pressed]}
               >
@@ -500,6 +560,17 @@ export default function ReadyScreen() {
           </Animated.View>
 
           {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+          {/* ── Edit answers secondary action ─────────────────────────── */}
+          <Pressable
+            onPress={() => router.push("/(onboarding)/personalization")}
+            style={({ pressed }) => [s.editAnswersBtn, pressed && s.pressed]}
+            accessibilityLabel="Edit your answers"
+            accessibilityRole="button"
+          >
+            <Ionicons name="pencil-outline" size={13} color={C.onVariant} />
+            <Text style={s.editAnswersText}>Edit answers</Text>
+          </Pressable>
 
           {/* ── Page dots (6, last = ring indicator) ─────────────────── */}
           <View style={s.dotsRow}>
@@ -619,7 +690,7 @@ function AmbientParticles({ breathe }: { breathe: Animated.Value }) {
     PARTICLE_POS.map((_, i) =>
       breathe.interpolate({
         inputRange: [0, 1],
-        outputRange: [0.10 + i * 0.04, 0.34 + i * 0.04],
+        outputRange: [0.05 + i * 0.02, 0.14 + i * 0.02],
       })
     )
   ).current;
@@ -649,28 +720,28 @@ function AmbientParticles({ breathe }: { breathe: Animated.Value }) {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#CCBAE8",
+    backgroundColor: "#FFFFFF",
   },
   safe: { flex: 1 },
 
-  // Blobs
+  // Blobs — atmosphere only, 8-10% opacity
   blob1: {
-    position: "absolute", top: -180, left: -130,
-    width: 440, height: 440, borderRadius: 220,
-    backgroundColor: "rgba(200,170,240,0.36)",
+    position: "absolute", top: -160, left: -120,
+    width: 420, height: 420, borderRadius: 210,
+    backgroundColor: "rgba(189,172,255,0.09)",
   },
   blob2: {
-    position: "absolute", top: 340, right: -170,
-    width: 420, height: 420, borderRadius: 210,
-    backgroundColor: "rgba(248,196,180,0.28)",
+    position: "absolute", top: 360, right: -160,
+    width: 400, height: 400, borderRadius: 200,
+    backgroundColor: "rgba(255,183,183,0.09)",
   },
   blob3: {
-    position: "absolute", bottom: -80, left: -60,
+    position: "absolute", bottom: -80, left: -80,
     width: 360, height: 360, borderRadius: 180,
-    backgroundColor: "rgba(180,220,200,0.18)",
+    backgroundColor: "rgba(162,202,178,0.08)",
   },
 
-  // Hero golden glow
+  // Hero golden glow — warm soft halo on white
   heroGoldenGlow: {
     position: "absolute",
     top: 40,
@@ -678,7 +749,7 @@ const s = StyleSheet.create({
     width: 360,
     height: 360,
     borderRadius: 180,
-    backgroundColor: "rgba(255,218,120,0.26)",
+    backgroundColor: "rgba(230,210,255,0.14)",
   },
 
   // Botanicals
@@ -720,11 +791,11 @@ const s = StyleSheet.create({
   lotusBtn: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.48)",
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.80)",
+    backgroundColor: "rgba(248,244,248,0.96)",
+    borderWidth: 1, borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#8B5E6D",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10, shadowRadius: 10, elevation: 2,
+    shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
   },
 
   scroll: {
@@ -747,8 +818,14 @@ const s = StyleSheet.create({
     borderColor: "rgba(240,200,180,0.36)",
     backgroundColor: "rgba(255,230,200,0.08)",
   },
-  orbitBadge: {
+  // Orbit badge — layout wrapper (position only)
+  orbitBadgeWrap: {
     position: "absolute",
+    alignItems: "center",
+    // intentionally no fixed width/height so label can overflow naturally
+  },
+  // Orbit badge — visual Pressable (no position: absolute)
+  orbitBadge: {
     width: BADGE_SZ,
     height: BADGE_SZ,
     borderRadius: BADGE_SZ / 2,
@@ -759,6 +836,14 @@ const s = StyleSheet.create({
     shadowColor: "#6040A0",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.14, shadowRadius: 10, elevation: 3,
+  },
+  orbitLabel: {
+    fontFamily: F.uiBold,
+    fontSize: 8,
+    letterSpacing: 0.3,
+    marginTop: 3,
+    textAlign: "center",
+    opacity: 0.82,
   },
 
   // Bloop
@@ -841,13 +926,14 @@ const s = StyleSheet.create({
   },
   phraseText: {
     fontFamily: F.luxuryBold,
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 26,
+    lineHeight: 34,
     color: C.onSurface,
     textAlign: "center",
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
     marginBottom: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
+    fontStyle: "italic",
   },
   phraseSub: {
     fontFamily: F.uiMedium,
@@ -888,10 +974,10 @@ const s = StyleSheet.create({
     borderRadius: 28,
     overflow: "hidden",
     shadowColor: "#7040A0",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16, shadowRadius: 22, elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.10, shadowRadius: 20, elevation: 5,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.78)",
+    borderColor: "rgba(232,225,230,0.70)",
     marginBottom: 20,
     alignSelf: "stretch",
   },
@@ -901,6 +987,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     gap: 12,
+    backgroundColor: "rgba(250,247,252,0.98)",
   },
   bannerText: {
     flex: 1,
@@ -993,6 +1080,26 @@ const s = StyleSheet.create({
   dotRingInner: {
     width: 6, height: 6, borderRadius: 3,
     backgroundColor: C.terra,
+  },
+
+  // Edit answers
+  editAnswersBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.70)",
+    backgroundColor: "rgba(250,247,249,0.80)",
+  },
+  editAnswersText: {
+    fontFamily: F.uiMedium,
+    fontSize: 12,
+    color: C.onVariant,
+    letterSpacing: 0.2,
   },
 
   // Misc

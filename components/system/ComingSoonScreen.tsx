@@ -114,6 +114,8 @@ export function ComingSoonScreen({
         {/* Back button */}
         {showBackButton && (
           <Pressable
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
             onPress={() => router.replace(backHref as any)}
             hitSlop={12}
             style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}

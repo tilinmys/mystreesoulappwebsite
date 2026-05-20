@@ -26,7 +26,6 @@ const HALF_W    = (W - SIDE_PAD * 2 - CARD_GAP) / 2;
 // ── Assets ────────────────────────────────────────────────────────────────────
 const bloopHero  = require("../../public/images/bloop-welcome.webp");
 const bloopCycle = require("../../public/images/bloop-cycle.webp");
-const bloopCalm  = require("../../public/images/bloop-calm.webp");
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
@@ -47,30 +46,31 @@ const C = {
 type NeedCard = {
   id:        string;
   label:     string;
+  sub:       string;
   icon:      React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   iconColor: string;
-  selBg:     readonly [string, string];  // gradient when selected
-  idleBg:    readonly [string, string];  // gradient when idle
+  selBg:     readonly [string, string];
+  idleBg:    readonly [string, string];
   glow:      string;
   locked:    boolean;
-  image?:    ReturnType<typeof require>;
 };
 
 const NEEDS: NeedCard[] = [
   {
     id:        "self_love",
-    label:     "Self-love",
+    label:     "Self Love",
+    sub:       "Care & softness",
     icon:      "heart",
     iconColor: C.rose,
     selBg:     ["#FDDDE8", "#FBF0F4"],
     idleBg:    ["#FFFCFB", "#FFF8F8"],
     glow:      "#E05875",
     locked:    false,
-    image:     bloopCalm,
   },
   {
     id:        "goal_setting",
-    label:     "Goal setter",
+    label:     "Goal Setting",
+    sub:       "Build habits",
     icon:      "target",
     iconColor: "#C87040",
     selBg:     ["#FBF0E2", "#FDF8F2"],
@@ -80,7 +80,8 @@ const NEEDS: NeedCard[] = [
   },
   {
     id:        "nutrition",
-    label:     "Balanced",
+    label:     "Nutrition",
+    sub:       "Nourish deeply",
     icon:      "leaf",
     iconColor: C.sage,
     selBg:     ["#E4F4E8", "#F2FAF4"],
@@ -90,7 +91,8 @@ const NEEDS: NeedCard[] = [
   },
   {
     id:        "inner_harmony",
-    label:     "Inner\nHarmony",
+    label:     "Inner Harmony",
+    sub:       "Calm & clarity",
     icon:      "meditation",
     iconColor: C.lavender,
     selBg:     ["#EDE8F8", "#F6F2FB"],
@@ -116,8 +118,27 @@ export default function OnboardingGoalsScreen() {
   const setSelectedGoals = useOnboardingStore((s) => s.setSelectedGoals);
   const setLifeStage     = useOnboardingStore((s) => s.setLifeStage);
 
-  // "self_love" pre-selected to match the reference visual
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(["self_love"]));
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [lockedSheetVisible, setLockedSheetVisible] = useState(false);
+  const [lockedCardId, setLockedCardId] = useState<string | null>(null);
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+
+  // ── Screen entrance ───────────────────────────────────────────────────────
+  const entranceOp = useRef(new Animated.Value(0)).current;
+  const entranceY  = useRef(new Animated.Value(10)).current;
+  const cardsOp    = useRef(new Animated.Value(0)).current;
+  const cardsY     = useRef(new Animated.Value(8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(entranceOp, { toValue: 1, duration: 580, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(entranceY,  { toValue: 0, duration: 580, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+    Animated.parallel([
+      Animated.timing(cardsOp, { toValue: 1, duration: 500, delay: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(cardsY,  { toValue: 0, duration: 500, delay: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   // ── Orb breathing ─────────────────────────────────────────────────────────
   const breathe = useRef(new Animated.Value(1)).current;
@@ -172,9 +193,35 @@ export default function OnboardingGoalsScreen() {
   }, []);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
+  const showLockedSheet = (id: string) => {
+    setLockedCardId(id);
+    setLockedSheetVisible(true);
+    Animated.timing(sheetAnim, {
+      toValue: 1,
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const hideLockedSheet = () => {
+    Animated.timing(sheetAnim, {
+      toValue: 0,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      setLockedSheetVisible(false);
+      setLockedCardId(null);
+    });
+  };
+
   const toggle = (id: string) => {
     const card = NEEDS.find((need) => need.id === id);
-    if (card?.locked) return;
+    if (card?.locked) {
+      showLockedSheet(id);
+      return;
+    }
 
     setSelected((prev) => {
       const next = new Set(prev);
@@ -193,30 +240,25 @@ export default function OnboardingGoalsScreen() {
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
 
-      {/* ── Ambient background gradient ── */}
-      <LinearGradient
-        colors={["#FCE0D0", "#F5D8EE", "#E8DFF8", "#FAECD4"]}
-        locations={[0, 0.30, 0.64, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Ambient blob accents */}
+      {/* Ambient blob accents — low-opacity atmosphere only */}
       <View style={s.blob1} pointerEvents="none" />
       <View style={s.blob2} pointerEvents="none" />
       <View style={s.blob3} pointerEvents="none" />
 
       {/* ── Header ── */}
       <View style={s.header}>
-        <View>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={20} color={C.muted} />
+        </Pressable>
+        <View style={s.headerCenter}>
           <Text style={s.logoText}>MyStree Soul</Text>
           <Text style={s.logoSub}>Your wellness space</Text>
         </View>
-        <Pressable
-          style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
-          accessibilityLabel="App settings"
-        >
-          <MaterialCommunityIcons name="flower-outline" size={20} color={C.muted} />
-        </Pressable>
+        <View style={s.headerBtn} />
       </View>
 
       {/* ── Scrollable body ── */}
@@ -234,7 +276,7 @@ export default function OnboardingGoalsScreen() {
             <MaterialCommunityIcons name="moon-waning-crescent" size={32} color={C.moon} />
           </View>
 
-          {/* Botanical leaf shapes (pure CSS circles — soft + dimensional) */}
+          {/* Botanical leaf shapes */}
           <View style={s.botanicLeft}  pointerEvents="none" />
           <View style={s.botanicLeft2} pointerEvents="none" />
           <View style={s.botanicRight} pointerEvents="none" />
@@ -280,18 +322,26 @@ export default function OnboardingGoalsScreen() {
             </View>
           </Animated.View>
 
-          {/* Orbit lines — decorative SVG-less rings */}
+          {/* Orbit rings */}
           <View style={s.orbitRing1} pointerEvents="none" />
           <View style={s.orbitRing2} pointerEvents="none" />
         </View>
 
         {/* ── Main question ── */}
-        <View style={s.questionWrap}>
-          <Text style={s.question}>What do you{"\n"}need today?</Text>
-          <Text style={s.questionSub}>Self-love, goals, cycle, calm, or clarity.</Text>
-        </View>
+        <Animated.View style={{ opacity: entranceOp, transform: [{ translateY: entranceY }] }}>
+          <View style={s.questionWrap}>
+            {/* Pathway pill */}
+            <View style={s.pathwayPill}>
+              <MaterialCommunityIcons name="star-four-points" size={11} color={C.terracotta} />
+              <Text style={s.pathwayPillText}>Choose your pathway</Text>
+            </View>
+            <Text style={s.question}>What brings{"\n"}you here?</Text>
+            <Text style={s.questionSub}>Choose what feels right.</Text>
+          </View>
+        </Animated.View>
 
         {/* ── Card grid ── */}
+        <Animated.View style={{ opacity: cardsOp, transform: [{ translateY: cardsY }] }}>
         <View style={s.grid}>
 
           {/* Row 1 — Self Love + Goal Setting */}
@@ -306,7 +356,7 @@ export default function OnboardingGoalsScreen() {
             ))}
           </View>
 
-          {/* Row 2 — Balanced Nutrition + Inner Harmony (locked) */}
+          {/* Row 2 — Nutrition + Inner Harmony (locked) */}
           <View style={s.cardRow}>
             {NEEDS.slice(2, 4).map((n) => (
               <NeedTile
@@ -324,6 +374,8 @@ export default function OnboardingGoalsScreen() {
             onPress={() => toggle("cycle")}
           />
         </View>
+
+        </Animated.View>
 
         {/* Spacer for fixed CTA */}
         <View style={{ height: 130 }} />
@@ -351,7 +403,12 @@ export default function OnboardingGoalsScreen() {
           </LinearGradient>
         </Pressable>
 
-        {/* Page indicator — 5 dots, first active */}
+        {/* Helper text when nothing selected */}
+        {selected.size === 0 && (
+          <Text style={s.helperText}>Choose at least one path to continue.</Text>
+        )}
+
+        {/* Page indicator */}
         <View style={s.dotsRow}>
           {[0, 1, 2, 3, 4].map((i) => (
             <View key={i} style={[s.dot, i === 0 && s.dotActive]} />
@@ -359,12 +416,25 @@ export default function OnboardingGoalsScreen() {
         </View>
       </View>
 
+      {/* ── Locked card sheet ── */}
+      {lockedSheetVisible && (
+        <LockedSheet
+          cardId={lockedCardId}
+          sheetAnim={sheetAnim}
+          onClose={hideLockedSheet}
+          onAskBloop={() => {
+            hideLockedSheet();
+            router.push("/bloop-chat");
+          }}
+        />
+      )}
+
     </SafeAreaView>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ── NeedTile — half-width selectable card ─────────────────────────────────────
+// ── NeedTile — half-width premium pathway card ────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 function NeedTile({
   card,
@@ -375,74 +445,92 @@ function NeedTile({
   isSelected: boolean;
   onPress: () => void;
 }) {
+  // Subtle press-in scale animation
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 40 }).start();
+  const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1.00, useNativeDriver: true, speed: 40 }).start();
+
   return (
     <Pressable
       onPress={onPress}
-      disabled={card.locked}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityState={{ disabled: card.locked, selected: isSelected }}
-      style={({ pressed }) => [
+      accessibilityState={{ selected: isSelected }}
+      style={[
         s.tileShell,
         card.locked && s.tileLocked,
         isSelected && {
-          borderColor: card.glow,
+          borderColor: card.glow + "88",
           shadowColor: card.glow,
-          shadowOpacity: 0.24,
-          transform: [{ translateY: -3 }],
+          shadowOpacity: 0.30,
+          shadowRadius: 22,
+          elevation: 7,
         },
-        pressed && s.pressed,
       ]}
     >
-      <LinearGradient
-        colors={isSelected ? card.selBg : card.idleBg}
-        style={s.tileGrad}
-      >
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <LinearGradient
+          colors={isSelected ? card.selBg : card.idleBg}
+          style={s.tileGrad}
+        >
 
-        {/* Badge — top right corner */}
-        {isSelected && !card.locked && (
-          <View style={[s.tileBadge, { backgroundColor: C.terracotta }]}>
-            <Ionicons name="checkmark" size={11} color="#FFF" />
-          </View>
-        )}
-        {card.locked && !isSelected && (
-          <View style={[s.tileBadge, { backgroundColor: C.gold }]}>
-            <MaterialCommunityIcons name="lock" size={11} color="#FFF" />
-          </View>
-        )}
-        {card.locked && isSelected && (
-          <View style={[s.tileBadge, { backgroundColor: C.gold }]}>
-            <Ionicons name="checkmark" size={11} color="#FFF" />
-          </View>
-        )}
-
-        {/* Illustration area — icon inside soft bubble */}
-        <View style={s.tileIllusWrap}>
-          {card.image != null ? (
-            <View style={[s.tileIllusBubble, { backgroundColor: card.selBg[0] }]}>
-              <CachedImage
-                source={card.image}
-                style={s.tileIllusImg}
-                contentFit="contain"
-              />
-            </View>
-          ) : (
-            <View style={[s.tileIllusBubble, { backgroundColor: card.selBg[0] }]}>
-              <MaterialCommunityIcons
-                name={card.icon}
-                size={60}
-                color={isSelected ? card.iconColor : `${card.iconColor}BB`}
-              />
+          {/* Top-right badge */}
+          {isSelected && !card.locked && (
+            <View style={[s.tileBadge, { backgroundColor: card.glow }]}>
+              <Ionicons name="checkmark" size={11} color="#FFF" />
             </View>
           )}
-        </View>
+          {card.locked && (
+            <View style={[s.tileBadge, { backgroundColor: C.gold }]}>
+              <MaterialCommunityIcons name="lock-outline" size={10} color="#FFF" />
+            </View>
+          )}
 
-        {/* Label */}
-        <Text style={[s.tileLabel, isSelected && { color: C.text }]}>
-          {card.label}
-        </Text>
-        {card.locked && <Text style={s.lockedLabel}>Soul Premium</Text>}
+          {/* Icon illustration area */}
+          <View style={s.tileIllusWrap}>
+            {/* Ambient glow ring — only when selected */}
+            {isSelected && (
+              <View style={[s.tileIconGlow, { backgroundColor: card.glow + "1C" }]} />
+            )}
+            {/* Icon bubble */}
+            <View style={[
+              s.tileIllusBubble,
+              {
+                backgroundColor: isSelected
+                  ? card.selBg[0]
+                  : "rgba(255,255,255,0.72)",
+                borderColor: isSelected
+                  ? card.glow + "30"
+                  : "rgba(255,255,255,0.60)",
+              },
+            ]}>
+              <MaterialCommunityIcons
+                name={card.icon}
+                size={36}
+                color={isSelected ? card.iconColor : card.iconColor + "88"}
+              />
+            </View>
+          </View>
 
-      </LinearGradient>
+          {/* Label + sub + premium chip */}
+          <View style={s.tileLabelArea}>
+            <Text style={[s.tileLabel, isSelected && { color: C.text }]} numberOfLines={1}>
+              {card.label}
+            </Text>
+            {!card.locked && (
+              <Text style={s.tileSub} numberOfLines={1}>{card.sub}</Text>
+            )}
+            {card.locked && (
+              <View style={s.premiumChip}>
+                <MaterialCommunityIcons name="crown-outline" size={9} color={C.gold} />
+                <Text style={s.premiumChipText}>Premium</Text>
+              </View>
+            )}
+          </View>
+
+        </LinearGradient>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -457,62 +545,143 @@ function CycleTile({
   isSelected: boolean;
   onPress: () => void;
 }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, speed: 40 }).start();
+  const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1.00, useNativeDriver: true, speed: 40 }).start();
+
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
-      style={({ pressed }) => [
+      style={[
         s.cycleShell,
         isSelected && {
-          borderColor: C.terracotta,
+          borderColor: C.terracotta + "88",
           shadowColor: C.terracotta,
-          shadowOpacity: 0.22,
-          transform: [{ translateY: -3 }],
+          shadowOpacity: 0.26,
+          shadowRadius: 22,
+          elevation: 7,
         },
-        pressed && s.pressed,
       ]}
     >
-      <LinearGradient
-        colors={isSelected ? ["#FDDDD0", "#FFF0E8"] : ["#FFF8F5", "#FFFCFB"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.cycleGrad}
-      >
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <LinearGradient
+          colors={isSelected ? ["#FDDDD0", "#FFF0E8"] : ["#FFF8F5", "#FFFCFB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.cycleGrad}
+        >
 
-        {/* Left — icon + label */}
-        <View style={s.cycleLeft}>
-          <View style={s.cycleIconBubble}>
-            {/* Orbit ring decoration */}
-            <View style={s.cycleOrbitOuter} pointerEvents="none" />
-            <View style={s.cycleOrbitInner} pointerEvents="none" />
-            <MaterialCommunityIcons
-              name="moon-waning-crescent"
-              size={28}
-              color={isSelected ? C.terracotta : "#D0897A"}
+          {/* Left — icon + labels */}
+          <View style={s.cycleLeft}>
+            <View style={[
+              s.cycleIconBubble,
+              isSelected && { backgroundColor: "rgba(224,122,95,0.18)" },
+            ]}>
+              {/* Orbit ring decoration */}
+              <View style={s.cycleOrbitOuter} pointerEvents="none" />
+              <View style={s.cycleOrbitInner} pointerEvents="none" />
+              <MaterialCommunityIcons
+                name="moon-waning-crescent"
+                size={26}
+                color={isSelected ? C.terracotta : "#D0897A"}
+              />
+            </View>
+            <View style={s.cycleLabelGroup}>
+              <Text style={s.cycleLabel}>Cycle Tracking</Text>
+              <Text style={s.cycleSub}>Understand your phases</Text>
+            </View>
+          </View>
+
+          {/* Right — illustration */}
+          <View style={s.cycleImgWrap} pointerEvents="none">
+            <CachedImage
+              source={bloopCycle}
+              style={s.cycleImg}
+              contentFit="contain"
             />
           </View>
-          <Text style={s.cycleLabel}>Cycle Tracking</Text>
-        </View>
 
-        {/* Right — bloop-cycle illustration */}
-        <View style={s.cycleImgWrap} pointerEvents="none">
-          <CachedImage
-            source={bloopCycle}
-            style={s.cycleImg}
-            contentFit="contain"
-          />
-        </View>
+          {/* Checkmark badge */}
+          {isSelected && (
+            <View style={[s.tileBadge, { backgroundColor: C.terracotta, top: 14, right: 14 }]}>
+              <Ionicons name="checkmark" size={11} color="#FFF" />
+            </View>
+          )}
 
-        {/* Checkmark badge */}
-        {isSelected && (
-          <View style={[s.tileBadge, { backgroundColor: C.terracotta, top: 14, right: 14 }]}>
-            <Ionicons name="checkmark" size={11} color="#FFF" />
-          </View>
-        )}
-
-      </LinearGradient>
+        </LinearGradient>
+      </Animated.View>
     </Pressable>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── LockedSheet — soft bottom sheet for Premium-locked cards ──────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+function LockedSheet({
+  cardId,
+  sheetAnim,
+  onClose,
+  onAskBloop,
+}: {
+  cardId: string | null;
+  sheetAnim: Animated.Value;
+  onClose: () => void;
+  onAskBloop: () => void;
+}) {
+  const card = NEEDS.find((n) => n.id === cardId);
+
+  const translateY = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] });
+  const overlayOp  = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.45] });
+
+  return (
+    <>
+      <Animated.View
+        style={[StyleSheet.absoluteFillObject, { backgroundColor: "#000", opacity: overlayOp }]}
+      >
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Dismiss" />
+      </Animated.View>
+
+      <Animated.View style={[s.lockedSheet, { transform: [{ translateY }] }]}>
+        <View style={s.sheetHandle} />
+
+        <View style={s.sheetIconBubble}>
+          <MaterialCommunityIcons name="crown-outline" size={30} color={C.gold} />
+        </View>
+
+        <Text style={s.sheetTitle}>Soul Premium</Text>
+        <Text style={s.sheetBody}>
+          {card?.label} is part of Soul Premium.{"\n"}
+          Bloop can still give you a gentle preview.
+        </Text>
+
+        <View style={s.sheetActions}>
+          <Pressable
+            onPress={onAskBloop}
+            style={({ pressed }) => [s.sheetPrimaryBtn, pressed && s.pressed]}
+          >
+            <LinearGradient
+              colors={[C.peach, C.terracotta]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={s.sheetPrimaryGrad}
+            >
+              <Text style={s.sheetPrimaryLabel}>Ask Bloop</Text>
+            </LinearGradient>
+          </Pressable>
+
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [s.sheetGhostBtn, pressed && s.pressed]}
+          >
+            <Text style={s.sheetGhostLabel}>Explore Premium</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </>
   );
 }
 
@@ -525,35 +694,36 @@ const s = StyleSheet.create({
   screen: {
     flex: 1,
     overflow: "hidden",
+    backgroundColor: "#FFFFFF",
   },
 
-  // ── Ambient blobs ─────────────────────────────────────────────────────────
+  // ── Ambient blobs — atmosphere only, 8-10% opacity ────────────────────────
   blob1: {
     position: "absolute",
-    top: -100,
-    left: -80,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "rgba(252, 195, 175, 0.38)",
+    top: -120,
+    left: -100,
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    backgroundColor: "rgba(255,183,183,0.10)",
   },
   blob2: {
     position: "absolute",
-    top: 160,
-    right: -110,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: "rgba(189,172,255,0.26)",
+    top: 200,
+    right: -140,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: "rgba(189,172,255,0.08)",
   },
   blob3: {
     position: "absolute",
-    bottom: 60,
-    left: -70,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgba(244,162,97,0.16)",
+    bottom: 40,
+    left: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: "rgba(162,202,178,0.08)",
   },
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -567,14 +737,14 @@ const s = StyleSheet.create({
     zIndex: 10,
   },
   logoText: {
-    fontFamily: F.luxuryBold,              // PlayfairDisplay Bold — brand name
+    fontFamily: F.luxuryBold,
     fontSize: 22,
     lineHeight: 28,
     color: C.text,
     letterSpacing: 0.2,
   },
   logoSub: {
-    fontFamily: F.uiRegular,               // Nunito Regular — tagline
+    fontFamily: F.uiRegular,
     fontSize: 12,
     color: C.muted,
     marginTop: 2,
@@ -583,14 +753,14 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.68)",
+    backgroundColor: "rgba(248,244,248,0.96)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.88)",
+    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: C.muted,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 2,
   },
@@ -603,13 +773,12 @@ const s = StyleSheet.create({
   // ── Hero area ─────────────────────────────────────────────────────────────
   heroArea: {
     width: W,
-    height: H * 0.25,
+    height: H * 0.24,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
 
-  // Moon decoration
   moonWrap: {
     position: "absolute",
     top: "14%" as any,
@@ -617,7 +786,6 @@ const s = StyleSheet.create({
     opacity: 0.90,
   },
 
-  // Botanical leaf shapes (pure view geometry)
   botanicLeft: {
     position: "absolute",
     left: -30,
@@ -649,7 +817,6 @@ const s = StyleSheet.create({
     transform: [{ rotate: "-25deg" }],
   },
 
-  // Aura rings behind orb
   auraRingOuter: {
     position: "absolute",
     width: 220,
@@ -667,7 +834,6 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(244,162,97,0.18)",
   },
 
-  // Sparkle dots
   sparkle: {
     position: "absolute",
     width: 7,
@@ -675,7 +841,6 @@ const s = StyleSheet.create({
     borderRadius: 4,
   },
 
-  // Orbit decorative rings (behind orb)
   orbitRing1: {
     position: "absolute",
     width: 240,
@@ -694,7 +859,6 @@ const s = StyleSheet.create({
     borderStyle: "dashed",
   },
 
-  // Bloop image
   bloopShadow: {
     shadowColor: "#E07A5F",
     shadowOffset: { width: 0, height: 16 },
@@ -703,28 +867,51 @@ const s = StyleSheet.create({
     elevation: 8,
   },
   bloopImg: {
-    width: 124,
-    height: 124,
+    width: 120,
+    height: 120,
   },
 
   // ── Question text ──────────────────────────────────────────────────────────
   questionWrap: {
     paddingHorizontal: SIDE_PAD,
     alignItems: "center",
-    marginTop: 0,
-    marginBottom: 14,
-    gap: 4,
+    marginTop: 2,
+    marginBottom: 16,
+    gap: 6,
+  },
+  pathwayPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(248,244,248,0.96)",
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.70)",
+    shadowColor: C.terracotta,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  pathwayPillText: {
+    fontFamily: F.uiBlack,
+    fontSize: 10,
+    color: C.terracotta,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
   },
   question: {
-    fontFamily: F.luxuryBold,              // PlayfairDisplay Bold — hero question
-    fontSize: 31,
-    lineHeight: 37,
+    fontFamily: F.luxuryBold,
+    fontSize: 30,
+    lineHeight: 36,
     color: C.text,
     textAlign: "center",
     letterSpacing: 0.1,
   },
   questionSub: {
-    fontFamily: F.uiMedium,                // Nunito Medium — gentle supporting line
+    fontFamily: F.uiMedium,
     fontSize: 13,
     color: C.muted,
     textAlign: "center",
@@ -741,27 +928,27 @@ const s = StyleSheet.create({
     gap: CARD_GAP,
   },
 
-  // ── NeedTile — half-width card ────────────────────────────────────────────
+  // ── NeedTile ─────────────────────────────────────────────────────────────
   tileShell: {
     width: HALF_W,
     borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.82)",
+    borderWidth: 1,
+    borderColor: "rgba(228,218,224,0.70)",
     backgroundColor: "#FFFFFF",
     shadowColor: "#9E7080",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.09,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 3,
     overflow: "hidden",
   },
   tileLocked: {
-    opacity: 0.68,
+    borderColor: "rgba(201,169,110,0.32)",
   },
   tileGrad: {
     borderRadius: 26,
-    padding: 13,
-    minHeight: 146,
+    padding: 14,
+    minHeight: 158,
     justifyContent: "space-between",
   },
   tileBadge: {
@@ -778,57 +965,80 @@ const s = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 6,
     elevation: 4,
+    zIndex: 2,
   },
   tileIllusWrap: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 4,
-    paddingBottom: 4,
+    paddingVertical: 6,
+  },
+  tileIconGlow: {
+    position: "absolute",
+    width: 86,
+    height: 86,
+    borderRadius: 43,
   },
   tileIllusBubble: {
-    width: 66,
-    height: 66,
+    width: 68,
+    height: 68,
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.07,
     shadowRadius: 10,
     elevation: 2,
   },
-  tileIllusImg: {
-    width: 56,
-    height: 56,
+  tileLabelArea: {
+    gap: 5,
+    paddingTop: 2,
   },
   tileLabel: {
-    fontFamily: F.uiBold,                  // Nunito Bold — card label
+    fontFamily: F.uiBold,
     fontSize: 14,
     lineHeight: 18,
     color: C.text,
-    marginTop: 2,
   },
-  lockedLabel: {
-    fontFamily: F.uiBlack,
+  tileSub: {
+    fontFamily: F.uiRegular,
+    fontSize: 11,
+    color: C.muted,
+    lineHeight: 14,
+  },
+  premiumChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(201,169,110,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(201,169,110,0.32)",
+    alignSelf: "flex-start",
+  },
+  premiumChipText: {
+    fontFamily: F.uiBold,
     fontSize: 9,
     color: C.gold,
-    letterSpacing: 0.6,
-    marginTop: 3,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
 
-  // ── CycleTile — full-width card ───────────────────────────────────────────
+  // ── CycleTile ─────────────────────────────────────────────────────────────
   cycleShell: {
     width: "100%",
     borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.82)",
+    borderWidth: 1,
+    borderColor: "rgba(228,218,224,0.70)",
     backgroundColor: "#FFFFFF",
     shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.09,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 3,
     overflow: "hidden",
   },
@@ -839,8 +1049,8 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 12,
-    minHeight: 88,
+    paddingVertical: 14,
+    minHeight: 90,
   },
   cycleLeft: {
     flex: 1,
@@ -852,7 +1062,7 @@ const s = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 18,
-    backgroundColor: "rgba(224,122,95,0.13)",
+    backgroundColor: "rgba(224,122,95,0.11)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -873,21 +1083,30 @@ const s = StyleSheet.create({
     borderColor: "rgba(224,122,95,0.12)",
     borderStyle: "dashed",
   },
+  cycleLabelGroup: {
+    gap: 3,
+  },
   cycleLabel: {
-    fontFamily: F.uiBold,                  // Nunito Bold — card label
+    fontFamily: F.uiBold,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 20,
     color: C.text,
   },
+  cycleSub: {
+    fontFamily: F.uiRegular,
+    fontSize: 12,
+    color: C.muted,
+    lineHeight: 15,
+  },
   cycleImgWrap: {
-    width: 120,
-    height: 96,
+    width: 112,
+    height: 90,
     alignItems: "center",
     justifyContent: "center",
   },
   cycleImg: {
-    width: 120,
-    height: 96,
+    width: 112,
+    height: 90,
   },
 
   // ── Floating CTA bar ──────────────────────────────────────────────────────
@@ -901,9 +1120,9 @@ const s = StyleSheet.create({
     paddingBottom: 36,
     gap: 14,
     alignItems: "center",
-    backgroundColor: "rgba(251,240,230,0.88)",
+    backgroundColor: "rgba(255,255,255,0.96)",
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.72)",
+    borderTopColor: "rgba(232,225,230,0.60)",
   },
   ctaShell: {
     width: "100%",
@@ -923,7 +1142,7 @@ const s = StyleSheet.create({
     gap: 10,
   },
   ctaLabel: {
-    fontFamily: F.uiBlack,                 // Nunito Black — CTA button
+    fontFamily: F.uiBlack,
     color: "#FFFFFF",
     fontSize: 15,
     letterSpacing: 0.5,
@@ -949,6 +1168,115 @@ const s = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: C.terracotta,
+  },
+
+  // ── Header center ─────────────────────────────────────────────────────────
+  headerCenter: {
+    alignItems: "center",
+    flex: 1,
+  },
+
+  // ── Helper text ───────────────────────────────────────────────────────────
+  helperText: {
+    fontFamily: F.uiRegular,
+    fontSize: 12,
+    color: C.muted,
+    textAlign: "center",
+    opacity: 0.85,
+  },
+
+  // ── Locked sheet ──────────────────────────────────────────────────────────
+  lockedSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 50,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.10,
+    shadowRadius: 24,
+    elevation: 20,
+    zIndex: 100,
+  },
+  sheetHandle: {
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    marginBottom: 22,
+  },
+  sheetIconBubble: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: "rgba(201,169,110,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(201,169,110,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontFamily: F.luxuryBold,
+    fontSize: 22,
+    color: C.text,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  sheetBody: {
+    fontFamily: F.uiRegular,
+    fontSize: 14,
+    color: C.muted,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 28,
+    paddingHorizontal: 12,
+  },
+  sheetActions: {
+    width: "100%",
+    gap: 12,
+  },
+  sheetPrimaryBtn: {
+    width: "100%",
+    borderRadius: 999,
+    shadowColor: C.terracotta,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  sheetPrimaryGrad: {
+    height: 54,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetPrimaryLabel: {
+    fontFamily: F.uiBlack,
+    fontSize: 15,
+    color: "#FFFFFF",
+    letterSpacing: 0.4,
+  },
+  sheetGhostBtn: {
+    height: 48,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.80)",
+    backgroundColor: "rgba(250,247,249,0.98)",
+  },
+  sheetGhostLabel: {
+    fontFamily: F.uiBold,
+    fontSize: 14,
+    color: C.muted,
   },
 
   // ── Shared ────────────────────────────────────────────────────────────────

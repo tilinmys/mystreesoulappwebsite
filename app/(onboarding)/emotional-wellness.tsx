@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Easing,
   PanResponder,
   Pressable,
   ScrollView,
@@ -174,6 +175,24 @@ export default function EmotionalWellnessScreen() {
   const [stress,        setStress       ] = useState(68);   // 0–100
   const [selectedSleep, setSelectedSleep] = useState(defaults.sleep);
 
+  const [supportSheetVisible, setSupportSheetVisible] = useState(false);
+  const supportSheetAnim = useRef(new Animated.Value(0)).current;
+
+  const showSupportSheet = () => {
+    setSupportSheetVisible(true);
+    Animated.timing(supportSheetAnim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  };
+
+  const hideSupportSheet = () => {
+    Animated.timing(supportSheetAnim, { toValue: 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => setSupportSheetVisible(false));
+  };
+
+  // ── Screen entrance ────────────────────────────────────────────────────────
+  const entranceOp = useRef(new Animated.Value(0)).current;
+  const entranceY  = useRef(new Animated.Value(10)).current;
+  const cardsOp    = useRef(new Animated.Value(0)).current;
+  const cardsY     = useRef(new Animated.Value(8)).current;
+
   // ── Hero animations ──────────────────────────────────────────────────────
   const breathe = useRef(new Animated.Value(0)).current;
   const floatY  = useRef(new Animated.Value(0)).current;
@@ -203,6 +222,16 @@ export default function EmotionalWellnessScreen() {
       mkLoop(petal2,  7200, 0, 1),
     ];
     animations.forEach((a) => a.start());
+
+    Animated.parallel([
+      Animated.timing(entranceOp, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(entranceY,  { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+    Animated.parallel([
+      Animated.timing(cardsOp, { toValue: 1, duration: 520, delay: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(cardsY,  { toValue: 0, duration: 520, delay: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+
     return () => animations.forEach((a) => a.stop());
   }, [breathe, floatY, auraOp, petal1, petal2]);
 
@@ -226,14 +255,7 @@ export default function EmotionalWellnessScreen() {
 
   return (
     <View style={s.root}>
-      {/* Background gradient */}
-      <LinearGradient
-        colors={["#FCE0D0", "#F5DCF0", "#E8DFF8", "#FAECD4"]}
-        locations={[0, 0.30, 0.64, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Ambient blobs */}
+      {/* Ambient blobs — atmosphere only */}
       <View pointerEvents="none" style={s.blob1} />
       <View pointerEvents="none" style={s.blob2} />
       <View pointerEvents="none" style={s.blob3} />
@@ -244,12 +266,29 @@ export default function EmotionalWellnessScreen() {
       <SafeAreaView style={s.safe} edges={["top", "left", "right"]}>
         {/* ── Header row ────────────────────────────────────────────── */}
         <View style={s.headerRow}>
-          <View>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={20} color={C.onVariant} />
+          </Pressable>
+          <View style={s.headerCenter}>
             <Text style={s.brandName}>MyStree Soul</Text>
             <Text style={s.brandSub}>Your feelings matter here.</Text>
           </View>
-          <View style={s.lotusBtn}>
-            <MaterialCommunityIcons name="spa" size={20} color={C.onVariant} />
+          {/* Step 4/4 badge */}
+          <View style={s.progressRingOuter}>
+            <LinearGradient
+              colors={["#E07A5F", "#F4A27D"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.progressRing}
+            >
+              <Text style={s.progressNum}>4</Text>
+              <Text style={s.progressSlash}>/</Text>
+              <Text style={s.progressDenom}>4</Text>
+            </LinearGradient>
           </View>
         </View>
 
@@ -306,14 +345,17 @@ export default function EmotionalWellnessScreen() {
           </View>
 
           {/* ── Heading ──────────────────────────────────────────────── */}
-          <View style={s.focusPill}>
-            <MaterialCommunityIcons name="star-four-points" size={12} color={C.terra} />
-            <Text style={s.focusPillText}>{prompt.focusLabel}</Text>
-          </View>
-          <Text style={s.heading}>How is your Mood Today?</Text>
-          <Text style={s.headingSub}>{prompt.subheading}</Text>
+          <Animated.View style={{ opacity: entranceOp, transform: [{ translateY: entranceY }] }}>
+            <View style={s.focusPill}>
+              <MaterialCommunityIcons name="star-four-points" size={12} color={C.terra} />
+              <Text style={s.focusPillText}>{prompt.focusLabel}</Text>
+            </View>
+            <Text style={s.heading}>{prompt.heading}</Text>
+            <Text style={s.headingSub}>{prompt.subheading}</Text>
+          </Animated.View>
 
           {/* ── 3×2 Mood grid ───────────────────────────────────────── */}
+          <Animated.View style={{ opacity: cardsOp, transform: [{ translateY: cardsY }], width: "100%" }}>
           <View style={s.moodGrid}>
             {MOODS.map((mood) => (
               <MoodCard
@@ -324,6 +366,8 @@ export default function EmotionalWellnessScreen() {
               />
             ))}
           </View>
+
+          </Animated.View>
 
           {/* ── Energy & Stress sliders ──────────────────────────────── */}
           <View style={s.glassCard}>
@@ -376,7 +420,8 @@ export default function EmotionalWellnessScreen() {
           {/* ── Support banner ───────────────────────────────────────── */}
           <Pressable
             style={({ pressed }) => [s.supportBanner, pressed && s.pressed]}
-            onPress={() => {/* future: navigate to resources */}}
+            onPress={showSupportSheet}
+            accessibilityLabel="Open support options"
           >
             <View style={s.supportIconWrap}>
               <LinearGradient
@@ -386,7 +431,7 @@ export default function EmotionalWellnessScreen() {
                 <Ionicons name="heart" size={16} color="#C25C7E" />
               </LinearGradient>
             </View>
-            <Text style={s.supportText}>Support is always available.</Text>
+            <Text style={s.supportText}>Connect with Bloop.</Text>
             <Ionicons name="chevron-forward" size={16} color={C.onVariant} />
           </Pressable>
 
@@ -408,17 +453,21 @@ export default function EmotionalWellnessScreen() {
 
           {/* ── Page dots ─────────────────────────────────────────────── */}
           <View style={s.dotsRow}>
-            {[0, 1, 2, 3, 4].map((i) =>
-              i === 3 ? (
-                <View key={i} style={s.dotActive} />
-              ) : (
-                <View key={i} style={s.dot} />
-              )
-            )}
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <View key={i} style={[s.dot, i === 3 && s.dotActive]} />
+            ))}
           </View>
 
           <View style={{ height: 32 }} />
         </ScrollView>
+
+        {/* ── Bloop connect modal ──────────────────────────────────── */}
+        {supportSheetVisible && (
+          <BloopConnectModal
+            sheetAnim={supportSheetAnim}
+            onClose={hideSupportSheet}
+          />
+        )}
       </SafeAreaView>
     </View>
   );
@@ -519,18 +568,26 @@ function SliderRow({
   midLabel: string;
   rightLabel: string;
 }) {
-  const trackWidth = useRef(0);
+  // Use pageX (absolute screen coords) to eliminate locationX jitter
+  const trackRef     = useRef<View>(null);
+  const trackAbsLeft = useRef(0);
+  const trackW       = useRef(0);
 
   const responder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder:  () => true,
       onPanResponderGrant: (e) => {
-        const pct = e.nativeEvent.locationX / (trackWidth.current || 1);
+        // Re-measure absolute position each gesture start so scroll offset is fresh
+        trackRef.current?.measure((_x, _y, width, _h, pageX) => {
+          trackAbsLeft.current = pageX;
+          trackW.current = width;
+        });
+        const pct = (e.nativeEvent.pageX - trackAbsLeft.current) / (trackW.current || 1);
         onChange(Math.round(Math.max(0, Math.min(100, pct * 100))));
       },
       onPanResponderMove: (e) => {
-        const pct = e.nativeEvent.locationX / (trackWidth.current || 1);
+        const pct = (e.nativeEvent.pageX - trackAbsLeft.current) / (trackW.current || 1);
         onChange(Math.round(Math.max(0, Math.min(100, pct * 100))));
       },
     })
@@ -553,7 +610,14 @@ function SliderRow({
       {/* Track */}
       <View style={s.sliderRight}>
         <View
-          onLayout={(e) => { trackWidth.current = e.nativeEvent.layout.width; }}
+          ref={trackRef}
+          onLayout={() => {
+            // Capture absolute left + width after layout so pageX math is ready
+            trackRef.current?.measure((_x, _y, width, _h, pageX) => {
+              trackAbsLeft.current = pageX;
+              trackW.current = width;
+            });
+          }}
           style={s.sliderTrack}
           {...responder.panHandlers}
         >
@@ -631,6 +695,75 @@ function SleepCard({
   );
 }
 
+// ─── BloopConnectModal ───────────────────────────────────────────────────────
+// Shown when user taps "Connect with Bloop". No phone numbers — just the mascot
+// and a message to complete onboarding first.
+function BloopConnectModal({
+  sheetAnim,
+  onClose,
+}: {
+  sheetAnim: Animated.Value;
+  onClose: () => void;
+}) {
+  const translateY = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [440, 0] });
+  const overlayOp  = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.50] });
+
+  return (
+    <>
+      {/* Dim overlay */}
+      <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#120B0D", opacity: overlayOp }]}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Dismiss" />
+      </Animated.View>
+
+      {/* Bottom sheet */}
+      <Animated.View style={[s.supportSheet, { transform: [{ translateY }] }]}>
+        <View style={s.sheetHandle} />
+
+        {/* Bloop mascot */}
+        <View style={s.bloopModalArea}>
+          <View style={s.bloopModalHalo} />
+          <CachedImage
+            source={imgBloop}
+            style={s.bloopModalImg}
+            contentFit="contain"
+          />
+        </View>
+
+        <Text style={s.sheetTitle}>Meet Bloop 🌸</Text>
+        <Text style={s.sheetBody}>
+          Complete your onboarding to start chatting with Bloop — your personal wellness companion.
+        </Text>
+
+        <View style={s.sheetActions}>
+          {/* Primary CTA */}
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [s.sheetPrimaryBtn, pressed && s.pressed]}
+          >
+            <LinearGradient
+              colors={["#E07A5F", "#F4A27D"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={s.sheetPrimaryGrad}
+            >
+              <MaterialCommunityIcons name="robot-happy-outline" size={20} color="#FFF" />
+              <Text style={s.sheetPrimaryLabel}>Got it, let's continue!</Text>
+            </LinearGradient>
+          </Pressable>
+
+          {/* Ghost dismiss */}
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [s.sheetGhostBtn, pressed && s.pressed]}
+          >
+            <Text style={s.sheetGhostLabel}>Maybe later</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </>
+  );
+}
+
 // ─── Floating particles (ambient background) ─────────────────────────────────
 const PARTICLE_SEEDS = [
   { top: 80,  left: "8%",  size: 8,  delay: 0    },
@@ -642,7 +775,7 @@ const PARTICLE_SEEDS = [
 ] as const;
 
 function FloatingParticles() {
-  const anims = useRef(PARTICLE_SEEDS.map(() => new Animated.Value(0.14))).current;
+  const anims = useRef(PARTICLE_SEEDS.map(() => new Animated.Value(0.06))).current;
 
   useEffect(() => {
     const loops = anims.map((anim, i) => {
@@ -650,8 +783,8 @@ function FloatingParticles() {
       const loop = Animated.loop(
         Animated.sequence([
           Animated.delay(seed.delay),
-          Animated.timing(anim, { toValue: 0.44, duration: 2400, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.12, duration: 2400, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.18, duration: 2400, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.06, duration: 2400, useNativeDriver: true }),
         ])
       );
       loop.start();
@@ -673,7 +806,7 @@ function FloatingParticles() {
               width: seed.size,
               height: seed.size,
               borderRadius: seed.size / 2,
-              backgroundColor: "rgba(224,122,95,0.55)",
+              backgroundColor: "rgba(224,122,95,0.30)",
               opacity: anims[i],
             },
           ]}
@@ -687,49 +820,69 @@ function FloatingParticles() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FCE0D0",
+    backgroundColor: "#FFFFFF",
   },
   safe: {
     flex: 1,
   },
 
-  // Blobs
+  // Blobs — atmosphere only, 8-10% opacity
   blob1: {
     position: "absolute",
-    top: -160,
-    left: -120,
-    width: 420,
-    height: 420,
-    borderRadius: 210,
-    backgroundColor: "rgba(240,190,200,0.34)",
-  },
-  blob2: {
-    position: "absolute",
-    top: 300,
-    right: -180,
+    top: -140,
+    left: -110,
     width: 400,
     height: 400,
     borderRadius: 200,
-    backgroundColor: "rgba(214,174,230,0.22)",
+    backgroundColor: "rgba(255,183,183,0.10)",
+  },
+  blob2: {
+    position: "absolute",
+    top: 320,
+    right: -160,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: "rgba(189,172,255,0.08)",
   },
   blob3: {
     position: "absolute",
-    bottom: -100,
-    left: -80,
-    width: 360,
-    height: 360,
-    borderRadius: 180,
-    backgroundColor: "rgba(198,228,200,0.18)",
+    bottom: -80,
+    left: -90,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: "rgba(162,202,178,0.08)",
   },
 
   // Header
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: SIDE_PAD,
     paddingTop: 8,
     paddingBottom: 6,
+    gap: 10,
+  },
+  headerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(248,244,248,0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.70)",
+    shadowColor: C.onVariant,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+    flexShrink: 0,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
   },
   brandName: {
     fontFamily: F.luxuryBold,
@@ -743,20 +896,40 @@ const s = StyleSheet.create({
     color: C.onVariant,
     marginTop: 1,
   },
-  lotusBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  progressRingOuter: {
+    shadowColor: C.terra,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 6,
+    borderRadius: 28,
+  },
+  progressRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.surface,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    shadowColor: "#8B5E6D",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 10,
-    elevation: 2,
+    flexDirection: "row",
+    gap: 1,
+  },
+  progressNum: {
+    fontFamily: F.uiExtraBold,
+    fontSize: 18,
+    color: "#FFF",
+    lineHeight: 22,
+  },
+  progressSlash: {
+    fontFamily: F.uiLight,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.70)",
+    lineHeight: 22,
+  },
+  progressDenom: {
+    fontFamily: F.uiMedium,
+    fontSize: 13,
+    color: "rgba(255,255,255,0.80)",
+    lineHeight: 22,
   },
 
   // ScrollView
@@ -846,9 +1019,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.58)",
+    backgroundColor: "rgba(248,244,248,0.98)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.82)",
+    borderColor: "rgba(232,225,230,0.70)",
     marginBottom: 10,
   },
   focusPillText: {
@@ -948,13 +1121,13 @@ const s = StyleSheet.create({
   glassCard: {
     borderRadius: 28,
     padding: 20,
-    backgroundColor: C.surface,
+    backgroundColor: "rgba(250,247,249,0.98)",
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#8B5E6D",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
     elevation: 3,
     marginBottom: 14,
   },
@@ -1093,15 +1266,15 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: C.surface,
+    backgroundColor: "rgba(250,247,249,0.98)",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: "rgba(232,225,230,0.70)",
     padding: 14,
     marginBottom: 14,
     shadowColor: "#8B5E6D",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.06,
     shadowRadius: 14,
     elevation: 2,
   },
@@ -1170,6 +1343,123 @@ const s = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "rgba(224,122,95,0.28)",
+  },
+
+  // Support sheet
+  supportSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 52,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.10,
+    shadowRadius: 24,
+    elevation: 20,
+    zIndex: 100,
+  },
+  sheetHandle: {
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    marginBottom: 22,
+  },
+  sheetIconBubble: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "rgba(194,92,126,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(194,92,126,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  sheetTitle: {
+    fontFamily: F.luxuryBold,
+    fontSize: 22,
+    color: C.onSurface,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  sheetBody: {
+    fontFamily: F.uiRegular,
+    fontSize: 14,
+    color: C.onVariant,
+    textAlign: "center",
+    lineHeight: 21,
+    marginBottom: 26,
+    paddingHorizontal: 8,
+  },
+  sheetActions: {
+    width: "100%",
+    gap: 11,
+  },
+  sheetPrimaryBtn: {
+    width: "100%",
+    borderRadius: 999,
+    shadowColor: C.terra,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  sheetPrimaryGrad: {
+    height: 54,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+  },
+  sheetPrimaryLabel: {
+    fontFamily: F.uiBlack,
+    fontSize: 15,
+    color: "#FFFFFF",
+    letterSpacing: 0.4,
+  },
+  // Bloop mascot in modal
+  bloopModalArea: {
+    width: 120,
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  bloopModalHalo: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(240,190,200,0.30)",
+  },
+  bloopModalImg: {
+    width: 104,
+    height: 96,
+  },
+
+  sheetGhostBtn: {
+    height: 46,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(232,225,230,0.80)",
+    backgroundColor: "rgba(250,247,249,0.98)",
+  },
+  sheetGhostLabel: {
+    fontFamily: F.uiBold,
+    fontSize: 14,
+    color: C.onVariant,
   },
 
   // Misc

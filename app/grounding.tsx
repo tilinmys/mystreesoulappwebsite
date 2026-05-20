@@ -11,6 +11,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -360,7 +361,7 @@ function BreathingOrb({ phaseText }: { phaseText: string }) {
 
 // ── Square action card ────────────────────────────────────────────────────────
 function ActionCard({ icon, label, color, onPress }: {
-  icon: string; label: string; color: string; onPress?: () => void;
+  icon: string; label: string; color: string; onPress: () => void;
 }) {
   return (
     <Pressable
@@ -380,6 +381,9 @@ export default function GroundingScreen() {
   const router = useRouter();
   const safeBack = useSafeBack();
   const [phaseIdx, setPhaseIdx] = useState(0);
+  const [supportSheetOpen, setSupportSheetOpen] = useState(false);
+  const [therapistSheetOpen, setTherapistSheetOpen] = useState(false);
+  const [audioPlaying, setAudioPlaying] = useState(false);
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -388,6 +392,25 @@ export default function GroundingScreen() {
     return () => clearInterval(iv);
   }, []);
 
+  const talkToBloop = (prompt: string) => {
+    router.push({
+      pathname: "/bloop-chat",
+      params: {
+        prompt,
+        source: "Grounding",
+        autoSend: "true",
+      },
+    } as any);
+  };
+
+  const callSupport = () => {
+    Linking.openURL("tel:9152987821").catch(() => undefined);
+  };
+
+  const resetBreathing = () => {
+    setPhaseIdx(0);
+  };
+
   return (
     <LinearGradient colors={[...C.bg]} style={styles.root}>
       <BackgroundSparkles />
@@ -395,7 +418,12 @@ export default function GroundingScreen() {
 
         {/* ── Header ────────────────────────────────────────────────────── */}
         <View style={styles.header}>
-          <Pressable style={styles.headerCircleBtn} onPress={safeBack}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close grounding"
+            style={styles.headerCircleBtn}
+            onPress={safeBack}
+          >
             <MaterialCommunityIcons name="close" size={18} color={C.deep} />
           </Pressable>
 
@@ -404,7 +432,12 @@ export default function GroundingScreen() {
             <MaterialCommunityIcons name="heart-outline" size={16} color={C.lavender} style={{ marginLeft: 5, marginTop: 1 }} />
           </View>
 
-          <Pressable style={styles.headerCircleBtn}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open support options"
+            style={styles.headerCircleBtn}
+            onPress={() => setSupportSheetOpen(true)}
+          >
             <Text style={styles.helpText}>?</Text>
           </Pressable>
         </View>
@@ -440,7 +473,15 @@ export default function GroundingScreen() {
                 icon={a.icon}
                 label={a.label}
                 color={a.color}
-                onPress={a.id === "qa4" ? () => router.push("/bloop-chat" as any) : undefined}
+                onPress={
+                  a.id === "qa1"
+                    ? () => talkToBloop("Help me calm my thoughts right now.")
+                    : a.id === "qa2"
+                      ? resetBreathing
+                      : a.id === "qa3"
+                        ? () => setAudioPlaying((current) => !current)
+                        : () => talkToBloop("I need grounding support right now.")
+                }
               />
             ))}
           </View>
@@ -465,14 +506,24 @@ export default function GroundingScreen() {
               style={StyleSheet.absoluteFill}
             />
             {/* Play button */}
-            <Pressable style={styles.audioPlayBtn}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={audioPlaying ? "Pause calming rain preview" : "Play calming rain preview"}
+              style={styles.audioPlayBtn}
+              onPress={() => setAudioPlaying((current) => !current)}
+            >
               <LinearGradient
-                colors={["#C4A0FF", "#8A56D8"]}
+                colors={audioPlaying ? ["#8A56D8", "#6F46BC"] : ["#C4A0FF", "#8A56D8"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.audioPlayGrad}
               >
-                <MaterialCommunityIcons name="play" size={18} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                <MaterialCommunityIcons
+                  name={audioPlaying ? "pause" : "play"}
+                  size={18}
+                  color="#FFFFFF"
+                  style={{ marginLeft: audioPlaying ? 0 : 2 }}
+                />
               </LinearGradient>
             </Pressable>
 
@@ -484,7 +535,7 @@ export default function GroundingScreen() {
             {/* Track info */}
             <View style={styles.audioInfo}>
               <Text style={styles.audioTitle}>Calming Rain</Text>
-              <Text style={styles.audioDur}>8 min</Text>
+              <Text style={styles.audioDur}>{audioPlaying ? "Preview playing" : "8 min preview"}</Text>
             </View>
             <MaterialCommunityIcons name="cloud-outline" size={20} color={C.lavender} />
           </View>
@@ -493,7 +544,21 @@ export default function GroundingScreen() {
           <Text style={styles.reachTitle}>Reach out if you need</Text>
           <View style={styles.actionGrid}>
             {REACH_ITEMS.map(r => (
-              <ActionCard key={r.id} icon={r.icon} label={r.label} color={r.color} />
+              <ActionCard
+                key={r.id}
+                icon={r.icon}
+                label={r.label}
+                color={r.color}
+                onPress={
+                  r.id === "r2"
+                    ? () => setSupportSheetOpen(true)
+                    : r.id === "r3"
+                      ? () => setTherapistSheetOpen(true)
+                      : r.id === "r4"
+                        ? () => talkToBloop("Help me decide who from my care team I should reach out to.")
+                        : () => setSupportSheetOpen(true)
+                }
+              />
             ))}
           </View>
 
@@ -504,6 +569,84 @@ export default function GroundingScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {supportSheetOpen ? (
+        <View style={styles.sheetLayer}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSupportSheetOpen(false)} />
+          <View style={styles.supportSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Support is here</Text>
+            <Text style={styles.sheetBody}>
+              Choose one gentle next step. You do not have to explain everything right now.
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              style={styles.sheetPrimary}
+              onPress={() => talkToBloop("I need support right now. Please stay with me and help me ground.")}
+            >
+              <MaterialCommunityIcons name="message-processing-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.sheetPrimaryText}>Talk to Bloop</Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              style={styles.sheetOption}
+              onPress={callSupport}
+            >
+              <MaterialCommunityIcons name="phone-in-talk-outline" size={18} color={C.lavender} />
+              <Text style={styles.sheetOptionText}>Call iCall support: 9152987821</Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              style={styles.sheetClose}
+              onPress={() => setSupportSheetOpen(false)}
+            >
+              <Text style={styles.sheetCloseText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {therapistSheetOpen ? (
+        <View style={styles.sheetLayer}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setTherapistSheetOpen(false)} />
+          <View style={styles.supportSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Therapist support</Text>
+            <Text style={styles.sheetBody}>
+              Expert sessions are a guided support feature. For now, Bloop can help you name what you need and choose a safe next step.
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              style={styles.sheetPrimary}
+              onPress={() => talkToBloop("I want therapist support. Help me understand what kind of help I may need.")}
+            >
+              <MaterialCommunityIcons name="message-processing-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.sheetPrimaryText}>Ask Bloop first</Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              style={styles.sheetOption}
+              onPress={() => router.push("/premium" as any)}
+            >
+              <MaterialCommunityIcons name="crown-outline" size={18} color={C.lavender} />
+              <Text style={styles.sheetOptionText}>View expert support</Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              style={styles.sheetClose}
+              onPress={() => setTherapistSheetOpen(false)}
+            >
+              <Text style={styles.sheetCloseText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </LinearGradient>
   );
 }
@@ -802,5 +945,91 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     color: C.muted,
     letterSpacing: 0.2,
+  },
+
+  // Support sheet
+  sheetLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(45,43,61,0.18)",
+    justifyContent: "flex-end",
+  },
+  supportSheet: {
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 26,
+    shadowColor: "#7B6FA8",
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(138,86,216,0.22)",
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontFamily: F.luxuryBold,
+    fontSize: 22,
+    color: C.deep,
+    textAlign: "center",
+  },
+  sheetBody: {
+    fontFamily: F.uiRegular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: C.muted,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  sheetPrimary: {
+    minHeight: 52,
+    borderRadius: 18,
+    backgroundColor: C.lavender,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  sheetPrimaryText: {
+    fontFamily: F.uiSemiBold,
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
+  sheetOption: {
+    minHeight: 52,
+    borderRadius: 18,
+    backgroundColor: C.lavPale,
+    borderWidth: 1,
+    borderColor: "rgba(138,86,216,0.12)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  sheetOptionText: {
+    fontFamily: F.uiSemiBold,
+    fontSize: 14,
+    color: C.deep,
+  },
+  sheetClose: {
+    minHeight: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetCloseText: {
+    fontFamily: F.uiSemiBold,
+    fontSize: 14,
+    color: C.muted,
   },
 });

@@ -24,17 +24,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "./assets/fonts/PlayfairDisplay_700Bold.ttf",
-            "./assets/fonts/PlayfairDisplay_800ExtraBold.ttf",
-            "./assets/fonts/PlayfairDisplay_400Regular_Italic.ttf"
-          ]
-        }
-      ]
+      "expo-secure-store"
     ]
   }
 }

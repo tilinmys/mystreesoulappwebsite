@@ -2,72 +2,88 @@ import * as Font from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 
-// ── Caveat — handwritten warmth ───────────────────────────────────────────────
+// ── Fraunces — warm serif display (headers, greetings, hero moments) ──────────
 import {
-  Caveat_400Regular,
-  Caveat_500Medium,
-  Caveat_600SemiBold,
-  Caveat_700Bold,
-} from "@expo-google-fonts/caveat";
+  Fraunces_300Light,
+  Fraunces_300Light_Italic,
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_500Medium,
+  Fraunces_500Medium_Italic,
+  Fraunces_600SemiBold,
+  Fraunces_600SemiBold_Italic,
+  Fraunces_700Bold,
+  Fraunces_700Bold_Italic,
+} from "@expo-google-fonts/fraunces";
 
-// ── Nunito — rounded UI sans ──────────────────────────────────────────────────
+// ── Montserrat — geometric sans (subheads, category chips, body copy) ─────────
 import {
-  Nunito_300Light,
-  Nunito_400Regular,
-  Nunito_500Medium,
-  Nunito_600SemiBold,
-  Nunito_700Bold,
-  Nunito_800ExtraBold,
-  Nunito_900Black,
-} from "@expo-google-fonts/nunito";
+  Montserrat_300Light,
+  Montserrat_300Light_Italic,
+  Montserrat_400Regular,
+  Montserrat_400Regular_Italic,
+  Montserrat_500Medium,
+  Montserrat_500Medium_Italic,
+  Montserrat_600SemiBold,
+  Montserrat_600SemiBold_Italic,
+  Montserrat_700Bold,
+} from "@expo-google-fonts/montserrat";
 
-// ── Cormorant Garamond — calligraphic body serif ──────────────────────────────
-import { CormorantGaramond_300Light } from "@expo-google-fonts/cormorant-garamond/300Light";
-import { CormorantGaramond_300Light_Italic } from "@expo-google-fonts/cormorant-garamond/300Light_Italic";
-import { CormorantGaramond_400Regular } from "@expo-google-fonts/cormorant-garamond/400Regular";
-import { CormorantGaramond_400Regular_Italic } from "@expo-google-fonts/cormorant-garamond/400Regular_Italic";
-import { CormorantGaramond_500Medium } from "@expo-google-fonts/cormorant-garamond/500Medium";
-import { CormorantGaramond_500Medium_Italic } from "@expo-google-fonts/cormorant-garamond/500Medium_Italic";
-import { CormorantGaramond_600SemiBold } from "@expo-google-fonts/cormorant-garamond/600SemiBold";
+// ── Inter — clean UI sans (buttons, numbers, body, form fields) ───────────────
+import {
+  Inter_300Light,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from "@expo-google-fonts/inter";
 
 import { preloadAppImages } from "../components/imagePreload";
-import { OfflineBanner } from "../components/system/OfflineBanner";
+import { useColorMode } from "../hooks/useColorMode";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useRouteGuard } from "../hooks/useRouteGuard";
 
 export default function RootLayout() {
   useRouteGuard();
   useNetworkStatus();
+  const { colors, isDark } = useColorMode();
   const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
     void Font.loadAsync({
-      // ── Playfair Display (luxury/premium moments) ──────────────────────────
-      PlayfairDisplay_700Bold:           require("../assets/fonts/PlayfairDisplay_700Bold.ttf"),
-      PlayfairDisplay_800ExtraBold:      require("../assets/fonts/PlayfairDisplay_800ExtraBold.ttf"),
-      PlayfairDisplay_400Regular_Italic: require("../assets/fonts/PlayfairDisplay_400Regular_Italic.ttf"),
-      // ── Caveat (handwritten warmth) ────────────────────────────────────────
-      Caveat_400Regular,
-      Caveat_500Medium,
-      Caveat_600SemiBold,
-      Caveat_700Bold,
-      // ── Nunito (rounded UI sans) ───────────────────────────────────────────
-      Nunito_300Light,
-      Nunito_400Regular,
-      Nunito_500Medium,
-      Nunito_600SemiBold,
-      Nunito_700Bold,
-      Nunito_800ExtraBold,
-      Nunito_900Black,
-      // ── Cormorant Garamond (calligraphic body serif) ───────────────────────
-      CormorantGaramond_300Light,
-      CormorantGaramond_300Light_Italic,
-      CormorantGaramond_400Regular,
-      CormorantGaramond_400Regular_Italic,
-      CormorantGaramond_500Medium,
-      CormorantGaramond_500Medium_Italic,
-      CormorantGaramond_600SemiBold,
+      // ── Fraunces (warm serif — headers, greetings, luxury moments) ──────────
+      Fraunces_300Light,
+      Fraunces_300Light_Italic,
+      Fraunces_400Regular,
+      Fraunces_400Regular_Italic,
+      Fraunces_500Medium,
+      Fraunces_500Medium_Italic,
+      Fraunces_600SemiBold,
+      Fraunces_600SemiBold_Italic,
+      Fraunces_700Bold,
+      Fraunces_700Bold_Italic,
+      // ── Montserrat (geometric sans — subheads, chips, body copy) ────────────
+      Montserrat_300Light,
+      Montserrat_300Light_Italic,
+      Montserrat_400Regular,
+      Montserrat_400Regular_Italic,
+      Montserrat_500Medium,
+      Montserrat_500Medium_Italic,
+      Montserrat_600SemiBold,
+      Montserrat_600SemiBold_Italic,
+      Montserrat_700Bold,
+      // ── Inter (clean UI sans — buttons, numbers, interface copy) ────────────
+      Inter_300Light,
+      Inter_400Regular,
+      Inter_500Medium,
+      Inter_600SemiBold,
+      Inter_700Bold,
+      Inter_800ExtraBold,
+      Inter_900Black,
     }).then(() => setFontsReady(true));
   }, []);
 
@@ -75,22 +91,43 @@ export default function RootLayout() {
     void preloadAppImages();
   }, []);
 
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverscroll = root.style.overscrollBehaviorY;
+    const previousBodyOverscroll = body.style.overscrollBehaviorY;
+    const previousBodyBackground = body.style.backgroundColor;
+    const previousRootBackground = root.style.backgroundColor;
+
+    root.style.overscrollBehaviorY = "none";
+    body.style.overscrollBehaviorY = "none";
+    root.style.backgroundColor = colors.background;
+    body.style.backgroundColor = colors.background;
+
+    return () => {
+      root.style.overscrollBehaviorY = previousRootOverscroll;
+      body.style.overscrollBehaviorY = previousBodyOverscroll;
+      root.style.backgroundColor = previousRootBackground;
+      body.style.backgroundColor = previousBodyBackground;
+    };
+  }, [colors.background]);
+
   return (
     <>
-      <StatusBar style="dark" backgroundColor="#FBF8F5" />
+      <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.background} />
       <Stack
         screenOptions={{
           animation: "fade",
-          contentStyle: { backgroundColor: "#FAF9F6" },
+          contentStyle: { backgroundColor: colors.background },
           headerShown: false
         }}
       >
-        <Stack.Screen name="index" />
         <Stack.Screen name="welcome" options={{ animation: "fade" }} />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
       </Stack>
-      <OfflineBanner />
     </>
   );
 }

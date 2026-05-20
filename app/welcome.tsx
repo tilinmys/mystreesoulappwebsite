@@ -1,657 +1,548 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Dimensions,
-  Easing,
-  Pressable,
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle, Ellipse, Path } from "react-native-svg";
-import { CachedImage } from "../components/CachedImage";
+import Svg, { Circle, Defs, Ellipse, G, LinearGradient as SvgLinearGradient, Path, Stop } from "react-native-svg";
 import { F } from "../constants/fonts";
 
-const { width: W, height: H } = Dimensions.get("window");
-
-const bloopWelcome = require("../public/images/bloop-welcome.webp");
-const bloopInsight = require("../public/images/bloop-insight.webp");
-const bloopCalm    = require("../public/images/bloop-calm.webp");
-
 const C = {
-  bg:         "#FBF8F5",
-  bgDeep:     "#F2E8DF",
-  text:       "#2B2D42",
-  muted:      "#7D6E66",
-  faint:      "#B5A89F",
-  terracotta: "#E07A5F",
-  peach:      "#F4A261",
-  sage:       "#81B29A",
-  lavender:   "#BDB2FF",
-  card:       "rgba(255,255,255,0.82)",
-  border:     "rgba(224,122,95,0.14)",
+  ink: "#191616",
+  muted: "#554947",
+  rose: "#B77C69",
+  roseSoft: "rgba(183,124,105,0.24)",
+  gold: "#C9AA68",
+  goldSoft: "rgba(201,170,104,0.30)",
+  orange: "#F1663E",
+  peach: "#FF9B4A",
+  sage: "#7F9276",
+  lavender: "#A893BF",
+  footer: "rgba(92,83,80,0.42)",
 };
-
-const FEATURES = [
-  { label: "Cycle Tracking", color: C.terracotta, bg: "rgba(224,122,95,0.10)" },
-  { label: "Mood & Emotions", color: C.sage,       bg: "rgba(129,178,154,0.12)" },
-  { label: "AI Insights",    color: C.lavender,    bg: "rgba(189,178,255,0.14)" },
-  { label: "Nourishment",    color: C.peach,       bg: "rgba(244,162,97,0.12)"  },
-];
 
 export default function WelcomeScreen() {
   const router = useRouter();
-
-  // ── Animation values ───────────────────────────────────────────────
-  const heroOpacity   = useRef(new Animated.Value(0)).current;
-  const heroScale     = useRef(new Animated.Value(0.84)).current;
-  const heroFloat     = useRef(new Animated.Value(0)).current;
-  const haloScale     = useRef(new Animated.Value(0.92)).current;
-  const badgeOpacity  = useRef(new Animated.Value(0)).current;
-  const badgeSlide    = useRef(new Animated.Value(14)).current;
-  const textOpacity   = useRef(new Animated.Value(0)).current;
-  const textSlide     = useRef(new Animated.Value(28)).current;
-  const tagsOpacity   = useRef(new Animated.Value(0)).current;
-  const tagsSlide     = useRef(new Animated.Value(20)).current;
-  const ctaOpacity    = useRef(new Animated.Value(0)).current;
-  const ctaSlide      = useRef(new Animated.Value(30)).current;
-  const trustOpacity  = useRef(new Animated.Value(0)).current;
-  const petal1        = useRef(new Animated.Value(0)).current;
-  const petal2        = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    // ── Entrance sequence ──────────────────────────────────────────
-    Animated.stagger(110, [
-      // 1. Hero image
-      Animated.parallel([
-        Animated.timing(heroOpacity, { toValue: 1, duration: 680, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.spring(heroScale,   { toValue: 1, tension: 52, friction: 8, useNativeDriver: true }),
-      ]),
-      // 2. Badge
-      Animated.parallel([
-        Animated.timing(badgeOpacity, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(badgeSlide,   { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      ]),
-      // 3. Text block
-      Animated.parallel([
-        Animated.timing(textOpacity, { toValue: 1, duration: 560, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(textSlide,   { toValue: 0, duration: 560, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      ]),
-      // 4. Feature tags
-      Animated.parallel([
-        Animated.timing(tagsOpacity, { toValue: 1, duration: 480, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(tagsSlide,   { toValue: 0, duration: 480, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      ]),
-      // 5. CTAs
-      Animated.parallel([
-        Animated.timing(ctaOpacity, { toValue: 1, duration: 460, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(ctaSlide,   { toValue: 0, duration: 460, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      ]),
-      // 6. Trust row
-      Animated.timing(trustOpacity, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-    ]).start();
-
-    // ── Continuous float ───────────────────────────────────────────
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(heroFloat, { toValue: -11, duration: 2900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(heroFloat, { toValue:   0, duration: 2900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    ).start();
-
-    // ── Halo breathe ──────────────────────────────────────────────
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(haloScale, { toValue: 1.06, duration: 3200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(haloScale, { toValue: 0.92, duration: 3200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    ).start();
-
-    // ── Botanical loops ────────────────────────────────────────────
-    const botanicalLoop = (val: Animated.Value, dur: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(val, { toValue: 1, duration: dur, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-          Animated.timing(val, { toValue: 0, duration: dur, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        ])
-      );
-    botanicalLoop(petal1, 9000).start();
-    botanicalLoop(petal2, 12000).start();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const petal1Style = {
-    transform: [
-      { translateX: petal1.interpolate({ inputRange: [0, 1], outputRange: [0,  16] }) },
-      { translateY: petal1.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
-      { rotate:    petal1.interpolate({ inputRange: [0, 1], outputRange: ["-9deg", "9deg"] }) },
-    ],
-  };
-  const petal2Style = {
-    transform: [
-      { translateX: petal2.interpolate({ inputRange: [0, 1], outputRange: [0, -14] }) },
-      { translateY: petal2.interpolate({ inputRange: [0, 1], outputRange: [0,  16] }) },
-      { rotate:    petal2.interpolate({ inputRange: [0, 1], outputRange: ["7deg", "-7deg"] }) },
-    ],
-  };
+  const { width, height } = useWindowDimensions();
+  const compact = height < 760;
+  const logoSize = Math.min(width * 0.54, compact ? 190 : 226);
 
   return (
-    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
-      {/* ── Background gradient ─────────────────────────────── */}
+    <View style={styles.screen}>
       <LinearGradient
-        colors={[C.bg, "#F7EDE4", "#EDE4F0"]}
-        locations={[0, 0.55, 1]}
+        colors={["#EFC6C3", "#F8DDCA", "#EDE4CC", "#DDE9DB", "#F5E6DF"]}
+        locations={[0, 0.28, 0.54, 0.78, 1]}
+        start={{ x: 0.05, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* ── Ambient orbs ────────────────────────────────────── */}
-      <View style={styles.orbTopLeft}   pointerEvents="none" />
-      <View style={styles.orbBottomRight} pointerEvents="none" />
+      <View style={[styles.meshOrb, styles.meshOrbPink]} />
+      <View style={[styles.meshOrb, styles.meshOrbPeach]} />
+      <View style={[styles.meshOrb, styles.meshOrbSage]} />
+      <View style={[styles.meshOrb, styles.meshOrbRose]} />
+      <WaveTrails />
+      <GoldSpeckles />
+      <BotanicalScene width={width} height={height} />
 
-      {/* ── Botanical decorations ────────────────────────────── */}
-      <Animated.View style={[styles.botanicalTR, petal1Style]} pointerEvents="none">
-        <BotanicalBloom />
-      </Animated.View>
-      <Animated.View style={[styles.botanicalBL, petal2Style]} pointerEvents="none">
-        <BotanicalLeaves />
-      </Animated.View>
-
-      {/* ── Main content ─────────────────────────────────────── */}
-      <View style={styles.inner}>
-
-        {/* Hero */}
-        <Animated.View
-          style={[
-            styles.heroSection,
-            {
-              opacity: heroOpacity,
-              transform: [{ scale: heroScale }, { translateY: heroFloat }],
-            },
-          ]}
-        >
-          {/* Outer halo ring (breathes) */}
-          <Animated.View style={[styles.haloOuter, { transform: [{ scale: haloScale }] }]} />
-          {/* Inner halo rings */}
-          <View style={styles.haloMid} />
-          <View style={styles.haloInner} />
-
-          {/* Bloop avatar */}
-          <View style={styles.bloopCircle}>
-            <LinearGradient
-              colors={["rgba(255,248,245,0.98)", "rgba(255,231,214,0.92)"]}
-              style={StyleSheet.absoluteFill}
-            />
-            <CachedImage
-              source={bloopWelcome}
-              style={styles.bloopImage}
-              priority="high"
-            />
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+        <View style={[styles.content, compact && styles.contentCompact]}>
+          <View style={[styles.logoStage, { width: logoSize + 42, height: logoSize + 42 }]}>
+            <View style={[styles.logoGlow, { width: logoSize + 40, height: logoSize + 40, borderRadius: (logoSize + 40) / 2 }]} />
+            <View style={[styles.logoHalo, { width: logoSize + 20, height: logoSize + 20, borderRadius: (logoSize + 20) / 2 }]} />
+            <View style={[styles.logoCircle, { width: logoSize, height: logoSize, borderRadius: logoSize / 2 }]}>
+              <WomanFlowerLogo size={logoSize * 0.78} />
+            </View>
           </View>
 
-          {/* Floating badge — AI companion */}
-          <Animated.View
-            style={[
-              styles.badge,
-              { opacity: badgeOpacity, transform: [{ translateY: badgeSlide }] },
-            ]}
-          >
-            <CachedImage source={bloopInsight} style={styles.badgeBloop} />
-            <View style={styles.badgeText}>
-              <Text style={styles.badgeName}>Bloop</Text>
-              <Text style={styles.badgeSub}>Your AI companion</Text>
-            </View>
-            <View style={styles.onlineDot} />
-          </Animated.View>
+          <View style={styles.copyBlock}>
+            <Text style={[styles.headline, compact && styles.headlineCompact]}>
+              Know your body.{"\n"}Feel like yourself.
+            </Text>
+            <Text style={[styles.subhead, compact && styles.subheadCompact]}>
+              Personalized cycle insights with gentle{"\n"}AI guidance. Private, always.
+            </Text>
+          </View>
 
-          {/* Floating mini card — cycle insight */}
-          <Animated.View
-            style={[
-              styles.miniCard,
-              { opacity: badgeOpacity, transform: [{ translateY: Animated.multiply(badgeSlide, -1) }] },
-            ]}
-          >
-            <CachedImage source={bloopCalm} style={styles.miniCardBloop} />
-            <Text style={styles.miniCardText}>Cycle · Day 14</Text>
-            <View style={styles.miniCardDot} />
-          </Animated.View>
-        </Animated.View>
+          <MoonPhases compact={compact} />
 
-        {/* Text block */}
-        <Animated.View
-          style={[
-            styles.textBlock,
-            { opacity: textOpacity, transform: [{ translateY: textSlide }] },
-          ]}
-        >
-          <Text style={styles.eyebrow}>WOMEN'S WELLNESS INTELLIGENCE</Text>
-          <Text style={styles.headline}>
-            Know your body.{"\n"}
-            <Text style={styles.headlineAccent}>Feel like yourself.</Text>
-          </Text>
-          <Text style={styles.body}>
-            Track your cycle, understand your hormones, and get
-            gentle AI guidance — completely private.
-          </Text>
-        </Animated.View>
-
-        {/* Feature tags */}
-        <Animated.View
-          style={[
-            styles.tagsRow,
-            { opacity: tagsOpacity, transform: [{ translateY: tagsSlide }] },
-          ]}
-        >
-          {FEATURES.map((f) => (
-            <View key={f.label} style={[styles.tag, { backgroundColor: f.bg }]}>
-              <View style={[styles.tagDot, { backgroundColor: f.color }]} />
-              <Text style={[styles.tagLabel, { color: f.color }]}>{f.label}</Text>
-            </View>
-          ))}
-        </Animated.View>
-
-        {/* CTAs */}
-        <Animated.View
-          style={[
-            styles.ctaBlock,
-            { opacity: ctaOpacity, transform: [{ translateY: ctaSlide }] },
-          ]}
-        >
-          {/* Primary */}
-          <Pressable
-            onPress={() => router.push("/register")}
-            style={({ pressed }) => [styles.primaryShell, pressed && styles.btnPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Begin your journey — create account"
-          >
-            <LinearGradient
-              colors={[C.terracotta, C.peach]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.primaryBtn}
+          <View style={styles.actionBlock}>
+            <Pressable
+              onPress={() => router.push("/register")}
+              style={({ pressed }) => [styles.primaryShell, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Begin your journey"
             >
-              <Text style={styles.primaryText}>Begin Your Journey</Text>
-              <View style={styles.primaryArrow}>
-                <Text style={styles.arrowText}>→</Text>
-              </View>
-            </LinearGradient>
-          </Pressable>
+              <LinearGradient
+                colors={[C.orange, C.peach]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.primaryButton}
+              >
+                <Text style={styles.primaryText}>Begin Your Journey</Text>
+                <Ionicons name="arrow-forward" size={22} color="#FFF8F4" />
+              </LinearGradient>
+            </Pressable>
 
-          {/* Secondary */}
-          <Pressable
-            onPress={() => router.push("/login")}
-            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Sign in to existing account"
-          >
-            <Text style={styles.secondaryText}>I already have an account</Text>
-          </Pressable>
-        </Animated.View>
+            <Pressable
+              onPress={() => router.push("/login")}
+              style={({ pressed }) => [styles.loginButton, pressed && styles.pressedSoft]}
+              accessibilityRole="button"
+              accessibilityLabel="Log in"
+            >
+              <Text style={styles.loginText}>Log in</Text>
+            </Pressable>
+          </View>
 
-        {/* Trust row */}
-        <Animated.View style={[styles.trustRow, { opacity: trustOpacity }]}>
-          <TrustPill label="Private" />
-          <View style={styles.trustSep} />
-          <TrustPill label="No data sold" />
-          <View style={styles.trustSep} />
-          <TrustPill label="Yours always" />
-        </Animated.View>
-
-      </View>
-    </SafeAreaView>
-  );
-}
-
-// ── Sub-components ──────────────────────────────────────────────────
-
-function TrustPill({ label }: { label: string }) {
-  return (
-    <View style={styles.trustPill}>
-      <View style={styles.trustDot} />
-      <Text style={styles.trustLabel}>{label}</Text>
+          <Text style={styles.footer}>Private  •  No data sold  •  Yours always</Text>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
 
-function BotanicalBloom() {
+function WomanFlowerLogo({ size }: { size: number }) {
   return (
-    <Svg width={150} height={150} viewBox="0 0 100 100" fill="none">
-      <Path d="M50 50C50 30 70 10 90 10C90 30 70 50 50 50Z" fill="rgba(224,122,95,0.18)" />
-      <Path d="M50 50C70 50 90 70 90 90C70 90 50 70 50 50Z" fill="rgba(224,122,95,0.15)" />
-      <Path d="M50 50C50 70 30 90 10 90C10 70 30 50 50 50Z" fill="rgba(224,122,95,0.18)" />
-      <Path d="M50 50C30 50 10 30 10 10C30 10 50 30 50 50Z" fill="rgba(224,122,95,0.15)" />
-      <Circle cx={50} cy={50} r={8} fill="rgba(244,162,97,0.28)" />
+    <Svg width={size} height={size} viewBox="0 0 180 180" fill="none">
+      <Defs>
+        <SvgLinearGradient id="logoStroke" x1="34" y1="18" x2="144" y2="162">
+          <Stop offset="0" stopColor="#D2A28E" />
+          <Stop offset="0.45" stopColor="#A56551" />
+          <Stop offset="1" stopColor="#C89079" />
+        </SvgLinearGradient>
+      </Defs>
+      <G stroke="url(#logoStroke)" strokeLinecap="round" strokeLinejoin="round">
+        <Path
+          d="M104 20C86 33 78 54 82 76C86 100 75 120 61 134C50 145 50 157 64 164C78 171 100 163 107 145C112 132 106 120 98 110"
+          strokeWidth={3.8}
+        />
+        <Path
+          d="M104 20C120 31 124 47 116 61C112 68 103 72 96 75C107 78 116 84 119 94"
+          strokeWidth={3.4}
+        />
+        <Path
+          d="M113 45C119 50 121 56 119 63C118 67 115 70 112 72"
+          strokeWidth={3}
+        />
+        <Path
+          d="M108 58C112 59 115 61 117 64"
+          strokeWidth={2.6}
+        />
+        <Path
+          d="M96 75C92 83 92 92 97 101"
+          strokeWidth={2.8}
+        />
+        <Path
+          d="M70 160C55 147 47 128 48 104C49 79 60 56 82 39"
+          strokeWidth={3.35}
+        />
+        <Path
+          d="M50 102C41 90 31 83 20 82C24 95 35 104 50 108"
+          strokeWidth={2.7}
+        />
+        <Path
+          d="M51 101C57 82 70 68 88 62"
+          strokeWidth={2.7}
+        />
+        <Path
+          d="M86 63C78 48 82 34 95 25C102 40 99 54 86 63Z"
+          strokeWidth={2.7}
+        />
+        <Path
+          d="M86 63C73 50 58 48 47 57C58 69 72 72 86 63Z"
+          strokeWidth={2.7}
+        />
+        <Path
+          d="M80 121C74 108 77 96 89 88C98 99 97 112 80 121Z"
+          strokeWidth={2.6}
+        />
+        <Path
+          d="M80 121C67 112 55 113 45 124C57 132 70 131 80 121Z"
+          strokeWidth={2.6}
+        />
+      </G>
     </Svg>
   );
 }
 
-function BotanicalLeaves() {
+function MoonPhases({ compact }: { compact: boolean }) {
+  const size = compact ? 30 : 36;
+  const moons = [
+    { mask: "left", scale: 0.66 },
+    { mask: "left", scale: 0.82 },
+    { mask: "full", scale: 1 },
+    { mask: "right", scale: 0.82 },
+    { mask: "right", scale: 0.66 },
+  ] as const;
+
   return (
-    <Svg width={130} height={130} viewBox="0 0 100 100" fill="none">
-      <Path
-        d="M10 90C30 90 50 70 55 50C60 30 75 10 100 5"
-        stroke="rgba(129,178,154,0.30)"
-        strokeWidth={2}
-      />
-      <Ellipse cx={28} cy={72} rx={11} ry={17} transform="rotate(-45 28 72)" fill="rgba(129,178,154,0.20)" />
-      <Ellipse cx={72} cy={28} rx={11} ry={17} transform="rotate(-45 72 28)" fill="rgba(129,178,154,0.20)" />
-      <Ellipse cx={46} cy={54} rx={7}  ry={11} transform="rotate(-45 46 54)" fill="rgba(129,178,154,0.14)" />
+    <View style={[styles.moonWrap, compact && styles.moonWrapCompact]}>
+      <View style={styles.starTopA}><Sparkle size={8} /></View>
+      <View style={styles.starTopB}><Sparkle size={10} /></View>
+      <View style={styles.starTopC}><Sparkle size={6} /></View>
+      {moons.map((moon, index) => (
+        <View key={`${moon.mask}-${index}`} style={[styles.moonSlot, { width: size, height: size }]}>
+          <Svg width={size} height={size} viewBox="0 0 40 40">
+            <Defs>
+              <SvgLinearGradient id={`moon-${index}`} x1="4" y1="5" x2="36" y2="36">
+                <Stop offset="0" stopColor="#F1DEAA" />
+                <Stop offset="0.55" stopColor="#C7A15B" />
+                <Stop offset="1" stopColor="#EFE1B8" />
+              </SvgLinearGradient>
+            </Defs>
+            <G transform={`translate(20 20) scale(${moon.scale}) translate(-20 -20)`}>
+              <Circle cx={20} cy={20} r={12} fill={`url(#moon-${index})`} opacity={moon.mask === "full" ? 0.92 : 0.78} />
+              {moon.mask === "left" && <Circle cx={26} cy={17} r={13} fill="#F5E3D1" opacity={0.92} />}
+              {moon.mask === "right" && <Circle cx={14} cy={17} r={13} fill="#F5E3D1" opacity={0.92} />}
+            </G>
+          </Svg>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function WaveTrails() {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg width="100%" height="100%" viewBox="0 0 390 844" preserveAspectRatio="none">
+        <Path d="M-25 540C52 414 24 296 145 222C223 174 277 86 302 -32" stroke="rgba(255,255,255,0.58)" strokeWidth={7} strokeLinecap="round" fill="none" />
+        <Path d="M-8 565C68 432 48 328 162 244C244 184 284 92 318 -28" stroke="rgba(226,154,190,0.22)" strokeWidth={3} strokeLinecap="round" fill="none" />
+        <Path d="M-25 720C86 616 104 487 222 412C305 360 341 264 390 176" stroke="rgba(255,255,255,0.50)" strokeWidth={6} strokeLinecap="round" fill="none" />
+        <Path d="M36 860C126 725 134 596 250 521C331 468 340 368 411 258" stroke="rgba(196,176,225,0.22)" strokeWidth={4} strokeLinecap="round" fill="none" />
+      </Svg>
+    </View>
+  );
+}
+
+function BotanicalScene({ width, height }: { width: number; height: number }) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <View style={[styles.topFlower, { right: -24 }]}>
+        <PetalBloom />
+      </View>
+      <View style={[styles.lavenderRight, { top: height * 0.14, right: -8 }]}>
+        <LavenderSprigs />
+      </View>
+      <View style={[styles.lavenderLeft, { top: height * 0.36, left: -24 }]}>
+        <LavenderSprigs flip />
+      </View>
+      <View style={[styles.sageRight, { top: height * 0.39, right: -14 }]}>
+        <SageBranch />
+      </View>
+      <View style={[styles.sageBottomRight, { right: -18, bottom: 62 }]}>
+        <SageBranch />
+      </View>
+      <View style={[styles.sageBottomLeft, { left: -32, bottom: 72, opacity: 0.42 }]}>
+        <SageBranch flip />
+      </View>
+      <View style={[styles.bottomSparkle, { left: width * 0.80, bottom: 24 }]}>
+        <Sparkle size={26} pale />
+      </View>
+    </View>
+  );
+}
+
+function GoldSpeckles() {
+  const dots = [
+    [38, 78], [86, 54], [205, 92], [335, 72], [59, 232], [289, 206],
+    [18, 448], [361, 410], [96, 596], [232, 646], [311, 721], [126, 790],
+  ];
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {dots.map(([left, top], i) => (
+        <View
+          key={`${left}-${top}`}
+          style={[
+            styles.speck,
+            { left, top, width: i % 3 === 0 ? 2.5 : 1.5, height: i % 3 === 0 ? 2.5 : 1.5, opacity: i % 2 ? 0.42 : 0.72 },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+function LavenderSprigs({ flip = false }: { flip?: boolean }) {
+  return (
+    <Svg width={98} height={210} viewBox="0 0 98 210" fill="none" style={{ transform: [{ scaleX: flip ? -1 : 1 }] }}>
+      <G opacity={0.66}>
+        <Path d="M48 204C36 153 45 94 69 21" stroke="#796E64" strokeWidth={2.1} strokeLinecap="round" />
+        <Path d="M72 206C62 152 66 94 91 35" stroke="#796E64" strokeWidth={1.8} strokeLinecap="round" />
+        {Array.from({ length: 12 }).map((_, i) => (
+          <Ellipse key={`a-${i}`} cx={66 - i * 1.9} cy={30 + i * 10.4} rx={4.1} ry={8.8} fill="#81749E" transform={`rotate(${i % 2 ? -34 : 34} ${66 - i * 1.9} ${30 + i * 10.4})`} opacity={0.72} />
+        ))}
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Ellipse key={`b-${i}`} cx={88 - i * 1.8} cy={45 + i * 11} rx={3.5} ry={7.6} fill="#81749E" transform={`rotate(${i % 2 ? -30 : 32} ${88 - i * 1.8} ${45 + i * 11})`} opacity={0.58} />
+        ))}
+      </G>
     </Svg>
   );
 }
 
-// ── Styles ──────────────────────────────────────────────────────────
-const HERO_SIZE  = Math.min(W * 0.54, 224);
-const BLOOP_SIZE = HERO_SIZE * 0.72;
+function SageBranch({ flip = false }: { flip?: boolean }) {
+  return (
+    <Svg width={132} height={176} viewBox="0 0 132 176" fill="none" style={{ transform: [{ scaleX: flip ? -1 : 1 }] }}>
+      <G opacity={0.74}>
+        <Path d="M22 164C45 119 67 78 116 18" stroke="#707C61" strokeWidth={2.2} strokeLinecap="round" />
+        {[
+          [44, 126, -48], [58, 106, -34], [73, 86, -25], [91, 64, -18],
+          [39, 138, 132], [55, 119, 142], [73, 98, 151], [93, 75, 158],
+        ].map(([cx, cy, rot], i) => (
+          <Ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx={10} ry={22} fill="#6E8265" transform={`rotate(${rot} ${cx} ${cy})`} opacity={i < 4 ? 0.74 : 0.54} />
+        ))}
+      </G>
+    </Svg>
+  );
+}
+
+function PetalBloom() {
+  return (
+    <Svg width={128} height={128} viewBox="0 0 128 128" fill="none">
+      <G opacity={0.24} fill="#D98986">
+        <Ellipse cx={64} cy={25} rx={14} ry={38} />
+        <Ellipse cx={64} cy={103} rx={14} ry={38} />
+        <Ellipse cx={25} cy={64} rx={38} ry={14} />
+        <Ellipse cx={103} cy={64} rx={38} ry={14} />
+        <Ellipse cx={36} cy={36} rx={14} ry={35} transform="rotate(-45 36 36)" />
+        <Ellipse cx={92} cy={92} rx={14} ry={35} transform="rotate(-45 92 92)" />
+      </G>
+    </Svg>
+  );
+}
+
+function Sparkle({ size, pale = false }: { size: number; pale?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 1.8C13.7 8.3 15.7 10.3 22.2 12C15.7 13.7 13.7 15.7 12 22.2C10.3 15.7 8.3 13.7 1.8 12C8.3 10.3 10.3 8.3 12 1.8Z" fill={pale ? "rgba(255,255,255,0.74)" : C.gold} opacity={pale ? 0.86 : 0.72} />
+    </Svg>
+  );
+}
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: "#F4D6CB",
+    overflow: "hidden",
   },
-  orbTopLeft: {
-    position: "absolute",
-    top: -60,
-    left: -60,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: "rgba(224,122,95,0.08)",
+  safe: {
+    flex: 1,
   },
-  orbBottomRight: {
-    position: "absolute",
-    bottom: -80,
-    right: -60,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: "rgba(129,178,154,0.08)",
-  },
-  botanicalTR: {
-    position: "absolute",
-    top: -20,
-    right: -30,
-    zIndex: 0,
-  },
-  botanicalBL: {
-    position: "absolute",
-    bottom: 80,
-    left: -20,
-    zIndex: 0,
-  },
-
-  // ── Main column ──────────────────────────────────────────
-  inner: {
+  content: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "space-evenly",
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    zIndex: 2,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 10,
   },
-
-  // ── Hero ──────────────────────────────────────────────────
-  heroSection: {
-    width: HERO_SIZE + 80,
-    height: HERO_SIZE + 80,
+  contentCompact: {
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  meshOrb: {
+    position: "absolute",
+    borderRadius: 999,
+  },
+  meshOrbPink: {
+    width: 250,
+    height: 250,
+    left: -86,
+    top: -38,
+    backgroundColor: "rgba(210,112,126,0.22)",
+  },
+  meshOrbPeach: {
+    width: 280,
+    height: 280,
+    right: -118,
+    top: 118,
+    backgroundColor: "rgba(255,198,137,0.22)",
+  },
+  meshOrbSage: {
+    width: 330,
+    height: 330,
+    right: -90,
+    bottom: -42,
+    backgroundColor: "rgba(153,188,164,0.22)",
+  },
+  meshOrbRose: {
+    width: 210,
+    height: 210,
+    left: -70,
+    bottom: 170,
+    backgroundColor: "rgba(218,154,168,0.15)",
+  },
+  logoStage: {
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 22,
   },
-  haloOuter: {
+  logoGlow: {
     position: "absolute",
-    width: HERO_SIZE + 72,
-    height: HERO_SIZE + 72,
-    borderRadius: (HERO_SIZE + 72) / 2,
+    backgroundColor: "rgba(255,255,255,0.20)",
     borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.12)",
+    borderColor: "rgba(255,255,255,0.55)",
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.86,
+    shadowRadius: 22,
   },
-  haloMid: {
+  logoHalo: {
     position: "absolute",
-    width: HERO_SIZE + 36,
-    height: HERO_SIZE + 36,
-    borderRadius: (HERO_SIZE + 36) / 2,
-    borderWidth: 1,
-    borderColor: "rgba(244,162,97,0.16)",
-  },
-  haloInner: {
-    position: "absolute",
-    width: HERO_SIZE + 8,
-    height: HERO_SIZE + 8,
-    borderRadius: (HERO_SIZE + 8) / 2,
     borderWidth: 1.5,
-    borderColor: "rgba(224,122,95,0.22)",
+    borderColor: "rgba(255,255,255,0.70)",
   },
-  bloopCircle: {
-    width: HERO_SIZE,
-    height: HERO_SIZE,
-    borderRadius: HERO_SIZE / 2,
+  logoCircle: {
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.22,
-    shadowRadius: 36,
-    elevation: 12,
+    backgroundColor: "rgba(255,246,240,0.50)",
+    borderWidth: 1.35,
+    borderColor: "rgba(169,103,86,0.72)",
   },
-  bloopImage: {
-    width: BLOOP_SIZE,
-    height: BLOOP_SIZE,
-  },
-
-  // ── Floating badge ────────────────────────────────────────
-  badge: {
-    position: "absolute",
-    bottom: -6,
-    right: -14,
-    flexDirection: "row",
+  copyBlock: {
+    marginTop: 48,
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.95)",
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 6,
-  },
-  badgeBloop: { width: 30, height: 30, borderRadius: 10 },
-  badgeText:  { gap: 1 },
-  badgeName:  { fontSize: 11, fontWeight: "800", color: C.text, letterSpacing: 0.2 },
-  badgeSub:   { fontSize: 9,  fontWeight: "700", color: C.muted, letterSpacing: 0.2 },
-  onlineDot: {
-    position: "absolute",
-    top: 7,
-    right: 10,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: C.sage,
-    borderWidth: 1.5,
-    borderColor: "#FFF",
-  },
-
-  // ── Mini card ─────────────────────────────────────────────
-  miniCard: {
-    position: "absolute",
-    top: 4,
-    left: -18,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.88)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.95)",
-    shadowColor: C.sage,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    elevation: 4,
-  },
-  miniCardBloop:  { width: 22, height: 22, borderRadius: 8 },
-  miniCardText:   { fontSize: 10, fontWeight: "800", color: C.text },
-  miniCardDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: C.terracotta,
-  },
-
-  // ── Text block ────────────────────────────────────────────
-  textBlock: {
-    alignItems: "center",
-    gap: 9,
-    paddingHorizontal: 4,
-  },
-  eyebrow: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 2.6,
-    textTransform: "uppercase",
-    color: C.terracotta + "AA",
-    textAlign: "center",
   },
   headline: {
-    fontFamily: F.luxuryExtraBold,
-    fontSize: H < 700 ? 26 : 30,
-    lineHeight: H < 700 ? 33 : 38,
+    fontFamily: F.uiRegular,
+    fontSize: 34,
+    lineHeight: 42,
+    color: C.ink,
     textAlign: "center",
-    color: C.text,
+    letterSpacing: 0,
   },
-  headlineAccent: {
-    fontFamily: F.luxuryItalic,
-    color: C.terracotta,
+  headlineCompact: {
+    fontSize: 30,
+    lineHeight: 37,
   },
-  body: {
-    fontSize: 13,
+  subhead: {
+    marginTop: 16,
+    fontFamily: F.uiRegular,
+    fontSize: 16,
+    lineHeight: 23,
+    color: C.ink,
+    textAlign: "center",
+    letterSpacing: 0,
+  },
+  subheadCompact: {
+    marginTop: 12,
+    fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
-    textAlign: "center",
-    color: C.muted,
-    maxWidth: 300,
   },
-
-  // ── Feature tags ──────────────────────────────────────────
-  tagsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-  },
-  tag: {
+  moonWrap: {
+    marginTop: 46,
+    height: 44,
+    minWidth: 202,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 50,
+    justifyContent: "center",
+    gap: 2,
   },
-  tagDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+  moonWrapCompact: {
+    marginTop: 28,
   },
-  tagLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.2,
+  moonSlot: {
+    alignItems: "center",
+    justifyContent: "center",
   },
-
-  // ── CTAs ──────────────────────────────────────────────────
-  ctaBlock: {
+  starTopA: {
+    position: "absolute",
+    left: 18,
+    top: -2,
+  },
+  starTopB: {
+    position: "absolute",
+    left: 96,
+    top: -8,
+  },
+  starTopC: {
+    position: "absolute",
+    right: 32,
+    top: 0,
+  },
+  actionBlock: {
     width: "100%",
-    gap: 12,
+    marginTop: "auto",
+    alignItems: "center",
+    paddingBottom: 16,
   },
   primaryShell: {
-    borderRadius: 50,
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.30,
-    shadowRadius: 24,
-    elevation: 8,
+    width: "100%",
+    borderRadius: 999,
+    shadowColor: "#D75F35",
+    shadowOffset: { width: 0, height: 13 },
+    shadowOpacity: 0.24,
+    shadowRadius: 22,
+    elevation: 6,
   },
-  primaryBtn: {
-    height: 58,
-    borderRadius: 50,
-    flexDirection: "row",
+  primaryButton: {
+    height: 66,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    flexDirection: "row",
+    gap: 12,
   },
   primaryText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "800",
-    letterSpacing: 0.3,
+    fontFamily: F.uiBlack,
+    fontSize: 18,
+    color: "#FFF8F4",
+    letterSpacing: 0,
   },
-  primaryArrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.22)",
+  loginButton: {
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 18,
+    paddingHorizontal: 24,
   },
-  arrowText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "900",
+  loginText: {
+    fontFamily: F.uiBold,
+    fontSize: 18,
+    color: C.ink,
+    letterSpacing: 0,
   },
-  secondaryBtn: {
-    height: 52,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.60)",
-    borderWidth: 1.5,
-    borderColor: "rgba(224,122,95,0.22)",
+  footer: {
+    fontFamily: F.uiMedium,
+    fontSize: 11,
+    color: C.footer,
+    textAlign: "center",
+    marginBottom: 4,
   },
-  secondaryText: {
-    color: C.muted,
-    fontSize: 13.5,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+  pressed: {
+    transform: [{ scale: 0.985 }],
   },
-  btnPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.975 }],
+  pressedSoft: {
+    opacity: 0.68,
   },
-
-  // ── Trust row ─────────────────────────────────────────────
-  trustRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  topFlower: {
+    position: "absolute",
+    top: -18,
   },
-  trustPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  lavenderRight: {
+    position: "absolute",
+    transform: [{ rotate: "-15deg" }],
   },
-  trustDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: C.sage,
+  lavenderLeft: {
+    position: "absolute",
+    transform: [{ rotate: "18deg" }],
   },
-  trustLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    color: C.faint,
+  sageRight: {
+    position: "absolute",
+    transform: [{ rotate: "-18deg" }],
   },
-  trustSep: {
-    width: 1,
-    height: 10,
-    backgroundColor: "rgba(0,0,0,0.10)",
+  sageBottomRight: {
+    position: "absolute",
+    transform: [{ rotate: "12deg" }],
+  },
+  sageBottomLeft: {
+    position: "absolute",
+    transform: [{ rotate: "-10deg" }],
+  },
+  bottomSparkle: {
+    position: "absolute",
+  },
+  speck: {
+    position: "absolute",
+    borderRadius: 99,
+    backgroundColor: C.gold,
   },
 });

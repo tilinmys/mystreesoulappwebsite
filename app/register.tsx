@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
 import { AuraBackground } from "../components/system/AuraBackground";
+import { ValidationToast } from "../components/ValidationToast";
 import { spacing } from "../constants/spacing";
 import { typography } from "../constants/typography";
 import { useColorMode } from "../hooks/useColorMode";
@@ -39,9 +40,33 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
+    // Client-side guardrails so the user gets immediate, specific feedback
+    // before we hit the auth store's async checks.
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      haptics.error();
+      setError("Please enter your email to continue.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      haptics.error();
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      haptics.error();
+      setError("Please create a password (8+ characters).");
+      return;
+    }
+    if (password.length < 8) {
+      haptics.error();
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
     setLoading(true);
     setError("");
-    const result = await register(email, password);
+    const result = await register(trimmedEmail, password);
     setLoading(false);
 
     if (!result.ok) {
@@ -58,10 +83,20 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
       <AuraBackground variant="profile" />
+      <ValidationToast
+        message={error ? error : null}
+        onDismiss={() => setError("")}
+        top={50}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <Pressable onPress={safeBack} style={({ pressed }) => [styles.back, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}>
+            <Pressable
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+              onPress={safeBack}
+              style={({ pressed }) => [styles.back, { backgroundColor: colors.card, borderColor: colors.border }, pressed && styles.pressed]}
+            >
               <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
             <Text style={[styles.topLabel, { color: colors.muted }]}>Secure access</Text>

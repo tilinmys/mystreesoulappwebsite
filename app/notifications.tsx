@@ -28,32 +28,32 @@ const imgBloopNourish = require("../public/images/bloop-nourish.webp");
 const imgBreathing    = require("../public/images/insight-breathing-reset.webp");
 const imgBloopWelcome = require("../public/images/bloop-welcome.webp");
 
-// ── Palette ───────────────────────────────────────────────────────────────────
+// ── Palette — Midnight Plum dark theme ────────────────────────────────────────
 const C = {
-  text:        "#1C1528",
-  muted:       "#8A7A9A",
-  faint:       "#C4B8D4",
-  terracotta:  "#E07A5F",
-  peach:       "#F4A261",
-  lavender:    "#9277C8",
-  rose:        "#D45C82",
-  gold:        "#C9A040",
-  sage:        "#5E9B6B",
-  white:       "#FFFFFF",
-  cardBg:      "rgba(255,255,255,0.72)",
-  cardBorder:  "rgba(255,255,255,0.88)",
+  text:        "#F6E9EF",   // textPrimary  (Moon Pearl)
+  muted:       "#B58AC8",   // textMuted    (Lavender Dust)
+  faint:       "#6E5680",   // dimmed muted
+  terracotta:  "#E07A5F",   // informational accent (kept)
+  peach:       "#F4A261",   // informational accent (kept)
+  lavender:    "#9277C8",   // informational accent (kept)
+  rose:        "#D45C82",   // informational accent (kept)
+  gold:        "#C9A040",   // informational accent (kept)
+  sage:        "#5E9B6B",   // informational accent (kept)
+  white:       "#FFFFFF",   // badge icons
+  cardBg:      "#2E2330",   // surface      (Blackberry Smoke)
+  cardBorder:  "#4A394D",   // border       (Velvet Mauve)
 } as const;
 
-// ── Category config ───────────────────────────────────────────────────────────
+// ── Category config — dark-mode tag chips ─────────────────────────────────────
 type CategoryKey = "companion" | "wellness" | "cycle" | "emotional" | "premium" | "hydration";
 
 const CATEGORY: Record<CategoryKey, { label: string; bg: string; text: string }> = {
-  companion:  { label: "Companion Message", bg: "#EDE8F8",  text: "#6B42BB" },
-  wellness:   { label: "Wellness Reminder", bg: "#EDE8F8",  text: "#7B5EA7" },
-  cycle:      { label: "Cycle Update",      bg: "#FDDDE8",  text: "#C45A7A" },
-  emotional:  { label: "Emotional Wellness",bg: "#FFF0E8",  text: "#C46A30" },
-  premium:    { label: "Premium",           bg: "#FFF5E0",  text: "#B08820" },
-  hydration:  { label: "Wellness Reminder", bg: "#E8F8EE",  text: "#3D8B58" },
+  companion:  { label: "Companion Message", bg: "rgba(107,66,187,0.22)",  text: "#9277C8" },
+  wellness:   { label: "Wellness Reminder", bg: "rgba(107,66,187,0.16)",  text: "#B58AC8" },
+  cycle:      { label: "Cycle Update",      bg: "rgba(196,90,122,0.20)",  text: "#E8A6B6" },
+  emotional:  { label: "Emotional Wellness",bg: "rgba(196,106,48,0.20)",  text: "#F4A261" },
+  premium:    { label: "Premium",           bg: "rgba(176,136,32,0.20)",  text: "#C9A040" },
+  hydration:  { label: "Wellness Reminder", bg: "rgba(61,139,88,0.20)",   text: "#5E9B6B" },
 };
 
 // ── Notification data ─────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      true,
         category:    "companion",
         avatarImage: imgBloopCalm,
-        avatarBg:    "#EDE8F8",
+        avatarBg:    "#2A2438",
         avatarGlow:  "rgba(146,119,200,0.22)",
       },
       {
@@ -94,7 +94,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      true,
         category:    "wellness",
         avatarImage: imgBloopSleep,
-        avatarBg:    "#E8EEFF",
+        avatarBg:    "#1E2038",
         avatarGlow:  "rgba(120,120,220,0.18)",
       },
       {
@@ -105,7 +105,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      true,
         category:    "cycle",
         avatarImage: imgBloopCycle,
-        avatarBg:    "#FFE8F2",
+        avatarBg:    "#2E1A24",
         avatarGlow:  "rgba(212,92,130,0.18)",
       },
       {
@@ -116,7 +116,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      true,
         category:    "emotional",
         avatarImage: imgBreathing,
-        avatarBg:    "#FFF0E8",
+        avatarBg:    "#2C1E16",
         avatarGlow:  "rgba(196,106,48,0.16)",
       },
       {
@@ -127,7 +127,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      false,
         category:    "premium",
         avatarImage: imgBloopPremium,
-        avatarBg:    "#FFF5E0",
+        avatarBg:    "#2A2010",
         avatarGlow:  "rgba(201,160,64,0.22)",
         isPremium:   true,
         crownIcon:   true,
@@ -145,7 +145,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      false,
         category:    "hydration",
         avatarImage: imgBloopNourish,
-        avatarBg:    "#E8F8EE",
+        avatarBg:    "#162318",
         avatarGlow:  "rgba(94,155,107,0.18)",
       },
     ],
@@ -161,7 +161,7 @@ const NOTIF_GROUPS: Array<{ title: string; data: NotifItem[] }> = [
         unread:      false,
         category:    "cycle",
         avatarImage: imgBloopCycle,
-        avatarBg:    "#FFE8F2",
+        avatarBg:    "#2E1A24",
         avatarGlow:  "rgba(212,92,130,0.18)",
       },
     ],
@@ -239,12 +239,8 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
 
-      {/* ── Background gradient ── */}
-      <LinearGradient
-        colors={["#FCF8F7", "#F5EAE5", "#FEF0EA"]}
-        locations={[0, 0.52, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* ── Background — Midnight Plum ── */}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "#110812" }]} />
 
       {/* ── Ambient blobs ── */}
       <View style={s.blob1} pointerEvents="none" />
@@ -356,7 +352,7 @@ export default function NotificationsScreen() {
         {/* ────────────────── CAUGHT UP BANNER ────────────────── */}
         <View style={s.caughtUpWrap}>
           <LinearGradient
-            colors={["#FFF5F7", "#FFEDE9", "#FFF0F8"]}
+            colors={["#2E2330", "#362240", "#2A1E2E"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={s.caughtUpCard}
@@ -497,9 +493,10 @@ const s = StyleSheet.create({
   screen: {
     flex: 1,
     overflow: "hidden",
+    backgroundColor: "#110812",
   },
 
-  // ── Ambient blobs ────────────────────────────────────────────────────────────
+  // ── Ambient blobs — dark tinted ──────────────────────────────────────────────
   blob1: {
     position: "absolute",
     top: -80,
@@ -507,7 +504,7 @@ const s = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: "rgba(252,192,172,0.22)",
+    backgroundColor: "rgba(232,166,182,0.08)",
   },
   blob2: {
     position: "absolute",
@@ -516,7 +513,7 @@ const s = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: "rgba(189,172,255,0.14)",
+    backgroundColor: "rgba(146,119,200,0.09)",
   },
   blob3: {
     position: "absolute",
@@ -525,7 +522,7 @@ const s = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: "rgba(244,162,97,0.10)",
+    backgroundColor: "rgba(201,160,64,0.07)",
   },
 
   // ── Scroll ───────────────────────────────────────────────────────────────────
@@ -546,12 +543,12 @@ const s = StyleSheet.create({
     width:           44,
     height:          44,
     borderRadius:    22,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: "#2E2330",
     borderWidth:     1,
-    borderColor:     "rgba(255,255,255,0.88)",
+    borderColor:     "#4A394D",
     alignItems:      "center",
     justifyContent:  "center",
-    shadowColor:     "#D6C3B9",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 4 },
     shadowOpacity:   0.28,
     shadowRadius:    10,
@@ -577,7 +574,7 @@ const s = StyleSheet.create({
   headerLine: {
     width:           24,
     height:          1,
-    backgroundColor: "rgba(224,122,95,0.32)",
+    backgroundColor: "rgba(232,166,182,0.32)",
     borderRadius:    1,
   },
   headerDot: {
@@ -601,10 +598,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius:    30,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: "#2E2330",
     borderWidth:     1,
-    borderColor:     "rgba(255,255,255,0.88)",
-    shadowColor:     "#D6C3B9",
+    borderColor:     "#4A394D",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 4 },
     shadowOpacity:   0.26,
     shadowRadius:    12,
@@ -623,7 +620,7 @@ const s = StyleSheet.create({
     borderRadius:    5,
     backgroundColor: C.terracotta,
     borderWidth:     1.5,
-    borderColor:     "#FCF8F7",
+    borderColor:     "#110812",
   },
   filterLabel: {
     fontFamily:  F.uiSemiBold,        // Nunito SemiBold — pill labels
@@ -656,12 +653,12 @@ const s = StyleSheet.create({
   card: {
     flexDirection:   "row",
     alignItems:      "center",
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: "#2E2330",
     borderRadius:    20,
     borderWidth:     1,
-    borderColor:     "rgba(255,255,255,0.88)",
+    borderColor:     "#4A394D",
     padding:         14,
-    shadowColor:     "#D6C3B9",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 8 },
     shadowOpacity:   0.30,
     shadowRadius:    18,
@@ -669,8 +666,8 @@ const s = StyleSheet.create({
     gap:             12,
   },
   cardUnread: {
-    backgroundColor: "rgba(255,255,255,0.86)",
-    borderColor:     "rgba(255,255,255,0.96)",
+    backgroundColor: "#362840",
+    borderColor:     "#5A4460",
     shadowOpacity:   0.38,
   },
 
@@ -752,7 +749,7 @@ const s = StyleSheet.create({
     fontFamily:  F.uiRegular,         // Nunito Regular — notification body
     fontSize:    12,
     lineHeight:  17,
-    color:       "#6B6178",
+    color:       "#B58AC8",
   },
   tag: {
     alignSelf:       "flex-start",
@@ -805,7 +802,7 @@ const s = StyleSheet.create({
     flexDirection:   "row",
     alignItems:      "center",
     overflow:        "hidden",
-    shadowColor:     "#E8C8C0",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 10 },
     shadowOpacity:   0.28,
     shadowRadius:    22,
@@ -838,7 +835,7 @@ const s = StyleSheet.create({
     fontFamily:  F.uiRegular,         // Nunito Regular — supporting line
     fontSize:    12,
     lineHeight:  18,
-    color:       "#8A7A9A",
+    color:       "#B58AC8",
   },
 
   // ── Botanical decoration on banner ───────────────────────────────────────────
@@ -880,9 +877,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical:   10,
     borderRadius:     20,
-    backgroundColor:  "rgba(255,255,255,0.72)",
+    backgroundColor:  "#2E2330",
     borderWidth:      1,
-    borderColor:      "rgba(255,255,255,0.88)",
+    borderColor:      "#4A394D",
   },
   emptyFilterBtnText: {
     fontFamily:  F.uiBold,

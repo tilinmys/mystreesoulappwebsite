@@ -1,5 +1,4 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -11,9 +10,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { type AppColors } from "../constants/colors";
 import { F } from "../constants/fonts";
 import { useColorMode } from "../hooks/useColorMode";
 import { useHaptics } from "../hooks/useHaptics";
@@ -21,7 +22,7 @@ import { useSafeBack } from "../hooks/useSafeBack";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 
-// ─── Mocked health records ─────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 type HealthRecord = {
   id: string;
   title: string;
@@ -105,24 +106,42 @@ const CATEGORY_COLORS: Record<HealthRecord["category"], string> = {
 };
 
 const CATEGORIES: (HealthRecord["category"] | "All")[] = [
-  "All", "Cycle", "Wellness", "Lab", "Nutrition", "Medication"
+  "All", "Cycle", "Wellness", "Lab", "Nutrition", "Medication",
 ];
 
+const UPLOAD_CATEGORIES: HealthRecord["category"][] = [
+  "Cycle", "Lab", "Wellness", "Nutrition", "Medication",
+];
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
 export default function HealthRecordsScreen() {
   const safeBack = useSafeBack();
-  const { isDark, colors } = useColorMode();
+  const { colors } = useColorMode();
   const haptics = useHaptics();
+  const s = getStyles(colors);
+
   const [filter, setFilter] = useState<HealthRecord["category"] | "All">("All");
   const [records] = useState<HealthRecord[]>(SEED_RECORDS);
   const [selectedRecord, setSelectedRecord] = useState<HealthRecord | null>(null);
-  const [addToast, setAddToast] = useState(false);
+
+  // Upload panel state
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [docName, setDocName] = useState("");
+  const [uploadCategory, setUploadCategory] = useState<HealthRecord["category"] | null>(null);
+  const uploadAnim = useRef(new Animated.Value(0)).current;
 
   const filtered = filter === "All" ? records : records.filter((r) => r.category === filter);
 
-  const handleAdd = () => {
+  const toggleUpload = () => {
     haptics.selection();
-    setAddToast(true);
-    setTimeout(() => setAddToast(false), 2200);
+    const next = !uploadOpen;
+    setUploadOpen(next);
+    Animated.spring(uploadAnim, {
+      toValue: next ? 1 : 0,
+      tension: 70,
+      friction: 12,
+      useNativeDriver: false,
+    }).start();
   };
 
   const handleRecordPress = (record: HealthRecord) => {
@@ -131,63 +150,133 @@ export default function HealthRecordsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.screen, isDark && { backgroundColor: "#1A1028" }]} edges={["top", "bottom"]}>
-      <View style={[styles.auraOne, isDark && { backgroundColor: "rgba(224,122,95,0.09)" }]} />
-      <View style={[styles.auraTwo, isDark && { backgroundColor: "rgba(189,178,255,0.08)" }]} />
+    <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
+      {/* Ambient aura decorations */}
+      <View style={s.auraOne} />
+      <View style={s.auraTwo} />
 
-      {/* Header */}
-      <View style={styles.header}>
+      {/* ── Header ── */}
+      <View style={s.header}>
         <Pressable
           accessibilityLabel="Go back"
           accessibilityRole="button"
           onPress={safeBack}
-          style={({ pressed }) => [styles.iconButton, isDark && styles.iconButtonDark, pressed && styles.pressed]}
+          style={({ pressed }) => [s.iconButton, pressed && s.pressed]}
         >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
+          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
         </Pressable>
-        <View style={styles.headerCopy}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Health Records</Text>
-          <Text style={[styles.headerSub, { color: colors.muted }]}>Your private wellness archive</Text>
+        <View style={s.headerCopy}>
+          <Text style={s.headerTitle}>Health Records</Text>
+          <Text style={s.headerSub}>Your private wellness vault</Text>
         </View>
         <Pressable
-          accessibilityLabel="Add record"
+          accessibilityLabel="Upload a document"
           accessibilityRole="button"
-          onPress={handleAdd}
-          style={({ pressed }) => [styles.iconButton, isDark && styles.iconButtonDark, pressed && styles.pressed]}
+          onPress={toggleUpload}
+          style={({ pressed }) => [s.iconButton, uploadOpen && s.iconButtonActive, pressed && s.pressed]}
         >
-          <Ionicons name="add" size={22} color={colors.terracotta} />
+          <MaterialCommunityIcons
+            name={uploadOpen ? "close" : "upload-outline"}
+            size={20}
+            color={uploadOpen ? colors.background : colors.primaryCTA}
+          />
         </Pressable>
       </View>
 
-      {/* Hero banner */}
-      <LinearGradient
-        colors={isDark ? ["#2B1F3A", "#1E2B3A"] : ["#FDF0EC", "#EEF4F8"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.heroBanner}
-      >
-        <View style={styles.heroIconWrap}>
+      {/* ── Hero banner ── */}
+      <View style={s.heroBanner}>
+        <View style={s.heroIconWrap}>
           <MaterialCommunityIcons name="folder-heart-outline" size={26} color="#E07A5F" />
         </View>
-        <View style={styles.heroCopy}>
-          <Text style={[styles.heroTitle, { color: colors.text }]}>
-            {records.length} records stored
-          </Text>
-          <Text style={[styles.heroSub, { color: colors.muted }]}>
-            Encrypted and visible only to you
-          </Text>
+        <View style={s.heroCopy}>
+          <Text style={s.heroTitle}>{records.length} records stored</Text>
+          <Text style={s.heroSub}>Encrypted and visible only to you</Text>
         </View>
-        <View style={styles.shieldBadge}>
+        <View style={s.shieldBadge}>
           <MaterialCommunityIcons name="shield-check-outline" size={18} color="#81B29A" />
         </View>
-      </LinearGradient>
+      </View>
 
-      {/* Category filter chips — fixed-height row prevents layout reflow */}
-      <View style={styles.filterRowWrap}>
+      {/* ── Upload document panel ── */}
+      <Animated.View
+        style={[
+          s.uploadPanel,
+          {
+            maxHeight: uploadAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 340] }),
+            opacity: uploadAnim,
+            marginBottom: uploadAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 14] }),
+          },
+        ]}
+        pointerEvents={uploadOpen ? "auto" : "none"}
+      >
+        <View style={s.uploadPanelInner}>
+          {/* Panel header */}
+          <View style={s.uploadPanelHeader}>
+            <MaterialCommunityIcons name="file-upload-outline" size={18} color={colors.primaryCTA} />
+            <Text style={s.uploadPanelTitle}>Upload a document</Text>
+          </View>
+
+          {/* Document name input */}
+          <View style={s.uploadInputWrap}>
+            <MaterialCommunityIcons name="file-document-outline" size={16} color={colors.textMuted} />
+            <TextInput
+              style={s.uploadInput}
+              placeholder="Document name"
+              placeholderTextColor={colors.textHint}
+              value={docName}
+              onChangeText={setDocName}
+              returnKeyType="done"
+            />
+          </View>
+
+          {/* Category chip selection */}
+          <Text style={s.uploadCategoryLabel}>Category</Text>
+          <View style={s.uploadChipRow}>
+            {UPLOAD_CATEGORIES.map((cat) => {
+              const active = uploadCategory === cat;
+              const catColor = CATEGORY_COLORS[cat];
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => { haptics.selection(); setUploadCategory(active ? null : cat); }}
+                  style={({ pressed }) => [
+                    s.uploadChip,
+                    active && { backgroundColor: `${catColor}28`, borderColor: `${catColor}70` },
+                    pressed && s.pressed,
+                  ]}
+                >
+                  <Text style={[s.uploadChipText, active && { color: catColor }]}>{cat}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Action row */}
+          <View style={s.uploadActionRow}>
+            <Pressable
+              style={({ pressed }) => [s.uploadDocBtn, pressed && s.pressed]}
+              onPress={() => haptics.selection()}
+            >
+              <MaterialCommunityIcons name="paperclip" size={16} color={colors.textPrimary} />
+              <Text style={s.uploadDocBtnText}>Attach file</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [s.askBloopBtn, pressed && s.pressed]}
+              onPress={() => haptics.selection()}
+            >
+              <MaterialCommunityIcons name="shield-check-outline" size={15} color={colors.background} />
+              <Text style={s.askBloopText}>Ask Bloop about this</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* ── Category filter chips ── */}
+      <View style={s.filterRowWrap}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
+          contentContainerStyle={s.filterRow}
         >
           {CATEGORIES.map((item) => {
             const active = filter === item;
@@ -199,19 +288,12 @@ export default function HealthRecordsScreen() {
                 accessibilityState={active ? { selected: true } : {}}
                 onPress={() => setFilter(item)}
                 style={({ pressed }) => [
-                  styles.filterChip,
-                  isDark && styles.filterChipDark,
+                  s.filterChip,
                   active && { backgroundColor: `${chipColor}22`, borderColor: `${chipColor}60` },
-                  pressed && styles.pressed,
+                  pressed && s.pressed,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    { color: active ? chipColor : colors.muted },
-                  ]}
-                  numberOfLines={1}
-                >
+                <Text style={[s.filterChipText, { color: active ? chipColor : colors.textMuted }]} numberOfLines={1}>
                   {item}
                 </Text>
               </Pressable>
@@ -220,88 +302,68 @@ export default function HealthRecordsScreen() {
         </ScrollView>
       </View>
 
-      {/* Records list — wrapped in a fixed-flex container so the list area
-          doesn't reflow when chip filter changes the data length. */}
-      <View style={styles.listWrap}>
+      {/* ── Records list ── */}
+      <View style={s.listWrap}>
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           renderItem={({ item }) => (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Open record ${item.title}`}
-              style={({ pressed }) => [
-                styles.recordCard,
-                isDark && styles.recordCardDark,
-                pressed && styles.pressed,
-              ]}
+              style={({ pressed }) => [s.recordCard, pressed && s.pressed]}
               onPress={() => handleRecordPress(item)}
             >
-              <View style={[styles.recordIconWrap, { backgroundColor: `${item.color}18` }]}>
+              <View style={[s.recordIconWrap, { backgroundColor: `${item.color}18` }]}>
                 <MaterialCommunityIcons name={item.icon} size={22} color={item.color} />
               </View>
-              <View style={styles.recordBody}>
-                <View style={styles.recordTopRow}>
-                  <Text style={[styles.recordTitle, { color: colors.text }]} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <View style={[styles.categoryPill, { backgroundColor: `${item.color}1A` }]}>
-                    <Text style={[styles.categoryText, { color: item.color }]}>{item.category}</Text>
+              <View style={s.recordBody}>
+                <View style={s.recordTopRow}>
+                  <Text style={s.recordTitle} numberOfLines={1}>{item.title}</Text>
+                  <View style={[s.categoryPill, { backgroundColor: `${item.color}1A` }]}>
+                    <Text style={[s.categoryText, { color: item.color }]}>{item.category}</Text>
                   </View>
                 </View>
-                <Text style={[styles.recordDate, { color: colors.muted }]}>{item.date}</Text>
-                <Text style={[styles.recordSummary, { color: colors.muted }]} numberOfLines={2}>
-                  {item.summary}
-                </Text>
+                <Text style={s.recordDate}>{item.date}</Text>
+                <Text style={s.recordSummary} numberOfLines={2}>{item.summary}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.hint} />
+              <Ionicons name="chevron-forward" size={16} color={colors.textHint} />
             </Pressable>
           )}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="folder-open-outline" size={44} color={colors.hint} />
-              <Text style={[styles.emptyText, { color: colors.muted }]}>No records in this category yet.</Text>
-              <Pressable onPress={() => setFilter("All")} style={({ pressed }) => [styles.emptyAction, pressed && styles.pressed]}>
-                <Text style={styles.emptyActionText}>Show all records</Text>
+            <View style={s.emptyState}>
+              <MaterialCommunityIcons name="folder-open-outline" size={44} color={colors.textHint} />
+              <Text style={s.emptyText}>No records in this category yet.</Text>
+              <Pressable
+                onPress={() => setFilter("All")}
+                style={({ pressed }) => [s.emptyAction, pressed && s.pressed]}
+              >
+                <Text style={s.emptyActionText}>Show all records</Text>
               </Pressable>
             </View>
           }
         />
       </View>
 
-      {/* Add-record toast */}
-      {addToast && (
-        <View style={styles.toastWrap} pointerEvents="none">
-          <View style={styles.toast}>
-            <MaterialCommunityIcons name="information-outline" size={16} color="#E07A5F" />
-            <Text style={styles.toastText}>Manual records sync from your wearables — coming soon.</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Record detail modal */}
-      <RecordDetailModal
-        record={selectedRecord}
-        onClose={() => setSelectedRecord(null)}
-        isDark={isDark}
-      />
+      {/* ── Record detail modal ── */}
+      <RecordDetailModal record={selectedRecord} onClose={() => setSelectedRecord(null)} />
     </SafeAreaView>
   );
 }
 
-// ─── Record detail modal ────────────────────────────────────────────────────
+// ─── Record detail modal ──────────────────────────────────────────────────────
 function RecordDetailModal({
   record,
   onClose,
-  isDark,
 }: {
   record: HealthRecord | null;
   onClose: () => void;
-  isDark: boolean;
 }) {
+  const { colors } = useColorMode();
+  const s = getStyles(colors);
   const visible = record !== null;
   const scrimAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(SCREEN_H)).current;
@@ -322,37 +384,45 @@ function RecordDetailModal({
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.modalScrim, { opacity: scrimAnim }]}>
+      <Animated.View style={[s.modalScrim, { opacity: scrimAnim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
-      <Animated.View
-        style={[
-          styles.modalSheet,
-          isDark && styles.modalSheetDark,
-          { transform: [{ translateY: slideAnim }] },
-        ]}
-      >
-        <View style={styles.modalHandle} />
+      <Animated.View style={[s.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
+        <View style={s.modalHandle} />
         {record && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalContent}>
-            <View style={[styles.modalIconWrap, { backgroundColor: `${record.color}1A` }]}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.modalContent}>
+            <View style={[s.modalIconWrap, { backgroundColor: `${record.color}1A` }]}>
               <MaterialCommunityIcons name={record.icon} size={28} color={record.color} />
             </View>
-            <Text style={[styles.modalTitle, isDark && { color: "#F8FAFC" }]}>{record.title}</Text>
-            <View style={styles.modalMetaRow}>
-              <View style={[styles.modalMetaChip, { backgroundColor: `${record.color}1A` }]}>
-                <Text style={[styles.modalMetaText, { color: record.color }]}>{record.category}</Text>
+            <Text style={s.modalTitle}>{record.title}</Text>
+            <View style={s.modalMetaRow}>
+              <View style={[s.modalMetaChip, { backgroundColor: `${record.color}1A` }]}>
+                <Text style={[s.modalMetaText, { color: record.color }]}>{record.category}</Text>
               </View>
-              <Text style={[styles.modalMetaDate, isDark && { color: "rgba(255,255,255,0.65)" }]}>{record.date}</Text>
+              <Text style={s.modalMetaDate}>{record.date}</Text>
             </View>
-            <Text style={[styles.modalDetail, isDark && { color: "rgba(255,255,255,0.82)" }]}>{record.detail}</Text>
+            <Text style={s.modalDetail}>{record.detail}</Text>
+
+            {/* Ask Bloop CTA */}
+            <Pressable
+              style={({ pressed }) => [s.askBloopCard, pressed && s.pressed]}
+              onPress={() => {}}
+            >
+              <View style={s.askBloopCardIcon}>
+                <MaterialCommunityIcons name="shield-check-outline" size={18} color={colors.primaryCTA} />
+              </View>
+              <View style={s.askBloopCardCopy}>
+                <Text style={s.askBloopCardTitle}>Ask Bloop about this</Text>
+                <Text style={s.askBloopCardSub}>Get a calm, jargon-free explanation of your record</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </Pressable>
+
             <Pressable
               onPress={onClose}
-              style={({ pressed }) => [styles.modalCloseBtn, pressed && styles.pressed]}
+              style={({ pressed }) => [s.modalCloseBtn, pressed && s.pressed]}
             >
-              <LinearGradient colors={["#E07A5F", "#F4A27D"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalCloseGrad}>
-                <Text style={styles.modalCloseText}>Done</Text>
-              </LinearGradient>
+              <Text style={s.modalCloseText}>Done</Text>
             </Pressable>
           </ScrollView>
         )}
@@ -361,308 +431,454 @@ function RecordDetailModal({
   );
 }
 
-const palette = {
-  background: "#FAF9F6",
-  warmShadow: "#D6C3B9",
-};
+// ─── Styles ───────────────────────────────────────────────────────────────────
+function getStyles(colors: AppColors) {
+  const darkShadow = {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.32,
+    shadowRadius: 18,
+    elevation: 3,
+  };
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: palette.background,
-  },
-  auraOne: {
-    position: "absolute",
-    width: 240, height: 240, borderRadius: 120,
-    backgroundColor: "rgba(224,122,95,0.10)",
-    top: -60, right: -80,
-  },
-  auraTwo: {
-    position: "absolute",
-    width: 200, height: 200, borderRadius: 100,
-    backgroundColor: "rgba(189,178,255,0.11)",
-    bottom: 100, left: -70,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 10,
-  },
-  iconButton: {
-    width: 44, height: 44, borderRadius: 22,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.82)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.70)",
-    shadowColor: palette.warmShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15, shadowRadius: 12, elevation: 2,
-  },
-  iconButtonDark: {
-    backgroundColor: "rgba(255,255,255,0.10)",
-    borderColor: "rgba(255,255,255,0.14)",
-  },
-  headerCopy: { flex: 1, alignItems: "center" },
-  headerTitle: { fontFamily: F.luxuryBold, fontSize: 22, lineHeight: 28 },
-  headerSub: { fontFamily: F.uiBold, fontSize: 11, lineHeight: 15, marginTop: 2 },
-  heroBanner: {
-    marginHorizontal: 20, borderRadius: 22, padding: 16,
-    flexDirection: "row", alignItems: "center", gap: 12,
-    marginBottom: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.60)",
-  },
-  heroIconWrap: {
-    width: 50, height: 50, borderRadius: 25,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(224,122,95,0.14)",
-  },
-  heroCopy: { flex: 1 },
-  heroTitle: { fontFamily: F.luxuryBold, fontSize: 17, lineHeight: 22 },
-  heroSub: { fontFamily: F.uiBold, fontSize: 12, lineHeight: 16, marginTop: 3 },
-  shieldBadge: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(129,178,154,0.16)",
-  },
-  // Fixed-height row so chip selection doesn't visually nudge the list below.
-  filterRowWrap: {
-    height: 50,
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  filterRow: {
-    paddingHorizontal: 20,
-    gap: 8,
-    alignItems: "center",
-  },
-  filterChip: {
-    height: 36,
-    minWidth: 72,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.82)",
-    borderWidth: 1,
-    borderColor: "rgba(200,192,210,0.35)",
-  },
-  filterChipDark: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(255,255,255,0.14)",
-  },
-  filterChipText: {
-    fontFamily: F.uiExtraBold,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  listWrap: { flex: 1 },
-  listContent: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 4 },
-  recordCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 22,
-    padding: 14,
-    backgroundColor: "rgba(255,255,255,0.86)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.60)",
-    shadowColor: palette.warmShadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 2,
-  },
-  recordCardDark: {
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderColor: "rgba(255,255,255,0.10)",
-  },
-  recordIconWrap: {
-    width: 46, height: 46, borderRadius: 23,
-    alignItems: "center", justifyContent: "center", flexShrink: 0,
-  },
-  recordBody: { flex: 1, minWidth: 0, gap: 3 },
-  recordTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    flexWrap: "nowrap",
-  },
-  recordTitle: {
-    flex: 1,
-    fontFamily: F.uiBold,
-    fontSize: 13,
-    lineHeight: 17,
-    flexShrink: 1,
-  },
-  categoryPill: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, flexShrink: 0 },
-  categoryText: {
-    fontFamily: F.uiBlack,
-    fontSize: 9,
-    lineHeight: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  recordDate: { fontFamily: F.uiBold, fontSize: 11, lineHeight: 14 },
-  recordSummary: { fontFamily: F.uiSemiBold, fontSize: 12, lineHeight: 17 },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    gap: 12,
-  },
-  emptyText: {
-    fontFamily: F.uiBold,
-    fontSize: 14,
-    lineHeight: 19,
-    textAlign: "center",
-  },
-  emptyAction: {
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 18,
-    backgroundColor: "rgba(224,122,95,0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.30)",
-  },
-  emptyActionText: {
-    fontFamily: F.uiBlack,
-    fontSize: 12,
-    color: "#E07A5F",
-  },
-  pressed: { transform: [{ scale: 0.97 }] },
-  // ── Toast ─────────────────────────────────────────────────────────────
-  toastWrap: {
-    position: "absolute",
-    bottom: 30,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  toast: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.98)",
-    borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.24)",
-    shadowColor: "#7A4A5C",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.20,
-    shadowRadius: 18,
-    elevation: 6,
-    maxWidth: "86%",
-  },
-  toastText: {
-    flex: 1,
-    fontFamily: F.uiBold,
-    fontSize: 12,
-    lineHeight: 16,
-    color: "#241C1D",
-  },
-  // ── Detail modal ──────────────────────────────────────────────────────
-  modalScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(22,18,28,0.42)",
-  },
-  modalSheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFAF7",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 10,
-    paddingBottom: 30,
-    maxHeight: "84%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  modalSheetDark: {
-    backgroundColor: "#1A1028",
-  },
-  modalHandle: {
-    width: 44,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(107,76,85,0.22)",
-    alignSelf: "center",
-    marginBottom: 14,
-  },
-  modalContent: {
-    paddingHorizontal: 22,
-    paddingBottom: 10,
-  },
-  modalIconWrap: {
-    width: 56, height: 56, borderRadius: 28,
-    alignItems: "center", justifyContent: "center",
-    alignSelf: "flex-start",
-    marginBottom: 12,
-  },
-  modalTitle: {
-    fontFamily: F.luxuryBold,
-    fontSize: 22,
-    lineHeight: 28,
-    color: "#241C1D",
-    marginBottom: 8,
-  },
-  modalMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
-  },
-  modalMetaChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  modalMetaText: {
-    fontFamily: F.uiBlack,
-    fontSize: 10,
-    lineHeight: 13,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  modalMetaDate: {
-    fontFamily: F.uiBold,
-    fontSize: 12,
-    color: "rgba(107,76,85,0.78)",
-  },
-  modalDetail: {
-    fontFamily: F.uiMedium,
-    fontSize: 14,
-    lineHeight: 21,
-    color: "rgba(36,28,29,0.86)",
-    marginBottom: 24,
-  },
-  modalCloseBtn: {
-    borderRadius: 28,
-    shadowColor: "#E07A5F",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  modalCloseGrad: {
-    height: 52,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalCloseText: {
-    fontFamily: F.uiBlack,
-    fontSize: 15,
-    color: "#FFF",
-    letterSpacing: 0.3,
-  },
-});
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    auraOne: {
+      position: "absolute",
+      width: 240, height: 240, borderRadius: 120,
+      backgroundColor: "rgba(224,122,95,0.07)",
+      top: -60, right: -80,
+    },
+    auraTwo: {
+      position: "absolute",
+      width: 200, height: 200, borderRadius: 100,
+      backgroundColor: "rgba(155,114,203,0.06)",
+      bottom: 100, left: -70,
+    },
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 12,
+      gap: 10,
+    },
+    iconButton: {
+      width: 44, height: 44, borderRadius: 22,
+      alignItems: "center", justifyContent: "center",
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1, borderColor: colors.border,
+      ...darkShadow,
+    },
+    iconButtonActive: {
+      backgroundColor: colors.primaryCTA,
+      borderColor: colors.primaryCTA,
+    },
+    headerCopy: { flex: 1, alignItems: "center" },
+    headerTitle: {
+      fontFamily: F.luxuryBold,
+      fontSize: 22,
+      lineHeight: 28,
+      color: colors.textPrimary,
+    },
+    headerSub: {
+      fontFamily: F.uiBold,
+      fontSize: 11,
+      lineHeight: 15,
+      marginTop: 2,
+      color: colors.textMuted,
+    },
+
+    // ── Hero banner ───────────────────────────────────────────────────────────
+    heroBanner: {
+      marginHorizontal: 20,
+      borderRadius: 22,
+      padding: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      ...darkShadow,
+    },
+    heroIconWrap: {
+      width: 50, height: 50, borderRadius: 25,
+      alignItems: "center", justifyContent: "center",
+      backgroundColor: "rgba(224,122,95,0.14)",
+    },
+    heroCopy: { flex: 1 },
+    heroTitle: {
+      fontFamily: F.luxuryBold,
+      fontSize: 17,
+      lineHeight: 22,
+      color: colors.textPrimary,
+    },
+    heroSub: {
+      fontFamily: F.uiBold,
+      fontSize: 12,
+      lineHeight: 16,
+      marginTop: 3,
+      color: colors.textMuted,
+    },
+    shieldBadge: {
+      width: 36, height: 36, borderRadius: 18,
+      alignItems: "center", justifyContent: "center",
+      backgroundColor: "rgba(129,178,154,0.14)",
+    },
+
+    // ── Upload panel ──────────────────────────────────────────────────────────
+    uploadPanel: {
+      marginHorizontal: 20,
+      overflow: "hidden",
+    },
+    uploadPanelInner: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 12,
+      ...darkShadow,
+    },
+    uploadPanelHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    uploadPanelTitle: {
+      fontFamily: F.uiBold,
+      fontSize: 14,
+      lineHeight: 18,
+      color: colors.textPrimary,
+    },
+    uploadInputWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      paddingHorizontal: 14,
+      height: 46,
+    },
+    uploadInput: {
+      flex: 1,
+      fontFamily: F.uiSemiBold,
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
+    uploadCategoryLabel: {
+      fontFamily: F.uiBold,
+      fontSize: 11,
+      lineHeight: 14,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    uploadChipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    uploadChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 999,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    uploadChipText: {
+      fontFamily: F.uiBold,
+      fontSize: 11,
+      lineHeight: 14,
+      color: colors.textMuted,
+    },
+    uploadActionRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    uploadDocBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    uploadDocBtnText: {
+      fontFamily: F.uiBold,
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
+    askBloopBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primaryCTA,
+    },
+    askBloopText: {
+      fontFamily: F.uiBold,
+      fontSize: 12,
+      color: colors.background,
+    },
+
+    // ── Filter chips ──────────────────────────────────────────────────────────
+    filterRowWrap: {
+      height: 50,
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    filterRow: {
+      paddingHorizontal: 20,
+      gap: 8,
+      alignItems: "center",
+    },
+    filterChip: {
+      height: 36,
+      minWidth: 72,
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    filterChipText: {
+      fontFamily: F.uiExtraBold,
+      fontSize: 12,
+      lineHeight: 16,
+    },
+
+    // ── Records list ──────────────────────────────────────────────────────────
+    listWrap: { flex: 1 },
+    listContent: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 4 },
+    recordCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderRadius: 22,
+      padding: 14,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...darkShadow,
+    },
+    recordIconWrap: {
+      width: 46, height: 46, borderRadius: 23,
+      alignItems: "center", justifyContent: "center", flexShrink: 0,
+    },
+    recordBody: { flex: 1, minWidth: 0, gap: 3 },
+    recordTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      flexWrap: "nowrap",
+    },
+    recordTitle: {
+      flex: 1,
+      fontFamily: F.uiBold,
+      fontSize: 13,
+      lineHeight: 17,
+      flexShrink: 1,
+      color: colors.textPrimary,
+    },
+    categoryPill: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, flexShrink: 0 },
+    categoryText: {
+      fontFamily: F.uiBlack,
+      fontSize: 9,
+      lineHeight: 12,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    recordDate: {
+      fontFamily: F.uiBold,
+      fontSize: 11,
+      lineHeight: 14,
+      color: colors.textMuted,
+    },
+    recordSummary: {
+      fontFamily: F.uiSemiBold,
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.textMuted,
+    },
+
+    // ── Empty state ───────────────────────────────────────────────────────────
+    emptyState: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 60,
+      gap: 12,
+    },
+    emptyText: {
+      fontFamily: F.uiBold,
+      fontSize: 14,
+      lineHeight: 19,
+      textAlign: "center",
+      color: colors.textMuted,
+    },
+    emptyAction: {
+      marginTop: 4,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 18,
+      backgroundColor: "rgba(224,122,95,0.14)",
+      borderWidth: 1,
+      borderColor: "rgba(224,122,95,0.30)",
+    },
+    emptyActionText: {
+      fontFamily: F.uiBlack,
+      fontSize: 12,
+      color: "#E07A5F",
+    },
+
+    pressed: { transform: [{ scale: 0.97 }] },
+
+    // ── Detail modal ──────────────────────────────────────────────────────────
+    modalScrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(14,10,18,0.60)",
+    },
+    modalSheet: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      paddingTop: 10,
+      paddingBottom: 34,
+      maxHeight: "88%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -8 },
+      shadowOpacity: 0.36,
+      shadowRadius: 24,
+      elevation: 14,
+    },
+    modalHandle: {
+      width: 44, height: 4, borderRadius: 2,
+      backgroundColor: colors.borderSubtle,
+      alignSelf: "center",
+      marginBottom: 14,
+    },
+    modalContent: {
+      paddingHorizontal: 22,
+      paddingBottom: 10,
+    },
+    modalIconWrap: {
+      width: 56, height: 56, borderRadius: 28,
+      alignItems: "center", justifyContent: "center",
+      alignSelf: "flex-start",
+      marginBottom: 12,
+    },
+    modalTitle: {
+      fontFamily: F.luxuryBold,
+      fontSize: 22,
+      lineHeight: 28,
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    modalMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 16,
+    },
+    modalMetaChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 12,
+    },
+    modalMetaText: {
+      fontFamily: F.uiBlack,
+      fontSize: 10,
+      lineHeight: 13,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    modalMetaDate: {
+      fontFamily: F.uiBold,
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    modalDetail: {
+      fontFamily: F.uiMedium,
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.textPrimary,
+      marginBottom: 20,
+      opacity: 0.88,
+    },
+
+    // Ask Bloop card (inside detail modal)
+    askBloopCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      marginBottom: 20,
+    },
+    askBloopCardIcon: {
+      width: 40, height: 40, borderRadius: 20,
+      alignItems: "center", justifyContent: "center",
+      backgroundColor: colors.surfaceLavender,
+    },
+    askBloopCardCopy: { flex: 1 },
+    askBloopCardTitle: {
+      fontFamily: F.uiBold,
+      fontSize: 13,
+      lineHeight: 17,
+      color: colors.textPrimary,
+    },
+    askBloopCardSub: {
+      fontFamily: F.uiSemiBold,
+      fontSize: 11,
+      lineHeight: 15,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+
+    modalCloseBtn: {
+      alignItems: "center",
+      justifyContent: "center",
+      height: 52,
+      borderRadius: 28,
+      backgroundColor: colors.primaryCTA,
+      shadowColor: colors.primaryCTA,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.28,
+      shadowRadius: 14,
+      elevation: 4,
+    },
+    modalCloseText: {
+      fontFamily: F.uiBlack,
+      fontSize: 15,
+      color: colors.background,
+      letterSpacing: 0.3,
+    },
+  });
+}

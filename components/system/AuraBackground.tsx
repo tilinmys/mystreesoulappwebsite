@@ -14,6 +14,6 @@ export type SystemAuraVariant =
   | "menopause"
   | "vault";
 
-export function AuraBackground({ variant }: { variant: SystemAuraVariant }) {
-  return <ContextualAuraBackground variant={variant} />;
+export function AuraBackground({ variant, forceDark }: { variant: SystemAuraVariant; forceDark?: boolean }) {
+  return <ContextualAuraBackground variant={variant} forceDark={forceDark} />;
 }

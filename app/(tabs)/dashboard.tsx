@@ -8,25 +8,24 @@ import {
   Animated,
   Dimensions,
   Easing,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View
 } from "react-native";
 // Note: react-native-reanimated 4.x requires a dev-client build and cannot run
 // in Expo Go. All entrance animations are handled with React Native's built-in
 // Animated API instead.
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
+import Svg, { Circle, Path, Polyline } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
 import { DailyLogSheet } from "../../components/cycle/DailyLogSheet";
 import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
 import { useOnboardingStore, type LifeStage } from "../../store/onboardingStore";
 import { useDailyLogStore } from "../../store/dailyLogStore";
+import { darkColors, lightColors, type AppColors } from "../../constants/colors";
 
 const bloopWelcome       = require("../../public/images/bloop-welcome.webp");
 const bloopCalm          = require("../../public/images/bloop-calm.webp");
@@ -42,67 +41,48 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// ── Palette ──────────────────────────────────────────────────────────────────
-const C = {
-  bg:         "#FAF9F6",
-  white:      "#FFFFFF",
-  text:       "#2B2D42",
-  muted:      "#6B708D",
-  faint:      "#A89F9B",
-  terracotta: "#E07A5F",
-  peach:      "#F4A261",
-  sage:       "#81B29A",
-  lavender:   "#BDB2FF",
-  sand:       "#E7D8C9",
-  rose:       "#D7A6A1",
-};
+// â”€â”€ Static data structures (Dynamic Color Mapping) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function getHealthWay(colors: AppColors) {
+  return [
+    { label: "Period\ntracker",    icon: "water",               iconColor: colors.periodColor, bg: `${colors.periodColor}22` },
+    { label: "Symptoms\ntracker",  icon: "heart",               iconColor: colors.primaryCTA,  bg: `${colors.primaryCTA}22` },
+    { label: "Wellness",           icon: "flower-outline",      iconColor: colors.warning,     bg: `${colors.warning}22` },
+    { label: "Health\ninsights",   icon: "chart-bubble",        iconColor: colors.fertileColor,bg: `${colors.fertileColor}22` },
+  ] as const;
+}
 
-// ── Static data ───────────────────────────────────────────────────────────────
-const logMoods = [
-  { label: "Calm",        icon: "emoticon-outline",           color: "#81B29A" },
-  { label: "Emotional",   icon: "heart-outline",              color: "#F1A7C4" },
-  { label: "Happy",       icon: "emoticon-happy-outline",     color: "#FFD166" },
-  { label: "Irritated",   icon: "lightning-bolt-outline",     color: "#E07A5F" },
-  { label: "Overwhelmed", icon: "weather-lightning-rainy",    color: "#C17ACB" },
-  { label: "Anxious",     icon: "pulse",                      color: "#F1A7C4" },
-  { label: "Burned Out",  icon: "battery-alert-variant-outline", color: "#E07A5F" },
-  { label: "Low Energy",  icon: "sleep",                      color: "#81B29A" },
-] as const;
-
-const flowOptions = [
-  { label: "Spotting", fill: 0.25 },
-  { label: "Light",    fill: 0.46 },
-  { label: "Medium",   fill: 0.70 },
-  { label: "Heavy",    fill: 1.00 },
-] as const;
-
-const logSymptoms = [
-  { label: "Cramps",     icon: "fire" },
-  { label: "Bloating",   icon: "stomach" },
-  { label: "Headache",   icon: "head-snowflake-outline" },
-  { label: "Acne",       icon: "face-woman-shimmer-outline" },
-  { label: "Fatigue",    icon: "bed-outline" },
-  { label: "Back Pain",  icon: "human-handsdown" },
-  { label: "Tenderness", icon: "heart-pulse" },
-  { label: "Cravings",   icon: "food-croissant" },
-] as const;
-
-const healthWay = [
-  { label: "Period\ntracker",    icon: "water",               iconColor: C.terracotta, bg: "rgba(224,122,95,0.13)" },
-  { label: "Symptoms\ntracker",  icon: "heart",               iconColor: C.lavender,   bg: "rgba(189,178,255,0.15)" },
-  { label: "Wellness",           icon: "flower-outline",      iconColor: C.peach,      bg: "rgba(244,162,97,0.13)" },
-  { label: "Health\ninsights",   icon: "chart-bubble",        iconColor: C.sage,       bg: "rgba(129,178,154,0.15)" },
-] as const;
-
-// ── Animated circle helper ────────────────────────────────────────────────────
+// â”€â”€ Animated circle helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const AnimCircle = Animated.createAnimatedComponent(Circle);
 
-// ── Root screen ───────────────────────────────────────────────────────────────
+// â”€â”€ Dynamic Styles Cache (Maximum Performance Engine) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let darkStyles: ReturnType<typeof getStyles> | null = null;
+let lightStyles: ReturnType<typeof getStyles> | null = null;
+let darkPremiumStyles: ReturnType<typeof getPremiumStyles> | null = null;
+let lightPremiumStyles: ReturnType<typeof getPremiumStyles> | null = null;
+
+function useStyles() {
+  const { colors, isDark } = useColorMode();
+  if (isDark) {
+    if (!darkStyles) {
+      darkStyles = getStyles(darkColors, true);
+      darkPremiumStyles = getPremiumStyles(darkColors, true);
+    }
+    return { colors, isDark, s: darkStyles!, ps: darkPremiumStyles! };
+  } else {
+    if (!lightStyles) {
+      lightStyles = getStyles(lightColors, false);
+      lightPremiumStyles = getPremiumStyles(lightColors, false);
+    }
+    return { colors, isDark, s: lightStyles!, ps: lightPremiumStyles! };
+  }
+}
+
+// â”€â”€ Root screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function DashboardScreen() {
   const router   = useRouter();
-  const { isDark } = useColorMode();
+  const { colors, isDark, s, ps } = useStyles();
 
-  // ── Personalisation data from onboarding ─────────────────────────────────
+  // â”€â”€ Personalisation data from onboarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const selectedGoals  = useOnboardingStore((s) => s.selectedGoals);
   const lifeStage      = useOnboardingStore((s) => s.lifeStage);
   const stressLevel    = useOnboardingStore((s) => s.stressLevel);
@@ -115,13 +95,11 @@ export default function DashboardScreen() {
   );
 
   const [logOpen, setLogOpen]           = useState(false);
-  const [activeQuickLog, setActiveLog]  = useState("mood");
-  // nudge: null = loading, "logged" | "nudge" | "dismissed"
   const [nudgeState, setNudgeState] = useState<"loading" | "logged" | "nudge" | "dismissed">("loading");
 
   const hasLoggedToday = useDailyLogStore((s) => s.hasLoggedToday);
 
-  // ── Premium gate sheet ────────────────────────────────────────────────────
+  // â”€â”€ Premium gate sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [premiumSheetVisible, setPremiumSheetVisible] = useState(false);
   const [premiumFeature, setPremiumFeature] = useState<{ title: string; desc: string }>({
     title: "", desc: "",
@@ -163,16 +141,28 @@ export default function DashboardScreen() {
     SecureStore.getItemAsync(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`)
       .then((value) => setNudgeState(value === "true" ? "dismissed" : "nudge"))
       .catch(() => setNudgeState("nudge"));
-  }, []);
+  }, [hasLoggedToday]);
 
   function dismissNudge() {
     setNudgeState("dismissed");
     SecureStore.setItemAsync(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`, "true").catch(() => undefined);
   }
 
-  function onLogSaved() {
+  function onLogSaved(payload?: any) {
     setLogOpen(false);
     setNudgeState("logged");
+    if (payload?.symptoms?.includes("cramps")) {
+      setTimeout(() => {
+        router.push({
+          pathname: "/bloop-chat",
+          params: {
+            prompt: "I am experiencing cramps today",
+            autoSend: "true",
+            source: "cycle",
+          },
+        });
+      }, 1000);
+    }
   }
 
   // Cycle ring: 73% filled = Day 12 of ~16-day window
@@ -183,18 +173,18 @@ export default function DashboardScreen() {
   });
 
   return (
-    <SafeAreaView edges={["top"]} style={[s.screen, isDark && s.screenDark]}>
+    <SafeAreaView edges={["top"]} style={s.screen}>
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
         bounces={false}
         overScrollMode="never"
-        style={[s.scrollView, isDark && s.scrollViewDark]}
+        style={s.scrollView}
       >
-        {/* 1 ── Header */}
+        {/* 1 ——— Header */}
         <Header onNotifications={() => router.push("/notifications")} />
 
-        {/* 2 ── Daily log nudge */}
+        {/* 2 ——— Daily log nudge */}
         {nudgeState === "nudge" ? (
           <AnimatedSlideUp>
             <LogNudgeCard onDismiss={dismissNudge} onLog={() => setLogOpen(true)} />
@@ -209,23 +199,24 @@ export default function DashboardScreen() {
           </AnimatedFadeIn>
         ) : null}
 
-        {/* 3 ── Today at a glance */}
+        {/* 3 â”€â”€ Today at a glance */}
         <Text style={s.sectionLabel}>Today at a glance</Text>
         <TodayGrid
           ringOffset={ringOffset}
           AnimCircle={AnimCircle}
           CIRC={CIRC}
           onCalendar={() => router.navigate("/(tabs)/cycle")}
+          onLog={() => setLogOpen(true)}
         />
 
-        {/* 4 ── Your health, your way */}
+        {/* 4 â”€â”€ Your health, your way */}
         <Text style={s.sectionLabel}>Your health, your way</Text>
         <HealthWayRow router={router} />
 
-        {/* 5 ── Health insights */}
+        {/* 5 â”€â”€ Health insights */}
         <InsightsSection onSeeMore={() => router.navigate("/(tabs)/insights")} />
 
-        {/* 6 ── Health overview strip */}
+        {/* 6 â”€â”€ Health overview strip */}
         <Text style={s.sectionLabel}>Your health overview</Text>
         <HealthOverviewStrip
           emotionalState={emotionalState}
@@ -239,12 +230,16 @@ export default function DashboardScreen() {
           }
         />
 
-        {/* 7 ── Life stage module — only when a stage is stored */}
+        {/* 6.5 ── Today's Gentle Movement */}
+        <Text style={s.sectionLabel}>Today's gentle movement</Text>
+        <GentleMovementWidget router={router} />
+
+        {/* 7 â”€â”€ Life stage module â€” only when a stage is stored */}
         {lifeStage != null && (
           <LifeStageModuleCard lifeStage={lifeStage} router={router} />
         )}
 
-        {/* 8 ── Mental Health Hub — support / safety, never gated */}
+        {/* 8 â”€â”€ Mental Health Hub â€” support / safety, never gated */}
         {hasMentalHealthGoal && (
           <MentalHealthHubCard
             onPress={() => router.push("/grounding")}
@@ -252,7 +247,7 @@ export default function DashboardScreen() {
           />
         )}
 
-        {/* 9 ── Programs for you */}
+        {/* 9 â”€â”€ Programs for you */}
         <Text style={s.sectionLabel}>Our Programs</Text>
         <ProgramsSection
           lifeStage={lifeStage}
@@ -260,11 +255,11 @@ export default function DashboardScreen() {
           onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
         />
 
-        {/* 10 ── Women like you also explored */}
+        {/* 10 â”€â”€ Women like you also explored */}
         <Text style={s.sectionLabel}>Women like you also explored</Text>
         <ExploredSection />
 
-        {/* 11 ── Your companions */}
+        {/* 11 â”€â”€ Your companions */}
         <Text style={s.sectionLabel}>Your companions</Text>
         <CompanionsRow
           onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
@@ -293,37 +288,40 @@ export default function DashboardScreen() {
   );
 }
 
-// ── 1. Header ─────────────────────────────────────────────────────────────────
+// â”€â”€ 1. Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Header({ onNotifications }: { onNotifications: () => void }) {
+  const { colors, s } = useStyles();
   const name = useOnboardingStore((state) => state.name);
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const display = name.trim() || "there";
+  
+  // Time-aware dynamic sun/cloud/moon emoji based on hour
+  const emoji = hour < 12 ? "☀️" : hour < 17 ? "🌤️" : "🌙";
 
   return (
     <View style={s.header}>
       <View style={s.headerLeft}>
         <Text style={s.greetingName}>
-          {greeting}, {display}{" "}
-          <Text style={s.greetingEmoji}>💕</Text>
+          {greeting} {display} <Text style={s.greetingEmoji}>{emoji}</Text>
         </Text>
         <Text style={s.greetingSub}>Take care of yourself today and every day.</Text>
       </View>
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Open notifications"
-      onPress={onNotifications}
-      style={({ pressed }) => [s.bellWrap, pressed && s.pressed]}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open notifications"
+        onPress={onNotifications}
+        style={({ pressed }) => [s.bellWrap, pressed && s.pressed]}
       >
-        <Ionicons name="notifications-outline" size={22} color={C.text} />
+        <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
         <View style={s.bellDot} />
       </Pressable>
     </View>
   );
 }
 
-// ── Animated entrance helpers (Expo Go-safe, no Reanimated worklets) ─────────
+// â”€â”€ Animated entrance helpers (Expo Go-safe, no Reanimated worklets) â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function AnimatedSlideUp({ children }: { children: React.ReactNode }) {
   const translateY = useRef(new Animated.Value(40)).current;
   const opacity    = useRef(new Animated.Value(0)).current;
@@ -344,17 +342,22 @@ function AnimatedFadeIn({ children, duration = 450 }: { children: React.ReactNod
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(opacity, { toValue: 1, duration, useNativeDriver: true }).start();
-  }, []);
+  }, [duration]);
   return <Animated.View style={{ opacity }}>{children}</Animated.View>;
 }
 
-// ── 2a. Full log nudge card (not logged + not dismissed) ──────────────────────
+// â”€â”€ 2a. Full log nudge card (not logged + not dismissed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () => void }) {
+  const { colors, isDark, s } = useStyles();
   return (
     <View style={s.nudgeCard}>
       {/* Glowing gradient wash */}
       <LinearGradient
-        colors={["rgba(212,92,130,0.14)", "rgba(189,178,255,0.18)", "rgba(244,162,97,0.10)"]}
+        colors={[
+          isDark ? `${colors.primaryCTA}0D` : `${colors.primaryCTA}14`,
+          isDark ? `${colors.textMuted}12` : `${colors.textMuted}1E`,
+          isDark ? `${colors.warning}08` : `${colors.warning}0F`
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -371,7 +374,7 @@ function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () =
           onPress={onDismiss}
           style={({ pressed }) => [s.heroCloseBtn, pressed && s.pressed]}
         >
-          <Ionicons name="close" size={16} color={C.muted} />
+          <Ionicons name="close" size={16} color={colors.textMuted} />
         </Pressable>
         <Text style={s.nudgeHeadline}>{"Log today,\nstay in tune ✨"}</Text>
         <Text style={s.heroSub}>A tiny check-in helps your cycle insights feel more like you.</Text>
@@ -380,13 +383,13 @@ function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () =
           style={({ pressed }) => [s.nudgeCta, pressed && s.pressed]}
         >
           <LinearGradient
-            colors={["#E07A5F", "#D45C82"]}
+            colors={[colors.primaryCTA, colors.accentDark]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={s.nudgeCtaGradient}
           >
             <Text style={s.nudgeCtaText}>Log today</Text>
-            <Ionicons name="arrow-forward" size={15} color="#FFF" />
+            <Ionicons name="arrow-forward" size={15} color={colors.background} />
           </LinearGradient>
         </Pressable>
       </View>
@@ -399,18 +402,22 @@ function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () =
   );
 }
 
-// ── 2b. Compact success strip (logged today) ──────────────────────────────────
+// â”€â”€ 2b. Compact success strip (logged today) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LogSuccessStrip() {
+  const { colors, s } = useStyles();
   return (
     <View style={s.successStrip}>
       <LinearGradient
-        colors={["rgba(94,155,107,0.14)", "rgba(129,178,154,0.10)"]}
+        colors={[
+          colors.surfaceSage,
+          `${colors.primaryCTA}10`
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
       <View style={s.successIconWrap}>
-        <MaterialCommunityIcons name="check-circle-outline" size={22} color="#5E9B6B" />
+        <MaterialCommunityIcons name="check-circle-outline" size={22} color={colors.primaryCTA} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={s.successTitle}>You're all caught up today 🌿</Text>
@@ -420,8 +427,9 @@ function LogSuccessStrip() {
   );
 }
 
-// ── 2c. Minimal pill nudge (dismissed but not logged) ────────────────────────
+// â”€â”€ 2c. Minimal pill nudge (dismissed but not logged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LogPillNudge({ onLog }: { onLog: () => void }) {
+  const { colors, s } = useStyles();
   return (
     <Pressable
       onPress={onLog}
@@ -429,93 +437,116 @@ function LogPillNudge({ onLog }: { onLog: () => void }) {
       accessibilityLabel="Log your daily check-in"
       accessibilityRole="button"
     >
-      <MaterialCommunityIcons name="pencil-plus-outline" size={16} color={C.terracotta} />
+      <MaterialCommunityIcons name="pencil-plus-outline" size={16} color={colors.primaryCTA} />
       <Text style={s.pillNudgeText}>Add today's check-in</Text>
-      <Ionicons name="chevron-forward" size={14} color={C.muted} />
+      <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
     </Pressable>
   );
 }
 
-// ── 3. Today at a glance ──────────────────────────────────────────────────────
+// â”€â”€ 3. Today at a glance â€” premium full-width hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function TodayGrid({
-  ringOffset, AnimCircle, CIRC, onCalendar
+  ringOffset, AnimCircle, CIRC, onCalendar, onLog,
 }: {
   ringOffset: Animated.AnimatedInterpolation<number | string>;
   AnimCircle: ReturnType<typeof Animated.createAnimatedComponent<typeof Circle>>;
   CIRC: number;
   onCalendar: () => void;
+  onLog: () => void;
 }) {
+  const { colors, s, isDark } = useStyles();
   return (
-    <View style={s.todayGrid}>
-      {/* LEFT — tall cycle card */}
-      <Pressable
-        onPress={onCalendar}
-        style={({ pressed }) => [s.cycleCard, pressed && s.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Open cycle tracker"
-      >
-        <LinearGradient
-          colors={["rgba(255,248,245,0.98)", "rgba(255,231,214,0.78)", "rgba(232,241,231,0.72)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <CachedImage source={bloopCycle} style={s.cycleCardArt} contentFit="contain" />
-        {/* header row */}
-        <View style={s.cycleCardHeader}>
-          <View style={s.cycleIconBubble}>
-            <MaterialCommunityIcons name="calendar-heart" size={16} color={C.terracotta} />
-          </View>
-          <Text style={s.cycleCardLabel}>Cycle day</Text>
-        </View>
+    <View style={s.cycleCard}>
+      {/* Subtle gradient wash */}
+      <LinearGradient
+        colors={
+          isDark
+            ? [colors.surface, colors.surface]
+            : ["rgba(255,248,245,0.98)", "rgba(255,231,214,0.78)", "rgba(232,241,231,0.72)"]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      {/* Decorative mascot art â€” absolute, fades into background */}
+      <CachedImage source={bloopCycle} style={s.cycleCardArt} contentFit="contain" />
 
-        <Text style={s.cycleDayNum}>Day 12</Text>
+      {/* Header pill row */}
+      <View style={s.cycleCardHeader}>
+        <View style={s.cycleIconBubble}>
+          <MaterialCommunityIcons name="calendar-heart" size={16} color={colors.periodColor} />
+        </View>
+        <Text style={s.cycleCardLabel}>Cycle day</Text>
+      </View>
+
+      {/* â”€â”€ Hero number area â”€â”€ */}
+      <View style={s.cycleHeroArea}>
+        {/* Soft glow aura behind the number */}
+        <View style={s.cycleHeroAura} />
+        <Text style={s.cycleDayLabel}>DAY</Text>
+        <Text style={s.cycleDayNum}>12</Text>
         <Text style={s.cyclePhase}>Rising phase</Text>
+      </View>
 
-        {/* Ring */}
-        <View style={s.ringWrap}>
-          <Svg width={150} height={150} viewBox="0 0 150 150">
-            {/* track */}
-            <Circle
-              cx={75} cy={75} r={66}
-              fill="transparent"
-              stroke={`rgba(224,122,95,0.15)`}
-              strokeWidth={11}
-            />
-            {/* fill */}
-            <AnimCircle
-              cx={75} cy={75} r={66}
-              fill="transparent"
-              stroke={C.terracotta}
-              strokeWidth={11}
-              strokeDasharray={CIRC}
-              strokeDashoffset={ringOffset}
-              strokeLinecap="round"
-              rotation="-90"
-              originX={75}
-              originY={75}
-            />
-          </Svg>
-          <View style={s.ringCenter} pointerEvents="none">
-            <Text style={s.ringLabel}>Next period</Text>
-            <Text style={s.ringDays}><Text style={s.ringDaysNum}>16 </Text>days</Text>
-          </View>
+      {/* Progress ring */}
+      <View style={s.ringWrap}>
+        <Svg width={150} height={150} viewBox="0 0 150 150">
+          {/* track */}
+          <Circle
+            cx={75} cy={75} r={66}
+            fill="transparent"
+            stroke={isDark ? colors.borderSubtle : `${colors.periodColor}22`}
+            strokeWidth={11}
+          />
+          {/* fill */}
+          <AnimCircle
+            cx={75} cy={75} r={66}
+            fill="transparent"
+            stroke={colors.periodColor}
+            strokeWidth={11}
+            strokeDasharray={CIRC}
+            strokeDashoffset={ringOffset}
+            strokeLinecap="round"
+            rotation="-90"
+            originX={75}
+            originY={75}
+          />
+        </Svg>
+        <View style={s.ringCenter} pointerEvents="none">
+          <Text style={s.ringLabel}>Next period</Text>
+          <Text style={s.ringDays}><Text style={s.ringDaysNum}>16 </Text>days</Text>
         </View>
+      </View>
 
-        {/* View calendar button */}
-        <View style={s.viewCalBtn}>
-          <Text style={s.viewCalText}>View calendar</Text>
-          <Ionicons name="chevron-forward" size={14} color={C.muted} />
-        </View>
-      </Pressable>
-
-      {/* RIGHT — two stacked cards */}
+      {/* Action row â€” View calendar + Log today */}
+      <View style={s.logActionRow}>
+        <Pressable
+          onPress={onCalendar}
+          style={({ pressed }) => [s.logActionBtn, pressed && s.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="View cycle calendar"
+        >
+          <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+          <Text style={s.logActionText}>View calendar</Text>
+        </Pressable>
+        <Pressable
+          onPress={onLog}
+          style={({ pressed }) => [s.logActionBtn, s.logActionBtnPrimary, pressed && s.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Log today"
+        >
+          <Ionicons name="pencil-outline" size={13} color="#221822" />
+          <Text style={s.logActionTextPrimary}>Log today</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-// ── 4. Health way row ─────────────────────────────────────────────────────────
+// â”€â”€ 4. Health way row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function HealthWayRow({ router }: { router: ReturnType<typeof useRouter> }) {
+  const { colors, s } = useStyles();
+  const healthWayData = getHealthWay(colors);
   const destinations = [
     "/(tabs)/cycle",
     "/(tabs)/cycle",
@@ -525,7 +556,7 @@ function HealthWayRow({ router }: { router: ReturnType<typeof useRouter> }) {
 
   return (
     <View style={s.healthRow}>
-      {healthWay.map((item, i) => (
+      {healthWayData.map((item, i) => (
         <Pressable
           key={item.label}
           onPress={() => router.navigate(destinations[i])}
@@ -545,8 +576,9 @@ function HealthWayRow({ router }: { router: ReturnType<typeof useRouter> }) {
   );
 }
 
-// ── 5. Health insights section ────────────────────────────────────────────────
+// â”€â”€ 5. Health insights section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
+  const { colors, s } = useStyles();
   // simple sparkline points
   const pts = [
     [0, 38], [18, 28], [36, 32], [54, 16], [72, 22], [90, 10], [108, 18]
@@ -558,7 +590,7 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
       {/* Section header */}
       <View style={s.insightsHeader}>
         <View style={s.insightsHeaderLeft}>
-          <MaterialCommunityIcons name="trending-up" size={18} color={C.terracotta} />
+          <MaterialCommunityIcons name="trending-up" size={18} color={colors.primaryCTA} />
           <Text style={s.insightsTitle}>Health insights</Text>
         </View>
         <Pressable onPress={onSeeMore} hitSlop={10}>
@@ -584,13 +616,13 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
               d={`M0,${pts[0][1]} ` +
                 pts.map(([x, y]) => `L${x},${y}`).join(" ") +
                 ` L${pts[pts.length - 1][0]},52 L0,52 Z`}
-              fill={`rgba(224,122,95,0.10)`}
+              fill={`${colors.primaryCTA}18`}
             />
             {/* line */}
             <Polyline
               points={polyPts}
               fill="none"
-              stroke={C.terracotta}
+              stroke={colors.primaryCTA}
               strokeWidth={2.5}
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -600,7 +632,7 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
               cx={pts[pts.length - 1][0]}
               cy={pts[pts.length - 1][1]}
               r={4}
-              fill={C.terracotta}
+              fill={colors.primaryCTA}
             />
           </Svg>
         </View>
@@ -609,193 +641,11 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
   );
 }
 
-// ── Quick log sheet (preserved) ───────────────────────────────────────────────
-function QuickLogSheet({
-  activeQuickLog, onClose, onSave
-}: {
-  activeQuickLog: string;
-  onClose: () => void;
-  onSave:  () => void;
-}) {
-  const [mood, setMood]           = useState("Calm");
-  const [flow, setFlow]           = useState("Light");
-  const [symptoms, setSymptoms]   = useState(new Set(["Bloating"]));
-  const [energy, setEnergy]       = useState(4);
-  const [stress, setStress]       = useState(1);
-  const [note, setNote]           = useState("");
 
-  const toggleSymptom = (label: string) => {
-    setSymptoms((prev) => {
-      const next = new Set(prev);
-      next.has(label) ? next.delete(label) : next.add(label);
-      return next;
-    });
-  };
-
-  return (
-    <View style={s.overlay}>
-      <Pressable style={s.scrim} onPress={onClose} />
-      <View style={s.sheet}>
-        <View style={s.grabber} />
-
-        {/* Sheet header */}
-        <View style={s.sheetHeader}>
-          <View>
-            <Text style={s.sheetTitle}>How is your Mood Today?</Text>
-            <Text style={s.sheetSub}>A quick check-in for your body and mind.</Text>
-          </View>
-          <Pressable onPress={onClose} style={({ pressed }) => [s.closeBtn, pressed && s.pressed]}>
-            <Ionicons name="close" size={22} color="rgba(240,210,225,0.72)" />
-          </Pressable>
-        </View>
-
-        <ScrollView
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={s.sheetContent}
-        >
-          {/* Mood */}
-          <SheetSection title="Mood">
-            <View style={s.moodWrap}>
-              {logMoods.map((item) => {
-                const sel = mood === item.label;
-                return (
-                  <Pressable
-                    key={item.label}
-                    onPress={() => setMood(item.label)}
-                    style={({ pressed }) => [
-                      s.moodChip,
-                      sel && { borderColor: item.color, backgroundColor: `${item.color}22` },
-                      pressed && s.pressed,
-                    ]}
-                  >
-                    <MaterialCommunityIcons name={item.icon} size={18} color={sel ? item.color : "rgba(240,210,225,0.52)"} />
-                    <Text style={[s.moodChipText, sel && { color: "#FFF0F5" }]}>{item.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </SheetSection>
-
-          {/* Flow */}
-          <SheetSection title="How's your flow?">
-            <View style={s.flowRow}>
-              {flowOptions.map((item) => {
-                const sel = flow === item.label;
-                return (
-                  <Pressable
-                    key={item.label}
-                    onPress={() => setFlow(item.label)}
-                    style={({ pressed }) => [s.flowCard, sel && s.flowCardSel, pressed && s.pressed]}
-                  >
-                    <View style={s.dropShape}>
-                      <View style={[s.dropFill, { height: `${item.fill * 100}%` as any }]} />
-                      <MaterialCommunityIcons name="water" size={22} color={sel ? "#FFF0F5" : "rgba(240,210,225,0.44)"} />
-                    </View>
-                    <Text style={[s.flowLabel, sel && { color: "#FFF0F5" }]}>{item.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </SheetSection>
-
-          {/* Symptoms */}
-          <SheetSection title="Physical symptoms">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.symptomRow}>
-              {logSymptoms.map((item) => {
-                const sel = symptoms.has(item.label);
-                return (
-                  <Pressable
-                    key={item.label}
-                    onPress={() => toggleSymptom(item.label)}
-                    style={({ pressed }) => [s.symptomCard, sel && s.symptomCardSel, pressed && s.pressed]}
-                  >
-                    <MaterialCommunityIcons name={item.icon as any} size={22} color={sel ? C.peach : "rgba(240,210,225,0.44)"} />
-                    <Text style={[s.symptomLabel, sel && { color: "#FFF0F5" }]}>{item.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </SheetSection>
-
-          {/* Energy & stress */}
-          <SheetSection title="Energy & stress">
-            <SheetSlider label="Energy Level" accent={C.peach}  value={energy} max={5} onChange={() => setEnergy((v) => v >= 5 ? 1 : v + 1)} maxLabel="High" />
-            <SheetSlider label="Stress"       accent={C.sage}   value={stress} max={5} onChange={() => setStress((v) => v >= 5 ? 1 : v + 1)} maxLabel={stress <= 2 ? "Low" : "Elevated"} />
-          </SheetSection>
-
-          {/* Notes */}
-          <SheetSection title="Optional notes">
-            <TextInput
-              multiline
-              value={note}
-              onChangeText={setNote}
-              placeholder="Anything you'd like to remember today?"
-              placeholderTextColor="rgba(240,210,225,0.35)"
-              style={s.noteInput}
-              textAlignVertical="top"
-            />
-          </SheetSection>
-        </ScrollView>
-
-        {/* Save */}
-        <View style={s.sheetFooter}>
-          <Pressable onPress={onSave} style={({ pressed }) => [s.saveShell, pressed && s.pressed]}>
-            <LinearGradient
-              colors={[C.terracotta, C.peach]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={s.saveBtn}
-            >
-              <Text style={s.saveBtnText}>Save Today's Log</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFF" />
-            </LinearGradient>
-          </Pressable>
-          <Pressable onPress={onClose} hitSlop={10}>
-            <Text style={s.skipText}>Skip Notes</Text>
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function SheetSection({ children, title }: { children: React.ReactNode; title: string }) {
-  return (
-    <View style={s.sheetSection}>
-      <Text style={s.sheetSectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function SheetSlider({
-  accent, label, maxLabel, onChange, value, max
-}: {
-  accent: string; label: string; maxLabel: string;
-  onChange: () => void; value: number; max: number;
-}) {
-  return (
-    <Pressable onPress={onChange} style={({ pressed }) => [s.sliderBlock, pressed && s.pressed]}>
-      <View style={s.sliderRow}>
-        <Text style={s.sliderLabel}>{label}</Text>
-        <Text style={[s.sliderVal, { color: accent }]}>{maxLabel}</Text>
-      </View>
-      <View style={s.sliderTrack}>
-        <LinearGradient
-          colors={[`${accent}88`, accent]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={[s.sliderFill, { width: `${(value / max) * 100}%` }]}
-        />
-        <View style={[s.sliderThumb, { left: `${Math.min(88, (value / max) * 100)}%` as any, borderColor: accent }]} />
-      </View>
-    </Pressable>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ── Premium Gate Sheet ───────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ Premium Gate Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Shows before routing to /premium so users know what they're unlocking.
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function PremiumSheet({
   sheetAnim,
@@ -810,6 +660,7 @@ function PremiumSheet({
   onClose: () => void;
   onExplore: () => void;
 }) {
+  const { colors, ps, s } = useStyles();
   const translateY = sheetAnim.interpolate({
     inputRange: [0, 1], outputRange: [300, 0],
   });
@@ -829,7 +680,7 @@ function PremiumSheet({
         {/* Crown icon */}
         <View style={ps.crownRow}>
           <View style={ps.crownCircle}>
-            <MaterialCommunityIcons name="crown-outline" size={28} color={C.terracotta} />
+            <MaterialCommunityIcons name="crown-outline" size={28} color={colors.premium} />
           </View>
         </View>
 
@@ -843,7 +694,7 @@ function PremiumSheet({
             { icon: "check-circle-outline" as const, text: "Private & encrypted" },
           ].map((b) => (
             <View key={b.text} style={ps.benefitItem}>
-              <MaterialCommunityIcons name={b.icon} size={15} color={C.sage} />
+              <MaterialCommunityIcons name={b.icon} size={15} color={colors.fertileColor} />
               <Text style={ps.benefitText}>{b.text}</Text>
             </View>
           ))}
@@ -855,11 +706,11 @@ function PremiumSheet({
           style={({ pressed }) => [ps.exploreShell, pressed && s.pressed]}
         >
           <LinearGradient
-            colors={[C.terracotta, C.peach]}
+            colors={[colors.primaryCTA, colors.accentDark]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={ps.exploreBtn}
           >
-            <MaterialCommunityIcons name="crown-outline" size={16} color="#FFF" />
+            <MaterialCommunityIcons name="crown-outline" size={16} color={colors.background} />
             <Text style={ps.exploreBtnText}>Explore Soul Premium</Text>
           </LinearGradient>
         </Pressable>
@@ -872,9 +723,7 @@ function PremiumSheet({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── 6. Health Overview Strip ─────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function HealthOverviewStrip({
   emotionalState,
@@ -887,14 +736,15 @@ function HealthOverviewStrip({
   stressLevel: number;
   onPremium: () => void;
 }) {
+  const { colors, s } = useStyles();
   const cap = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
   const stressColor =
-    stressLevel < 34 ? C.sage : stressLevel < 67 ? C.peach : C.terracotta;
+    stressLevel < 34 ? colors.primaryCTA : stressLevel < 67 ? colors.warning : colors.periodColor;
 
   return (
     <View style={s.overviewGrid}>
       {/* Stress Score */}
-      <View style={[s.overviewTile, { borderColor: `${stressColor}44` }]}>
+      <View style={s.overviewTile}>
         <View style={[s.overviewIconBubble, { backgroundColor: `${stressColor}18` }]}>
           <MaterialCommunityIcons name="lightning-bolt-outline" size={17} color={stressColor} />
         </View>
@@ -906,24 +756,24 @@ function HealthOverviewStrip({
       </View>
 
       {/* Sleep Level */}
-      <View style={[s.overviewTile, { borderColor: `${C.lavender}44` }]}>
-        <View style={[s.overviewIconBubble, { backgroundColor: `${C.lavender}18` }]}>
-          <MaterialCommunityIcons name="moon-waning-crescent" size={17} color={C.lavender} />
+      <View style={s.overviewTile}>
+        <View style={[s.overviewIconBubble, { backgroundColor: `${colors.textMuted}18` }]}>
+          <MaterialCommunityIcons name="moon-waning-crescent" size={17} color={colors.textMuted} />
         </View>
         <Text style={s.overviewKicker}>Sleep Level</Text>
-        <Text style={[s.overviewValue, { color: C.lavender }]}>{cap(sleepScore)}</Text>
+        <Text style={[s.overviewValue, { color: colors.textMuted }]}>{cap(sleepScore)}</Text>
       </View>
 
       {/* Emotional State */}
-      <View style={[s.overviewTile, { borderColor: `${C.sage}44` }]}>
-        <View style={[s.overviewIconBubble, { backgroundColor: `${C.sage}18` }]}>
-          <MaterialCommunityIcons name="heart-outline" size={17} color={C.sage} />
+      <View style={s.overviewTile}>
+        <View style={[s.overviewIconBubble, { backgroundColor: `${colors.primaryCTA}18` }]}>
+          <MaterialCommunityIcons name="heart-outline" size={17} color={colors.primaryCTA} />
         </View>
         <Text style={s.overviewKicker}>Emotional State</Text>
-        <Text style={[s.overviewValue, { color: C.sage }]}>{cap(emotionalState)}</Text>
+        <Text style={[s.overviewValue, { color: colors.primaryCTA }]}>{cap(emotionalState)}</Text>
       </View>
 
-      {/* AI Insights — locked premium tile */}
+      {/* AI Insights â€” locked premium tile */}
       <Pressable
         onPress={onPremium}
         style={({ pressed }) => [
@@ -932,12 +782,12 @@ function HealthOverviewStrip({
           pressed && s.pressed,
         ]}
       >
-        <View style={[s.overviewIconBubble, { backgroundColor: "rgba(224,122,95,0.12)" }]}>
-          <MaterialCommunityIcons name="crown-outline" size={17} color={C.terracotta} />
+        <View style={[s.overviewIconBubble, { backgroundColor: `${colors.premium}18` }]}>
+          <MaterialCommunityIcons name="crown-outline" size={17} color={colors.premium} />
         </View>
         <Text style={s.overviewKicker}>AI Insights</Text>
         <View style={s.overviewLockRow}>
-          <MaterialCommunityIcons name="lock-outline" size={12} color={C.muted} />
+          <MaterialCommunityIcons name="lock-outline" size={12} color={colors.textMuted} />
           <Text style={s.overviewLockLabel}>Premium</Text>
         </View>
       </Pressable>
@@ -945,53 +795,77 @@ function HealthOverviewStrip({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── 7. Life Stage Module Card ────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ 7. Life Stage Module Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-type LifeStageDatum = {
-  title:    string;
-  subtitle: string;
-  icon:     React.ComponentProps<typeof MaterialCommunityIcons>["name"];
-  color:    string;
-  bg:       string;
-  route:    string;
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// ── 6.5. Gentle Movement Widget ─────────────────────────────────────────────
+function GentleMovementWidget({ router }: { router: ReturnType<typeof useRouter> }) {
+  const { colors, isDark, s } = useStyles();
 
-const LIFE_STAGE_DATA: Record<NonNullable<LifeStage>, LifeStageDatum> = {
-  teen: {
-    title:    "Teen Wellness",
-    subtitle: "A safe space to understand your body",
-    icon:     "school-outline",
-    color:    C.lavender,
-    bg:       "rgba(189,178,255,0.12)",
-    route:    "/adolescence",
-  },
-  cycle_fertility: {
-    title:    "Cycle & Fertility",
-    subtitle: "Track, understand, and optimise your cycle",
-    icon:     "flower-outline",
-    color:    C.terracotta,
-    bg:       "rgba(224,122,95,0.10)",
-    route:    "/(tabs)/cycle",
-  },
-  pregnancy: {
-    title:    "Pregnancy Care",
-    subtitle: "Planned for V2",
-    icon:     "baby-carriage",
-    color:    C.rose,
-    bg:       "rgba(215,166,161,0.13)",
-    route:    "/pregnancy",
-  },
-  menopause: {
-    title:    "Menopause Support",
-    subtitle: "Navigate this transition with confidence",
-    icon:     "sun-wireless-outline",
-    color:    C.peach,
-    bg:       "rgba(244,162,97,0.12)",
-    route:    "/menopause",
-  },
-};
+  return (
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname: "/bloop-chat",
+          params: {
+            prompt: "Luteal Calming Yoga",
+            autoSend: "true",
+            source: "cycle",
+          },
+        })
+      }
+      style={({ pressed }) => [s.gentleMovementCard, pressed && s.pressed]}
+    >
+      <LinearGradient
+        colors={isDark ? ["#1E2C24", "#151522"] : ["#E8F2EC", "#F5F5FC"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.gentleMovementGradient}
+      >
+        <View style={s.gmHeader}>
+          <View style={s.gmHeaderLeft}>
+            <View style={[s.gmPill, { backgroundColor: isDark ? "rgba(129, 178, 154, 0.15)" : "rgba(94, 155, 107, 0.15)" }]}>
+              <Text style={[s.gmPillText, { color: isDark ? "#81B29A" : "#5E9B6B" }]}>
+                Luteal Phase · Day 18
+              </Text>
+            </View>
+            <Text style={s.gmTitle}>Luteal Calming Yoga</Text>
+          </View>
+          <View style={[s.gmPlayBtn, { backgroundColor: isDark ? "#81B29A" : "#5E9B6B" }]}>
+            <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
+          </View>
+        </View>
+
+        <Text style={s.gmSubtitle}>
+          Your progesterone is peaking, which can make you feel more introverted or physically tense. Ground yourself with this cooling sequence designed to quiet the mind.
+        </Text>
+
+        <View style={s.gmDivider} />
+
+        <View style={s.gmFooter}>
+          <View style={s.gmPoseRow}>
+            <View style={[s.gmPoseBadge, { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}>
+              <MaterialCommunityIcons name="spa-outline" size={12} color={isDark ? "#81B29A" : "#5E9B6B"} />
+              <Text style={s.gmPoseText}>Bridge Pose</Text>
+            </View>
+            <View style={[s.gmPoseBadge, { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}>
+              <MaterialCommunityIcons name="spa-outline" size={12} color={isDark ? "#81B29A" : "#5E9B6B"} />
+              <Text style={s.gmPoseText}>Legs-up-Wall</Text>
+            </View>
+            <View style={[s.gmPoseBadge, { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}>
+              <MaterialCommunityIcons name="spa-outline" size={12} color={isDark ? "#81B29A" : "#5E9B6B"} />
+              <Text style={s.gmPoseText}>Forward Fold</Text>
+            </View>
+          </View>
+          
+          <Text style={s.gmDuration}>15m · Gentle</Text>
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
 
 function LifeStageModuleCard({
   lifeStage,
@@ -1000,7 +874,42 @@ function LifeStageModuleCard({
   lifeStage: NonNullable<LifeStage>;
   router: ReturnType<typeof useRouter>;
 }) {
-  const data = LIFE_STAGE_DATA[lifeStage];
+  const { colors, s } = useStyles();
+  const data = {
+    teen: {
+      title:    "Teen Wellness",
+      subtitle: "A safe space to understand your body",
+      icon:     "school-outline" as const,
+      color:    colors.textMuted,
+      bg:       `${colors.textMuted}22`,
+      route:    "/adolescence" as const,
+    },
+    cycle_fertility: {
+      title:    "Cycle & Fertility",
+      subtitle: "Track, understand, and optimise your cycle",
+      icon:     "flower-outline" as const,
+      color:    colors.periodColor,
+      bg:       `${colors.periodColor}22`,
+      route:    "/(tabs)/cycle" as const,
+    },
+    pregnancy: {
+      title:    "Pregnancy Care",
+      subtitle: "Planned for V2",
+      icon:     "baby-carriage" as const,
+      color:    colors.primaryCTA,
+      bg:       `${colors.primaryCTA}22`,
+      route:    "/pregnancy" as const,
+    },
+    menopause: {
+      title:    "Menopause Support",
+      subtitle: "Navigate this transition with confidence",
+      icon:     "sun-wireless-outline" as const,
+      color:    colors.warning,
+      bg:       `${colors.warning}22`,
+      route:    "/menopause" as const,
+    },
+  }[lifeStage];
+
   return (
     <Pressable
       onPress={() => router.navigate(data.route as any)}
@@ -1013,14 +922,14 @@ function LifeStageModuleCard({
         <Text style={s.lifeStageTitle}>{data.title}</Text>
         <Text style={s.lifeStageSubtitle}>{data.subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={C.faint} />
+      <Ionicons name="chevron-forward" size={18} color={colors.textHint} />
     </Pressable>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── 8. Mental Health Hub — locked premium card ───────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ 8. Mental Health Hub â€” support / safety, never gated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function MentalHealthHubCard({
   onPress,
@@ -1029,6 +938,7 @@ function MentalHealthHubCard({
   onPress: () => void;
   onBloop: () => void;
 }) {
+  const { colors, s } = useStyles();
   return (
     <View style={s.mhCard}>
       <CachedImage source={bloopCalm} style={s.mhArt} contentFit="contain" />
@@ -1039,7 +949,7 @@ function MentalHealthHubCard({
         style={({ pressed }) => [s.mhMainRow, pressed && s.pressed]}
       >
         <View style={s.mhIconBubble}>
-          <MaterialCommunityIcons name="brain" size={24} color={C.lavender} />
+          <MaterialCommunityIcons name="brain" size={24} color={colors.textMuted} />
         </View>
         <View style={s.mhTextCol}>
           <Text style={s.mhTitle}>Mental Health Hub</Text>
@@ -1047,11 +957,11 @@ function MentalHealthHubCard({
             Breathing, grounding, and Bloop support
           </Text>
           <View style={s.mhSupportRow}>
-            <MaterialCommunityIcons name="leaf" size={11} color={C.sage} />
+            <MaterialCommunityIcons name="meditation" size={11} color={colors.primaryCTA} />
             <Text style={s.mhSupportLabel}>Grounding exercises</Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={C.faint} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textHint} />
       </Pressable>
 
       {/* Quick-access Bloop button */}
@@ -1060,16 +970,16 @@ function MentalHealthHubCard({
         style={({ pressed }) => [s.mhBloopBtn, pressed && s.pressed]}
         accessibilityLabel="Talk to Bloop"
       >
-        <MaterialCommunityIcons name="chat-processing-outline" size={14} color={C.lavender} />
+        <MaterialCommunityIcons name="chat-processing-outline" size={14} color={colors.textMuted} />
         <Text style={s.mhBloopText}>Talk to Bloop</Text>
       </Pressable>
     </View>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── 9. Programs For You ──────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ 9. Programs For You â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type ProgramDatum = {
   id:       string;
@@ -1078,32 +988,6 @@ type ProgramDatum = {
   icon:     React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   color:    string;
   bg:       string;
-};
-
-const BASE_PROGRAMS: ProgramDatum[] = [
-  {
-    id:       "mojo",
-    title:    "Mystree Mojo 1",
-    subtitle: "Build your rhythm and own your cycle",
-    icon:     "star-four-points-outline",
-    color:    C.terracotta,
-    bg:       "rgba(224,122,95,0.10)",
-  },
-  {
-    id:       "reset",
-    title:    "Safe campaign",
-    subtitle: "Feel supported, informed, and never alone",
-    icon:     "restore",
-    color:    C.sage,
-    bg:       "rgba(129,178,154,0.12)",
-  },
-];
-
-const LIFE_STAGE_PROGRAMS: Record<NonNullable<LifeStage>, ProgramDatum> = {
-  teen:            { id: "teen-prog",  title: "Teen Balance",   subtitle: "Understanding your changing body",    icon: "school-outline",       color: C.lavender,   bg: "rgba(189,178,255,0.12)" },
-  cycle_fertility: { id: "fertile",    title: "Fertile Window", subtitle: "Timing, tracking, and optimising",   icon: "flower-outline",       color: C.terracotta, bg: "rgba(224,122,95,0.10)"  },
-  pregnancy:       { id: "birth-prep", title: "Birth Prep",     subtitle: "Week-by-week readiness guide",        icon: "baby-carriage",        color: C.rose,       bg: "rgba(215,166,161,0.13)" },
-  menopause:       { id: "transition", title: "Transition Kit", subtitle: "Cooling rituals and hormone support", icon: "sun-wireless-outline", color: C.peach,      bg: "rgba(244,162,97,0.12)"  },
 };
 
 function ProgramsSection({
@@ -1115,9 +999,30 @@ function ProgramsSection({
   router: ReturnType<typeof useRouter>;
   onPremiumPress: (title: string, desc: string) => void;
 }) {
+  const { colors, s } = useStyles();
   const programs: ProgramDatum[] = [
-    ...BASE_PROGRAMS,
-    ...(lifeStage != null ? [LIFE_STAGE_PROGRAMS[lifeStage]] : []),
+    {
+      id:       "mojo",
+      title:    "Mystree Mojo 1",
+      subtitle: "Build your rhythm and own your cycle",
+      icon:     "heart-pulse",
+      color:    colors.primaryCTA,
+      bg:       `${colors.primaryCTA}22`,
+    },
+    {
+      id:       "reset",
+      title:    "Safe campaign",
+      subtitle: "Feel supported, informed, and never alone",
+      icon:     "restore",
+      color:    colors.fertileColor,
+      bg:       `${colors.fertileColor}22`,
+    },
+    ...(lifeStage != null ? [{
+      teen:            { id: "teen-prog",  title: "Teen Balance",   subtitle: "Understanding your changing body",    icon: "school-outline" as const,       color: colors.textMuted,   bg: `${colors.textMuted}22` },
+      cycle_fertility: { id: "fertile",    title: "Fertile Window", subtitle: "Timing, tracking, and optimising",   icon: "flower-outline" as const,       color: colors.periodColor, bg: `${colors.periodColor}22`  },
+      pregnancy:       { id: "birth-prep", title: "Birth Prep",     subtitle: "Week-by-week readiness guide",        icon: "baby-carriage" as const,        color: colors.primaryCTA,   bg: `${colors.primaryCTA}22` },
+      menopause:       { id: "transition", title: "Transition Kit", subtitle: "Cooling rituals and hormone support", icon: "sun-wireless-outline" as const, color: colors.warning,      bg: `${colors.warning}22`  },
+    }[lifeStage]] : []),
   ];
 
   return (
@@ -1153,18 +1058,19 @@ function ProgramsSection({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── 10. Women Like You Also Explored ────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-
-const EXPLORED_CARDS = [
-  { id: "breathwork", title: "Calming activities",    subtitle: "4-7-8 reset for anxious moments", icon: "weather-windy",          color: C.sage       },
-  { id: "hormones",   title: "Future Her",            subtitle: "What your cycle is telling you",  icon: "chart-bell-curve",       color: C.lavender   },
-  { id: "journaling", title: "Patient Story",         subtitle: "Real journeys, softly told",      icon: "book-heart-outline",     color: C.terracotta },
-  { id: "sleep",      title: "Affirmations",          subtitle: "Words for calm and clarity",      icon: "moon-waning-crescent",   color: C.peach      },
-] as const;
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ 10. Women Like You Also Explored â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ExploredSection() {
+  const { colors, s } = useStyles();
+  const EXPLORED_CARDS = [
+    { id: "breathwork", title: "Calming activities",    subtitle: "4-7-8 reset for anxious moments", icon: "weather-windy" as const,          color: colors.fertileColor, bg: `${colors.fertileColor}22` },
+    { id: "hormones",   title: "Future Her",            subtitle: "What your cycle is telling you",  icon: "chart-bell-curve" as const,       color: colors.textMuted,    bg: `${colors.textMuted}22` },
+    { id: "journaling", title: "Patient Story",         subtitle: "Real journeys, softly told",      icon: "book-heart-outline" as const,     color: colors.periodColor,  bg: `${colors.periodColor}22` },
+    { id: "sleep",      title: "Affirmations",          subtitle: "Words for calm and clarity",      icon: "moon-waning-crescent" as const,   color: colors.warning,      bg: `${colors.warning}22` },
+  ] as const;
+
   return (
     <ScrollView
       horizontal
@@ -1174,7 +1080,7 @@ function ExploredSection() {
     >
       {EXPLORED_CARDS.map((card) => (
         <View key={card.id} style={s.exploredCard}>
-          <View style={[s.exploredIconBubble, { backgroundColor: `${card.color}18` }]}>
+          <View style={[s.exploredIconBubble, { backgroundColor: card.bg }]}>
             <MaterialCommunityIcons name={card.icon} size={20} color={card.color} />
           </View>
           <Text style={s.exploredTitle}>{card.title}</Text>
@@ -1185,9 +1091,9 @@ function ExploredSection() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── 11. Your Companions Row ──────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ 11. Your Companions Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type CompanionDatum = {
   id:     string;
@@ -1199,13 +1105,6 @@ type CompanionDatum = {
   image:  ImageSource | number;
 };
 
-const COMPANIONS: CompanionDatum[] = [
-  { id: "bloop",  name: "Bloop",  role: "Wellness",   color: C.terracotta, icon: "face-woman-shimmer-outline", locked: false, image: bloopCalm       },
-  { id: "jiggy",  name: "Jiggy",  role: "Emotional",  color: C.lavender,   icon: "heart-pulse",                locked: true,  image: companionJiggy  },
-  { id: "manchi", name: "Manchi", role: "Psychology", color: "#8B5CF6",    icon: "head-snowflake-outline",     locked: true,  image: companionManchi },
-  { id: "yogi",   name: "Yogi",   role: "Movement",   color: C.sage,       icon: "yoga",                       locked: true,  image: companionYogi   },
-];
-
 function CompanionsRow({
   onPremiumPress,
   router,
@@ -1213,6 +1112,14 @@ function CompanionsRow({
   onPremiumPress: (title: string, desc: string) => void;
   router: ReturnType<typeof useRouter>;
 }) {
+  const { colors, s } = useStyles();
+  const companions: CompanionDatum[] = [
+    { id: "bloop",  name: "Bloop",  role: "Wellness",   color: colors.primaryCTA, icon: "face-woman-shimmer-outline", locked: false, image: bloopCalm       },
+    { id: "jiggy",  name: "Jiggy",  role: "Emotional",  color: colors.textMuted,   icon: "heart-pulse",                locked: true,  image: companionJiggy  },
+    { id: "manchi", name: "Manchi", role: "Psychology", color: colors.premium,    icon: "head-snowflake-outline",     locked: true,  image: companionManchi },
+    { id: "yogi",   name: "Yogi",   role: "Movement",   color: colors.fertileColor,       icon: "yoga",                       locked: true,  image: companionYogi   },
+  ];
+
   return (
     <ScrollView
       horizontal
@@ -1220,7 +1127,7 @@ function CompanionsRow({
       style={s.hScroll}
       contentContainerStyle={s.hScrollContent}
     >
-      {COMPANIONS.map((c) => (
+      {companions.map((c) => (
         <Pressable
           key={c.id}
           onPress={() =>
@@ -1234,12 +1141,12 @@ function CompanionsRow({
           style={({ pressed }) => [s.companionCard, pressed && s.pressed]}
         >
           {/* Avatar */}
-          <View style={[s.companionAvatar, { backgroundColor: `${c.color}18` }]}>
+          <View style={[s.companionAvatar, { backgroundColor: `${c.color}22` }]}>
             <CachedImage source={c.image} style={s.companionBloopImage} contentFit="contain" />
             {/* Lock badge on locked companions */}
             {c.locked && (
               <View style={s.companionLockBadge}>
-                <MaterialCommunityIcons name="lock-outline" size={10} color="#FFF" />
+                <MaterialCommunityIcons name="lock-outline" size={10} color={colors.background} />
               </View>
             )}
           </View>
@@ -1248,7 +1155,7 @@ function CompanionsRow({
           <Text style={s.companionRole}>{c.role}</Text>
 
           {c.locked && (
-            <View style={[s.companionPremiumPill, { backgroundColor: `${c.color}18` }]}>
+            <View style={[s.companionPremiumPill, { backgroundColor: `${c.color}22` }]}>
               <Text style={[s.companionPremiumText, { color: c.color }]}>Premium</Text>
             </View>
           )}
@@ -1258,25 +1165,16 @@ function CompanionsRow({
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CARD_RADIUS  = 24;
 const SIDE_PAD     = 20;
-const COL_GAP      = 12;
-const LEFT_COL     = (W - SIDE_PAD * 2 - COL_GAP) * 0.52;
-const RIGHT_COL    = (W - SIDE_PAD * 2 - COL_GAP) * 0.48;
-const RIGHT_CARD_H = (LEFT_COL - COL_GAP) / 2;   // each right card = half of left
 
-const SHEET_BG  = "rgba(30,14,22,0.96)";
-const SHEET_CARD = "rgba(255,220,240,0.07)";
-
-const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
-  screenDark: { backgroundColor: "#111827" },
+const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   scrollView: { flex: 1, backgroundColor: "transparent" },
-  scrollViewDark: { backgroundColor: "#111827" },
   scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, paddingBottom: 28, gap: 20, flexGrow: 1 },
 
-  // ── Header ──
+  // â”€â”€ Header â”€â”€
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1285,18 +1183,18 @@ const s = StyleSheet.create({
   },
   headerLeft: { flex: 1, paddingRight: 12 },
   greetingName: {
-    fontFamily: F.luxuryBold,           // Fraunces SemiBold — warm serif H1 greeting
+    fontFamily: F.luxuryBold,           // Fraunces SemiBold â€” warm serif H1 greeting
     fontSize: 30,
-    lineHeight: 36,
-    color: "#1C1528",
+    lineHeight: 38,
+    color: colors.textPrimary,
     letterSpacing: -0.3,
   },
   greetingEmoji: { fontSize: 22 },
   greetingSub: {
-    fontFamily: F.uiRegular,            // Inter Regular — clean readable subtitle
+    fontFamily: F.uiRegular,            // Inter Regular â€” clean readable subtitle
     fontSize: 13,
     lineHeight: 20,
-    color: C.muted,
+    color: colors.textMuted,
     marginTop: 4,
   },
   bellWrap: {
@@ -1305,10 +1203,10 @@ const s = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.white,
-    shadowColor: C.text,
+    backgroundColor: colors.surface,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: isDark ? 0.20 : 0.08,
     shadowRadius: 12,
     elevation: 3,
   },
@@ -1319,24 +1217,22 @@ const s = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: C.terracotta,
+    backgroundColor: colors.primaryCTA,
     borderWidth: 1.5,
-    borderColor: C.white,
+    borderColor: colors.surface,
   },
 
-  // ── Log nudge cards ──
+  // â”€â”€ Log nudge cards â”€â”€
   nudgeCard: {
     borderRadius: CARD_RADIUS + 4,
     minHeight: 148,
     flexDirection: "row",
     alignItems: "center",
     overflow: "hidden",
-    backgroundColor: "rgba(255,253,252,0.96)",
-    borderWidth: 1,
-    borderColor: "rgba(212,92,130,0.18)",
-    shadowColor: "#D45C82",
+    backgroundColor: colors.surface,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.13,
+    shadowOpacity: isDark ? 0.35 : 0.08,
     shadowRadius: 28,
     elevation: 5,
     paddingLeft: 20,
@@ -1347,14 +1243,14 @@ const s = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: "rgba(212,92,130,0.06)",
+    backgroundColor: `${colors.primaryCTA}10`,
     top: -80,
     right: -40,
   },
   heroLeft: { flex: 1, paddingRight: 8 },
   heroCloseBtn: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 14,
     height: 28,
     justifyContent: "center",
@@ -1367,8 +1263,8 @@ const s = StyleSheet.create({
   nudgeHeadline: {
     fontFamily: F.handwrittenBold,
     fontSize: 21,
-    lineHeight: 26,
-    color: C.text,
+    lineHeight: 28,
+    color: colors.textPrimary,
     letterSpacing: 0.2,
     marginTop: 4,
   },
@@ -1376,16 +1272,16 @@ const s = StyleSheet.create({
     fontFamily: F.uiMedium,
     fontSize: 12.5,
     lineHeight: 18,
-    color: C.muted,
+    color: colors.textMuted,
     marginTop: 8,
   },
   nudgeCta: {
     marginTop: 14,
     alignSelf: "flex-start",
     borderRadius: 999,
-    shadowColor: "#D45C82",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
+    shadowOpacity: isDark ? 0.30 : 0.15,
     shadowRadius: 10,
     elevation: 4,
     overflow: "hidden",
@@ -1400,7 +1296,7 @@ const s = StyleSheet.create({
   },
   nudgeCtaText: {
     fontFamily: F.uiExtraBold,
-    color: "#FFFFFF",
+    color: colors.background,
     fontSize: 13,
     letterSpacing: 0.3,
   },
@@ -1414,21 +1310,19 @@ const s = StyleSheet.create({
     width: 112,
     height: 130,
   },
-  // ── Success strip (logged today) ──
+  // â”€â”€ Success strip (logged today) â”€â”€
   successStrip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     borderRadius: CARD_RADIUS,
     overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderWidth: 1,
-    borderColor: "rgba(94,155,107,0.22)",
+    backgroundColor: colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    shadowColor: "#5E9B6B",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
+    shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 12,
     elevation: 2,
   },
@@ -1438,22 +1332,22 @@ const s = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(94,155,107,0.12)",
+    backgroundColor: `${colors.fertileColor}22`,
   },
   successTitle: {
     fontFamily: F.uiExtraBold,
     fontSize: 13.5,
     lineHeight: 18,
-    color: C.text,
+    color: colors.textPrimary,
   },
   successSub: {
     fontFamily: F.uiMedium,
     fontSize: 12,
     lineHeight: 17,
-    color: C.muted,
+    color: colors.textMuted,
     marginTop: 2,
   },
-  // ── Pill nudge (dismissed) ──
+  // â”€â”€ Pill nudge (dismissed) â”€â”€
   pillNudge: {
     flexDirection: "row",
     alignItems: "center",
@@ -1462,60 +1356,76 @@ const s = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 9,
-    backgroundColor: "rgba(255,255,255,0.90)",
-    borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.22)",
-    shadowColor: C.terracotta,
+    backgroundColor: colors.surface,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.10,
+    shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
   pillNudgeText: {
     fontFamily: F.uiBold,
     fontSize: 13,
-    color: C.text,
+    color: colors.textPrimary,
     flex: 1,
   },
 
-  // ── Section label — Montserrat SemiBold, ALL-CAPS, wide tracking (Proxima Nova role) ──
+  // â”€â”€ Section label â”€â”€
   sectionLabel: {
     fontFamily: F.bodySemiBold,               // Montserrat SemiBold
     fontSize: 11,
     lineHeight: 16,
-    color: C.muted,
+    color: colors.textMuted,
     letterSpacing: 1.4,
     textTransform: "uppercase",
     marginBottom: -8,                         // tighten gap to the card below
   },
 
-  // ── Today grid ──
-  todayGrid: {
-    alignItems: "stretch",
-  },
 
-  // Left cycle card — drives the row height; right column stretches to match
+  // â”€â”€ Full-width premium hero cycle card â”€â”€
   cycleCard: {
-    width: "100%",
-    minHeight: 328,
-    borderRadius: CARD_RADIUS,
-    backgroundColor: C.white,
-    padding: 22,
-    justifyContent: "space-between",  // spreads content evenly down the card
+    width: W - SIDE_PAD * 2,
+    minHeight: 396,
+    borderRadius: CARD_RADIUS + 6,
+    backgroundColor: colors.surface,
+    padding: 24,
+    paddingBottom: 20,
     overflow: "hidden",
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.09,
-    shadowRadius: 18,
-    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDark ? 0.44 : 0.12,
+    shadowRadius: 32,
+    elevation: 5,
   },
   cycleCardArt: {
     position: "absolute",
-    right: -18,
-    bottom: 44,
-    width: 144,
-    height: 144,
-    opacity: 0.14,
+    right: -20,
+    bottom: 36,
+    width: 160,
+    height: 160,
+    opacity: 0.30,
+  },
+  // Hero day number area
+  cycleHeroArea: {
+    alignItems: "center",
+    paddingVertical: 14,
+    position: "relative",
+  },
+  cycleHeroAura: {
+    position: "absolute",
+    width: 246,
+    height: 246,
+    borderRadius: 123,
+    backgroundColor: `${colors.periodColor}1F`,
+    top: -50,
+  },
+  cycleDayLabel: {
+    fontFamily: F.ui,
+    fontSize: 11,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    color: colors.periodColor,
+    marginBottom: 2,
   },
   cycleCardHeader: {
     flexDirection: "row",
@@ -1527,31 +1437,34 @@ const s = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "rgba(224,122,95,0.12)",
+    backgroundColor: `${colors.periodColor}22`,
     alignItems: "center",
     justifyContent: "center",
   },
   cycleCardLabel: {
     fontFamily: F.uiSemiBold,
     fontSize: 13,
-    color: C.text,                            // promoted from muted → full text for legibility
-    opacity: 0.70,
+    color: colors.textMuted,
   },
   cycleDayNum: {
-    fontFamily: F.luxuryBold,                 // Fraunces SemiBold — warm serif for the hero number
-    fontSize: 44,
-    lineHeight: 50,
-    color: "#1C1528",                         // deepest plum — max contrast, never fades
-    letterSpacing: -0.5,
-    fontWeight: "600",                        // explicit weight guard for Inter fallback path
+    fontFamily: F.display,                    // Cormorant Garamond â€” premium display serif
+    fontSize: 96,
+    lineHeight: 102,
+    color: colors.textPrimary,
+    textAlign: "center",
+    letterSpacing: -3,
+    textShadowColor: `${colors.periodColor}55`,
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 20,
   },
   cyclePhase: {
-    fontFamily: F.bodySemiBold,               // Montserrat SemiBold — structural subhead
+    fontFamily: F.ui,
     fontSize: 11,
-    color: C.terracotta,
-    marginTop: 4,
+    color: colors.periodColor,
+    marginTop: 6,
     textTransform: "uppercase",
     letterSpacing: 1.1,
+    textAlign: "center",
   },
   ringWrap: {
     alignItems: "center",
@@ -1568,22 +1481,22 @@ const s = StyleSheet.create({
     height: 150,
   },
   ringLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold — ring inner label
+    fontFamily: F.uiBold,                     // Nunito Bold â€” ring inner label
     fontSize: 10,
-    color: C.muted,
+    color: colors.textMuted,
     textAlign: "center",
   },
   ringDays: {
-    fontFamily: F.uiBold,                     // Nunito Bold — "X days" suffix
+    fontFamily: F.uiBold,                     // Nunito Bold â€” "X days" suffix
     fontSize: 13,
-    color: C.text,
+    color: colors.textPrimary,
     textAlign: "center",
     marginTop: 2,
   },
   ringDaysNum: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — countdown number
+    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€” countdown number
     fontSize: 22,
-    color: C.terracotta,
+    color: colors.periodColor,
   },
   viewCalBtn: {
     flexDirection: "row",
@@ -1593,59 +1506,46 @@ const s = StyleSheet.create({
     marginTop: 14,
     paddingVertical: 11,
     borderRadius: 999,
-    backgroundColor: "rgba(224,122,95,0.07)",
-    borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.14)",
+    backgroundColor: `${colors.periodColor}18`,
   },
   viewCalText: {
-    fontFamily: F.uiBold,                     // Nunito Bold — subtle CTA
+    fontFamily: F.uiBold,
     fontSize: 12,
-    color: C.muted,
+    color: colors.textMuted,
   },
 
-  // Right column — stretches to match cycleCard height, cards split space equally
-  rightCol: {
-    width: RIGHT_COL,
-    gap: COL_GAP,
-    flexDirection: "column",   // explicit column so flex: 1 on children works
+  // Dual-action row at the bottom of the cycle hero card
+  logActionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
   },
-  glanceCard: {
-    flex: 1,                   // each card takes exactly half the column height
-    borderRadius: CARD_RADIUS,
-    backgroundColor: C.white,
-    padding: 14,
+  logActionBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    overflow: "hidden",
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  glanceIconBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
+    gap: 5,
+    paddingVertical: 11,
+    borderRadius: 999,
+    backgroundColor: `${colors.periodColor}18`,
   },
-  glanceText: { flex: 1 },
-  glanceTitle: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — glance card title
-    fontSize: 13,
-    color: C.text,
+  logActionBtnPrimary: {
+    backgroundColor: colors.primaryCTA,
   },
-  glanceSub: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold — glance sub-label
-    fontSize: 11,
-    color: C.muted,
-    marginTop: 2,
+  logActionText: {
+    fontFamily: F.uiBold,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  logActionTextPrimary: {
+    fontFamily: F.uiBold,
+    fontSize: 12,
+    color: "#221822",
   },
 
-  // ── Health way ──
+
+  // â”€â”€ Health way â”€â”€
   healthRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1664,21 +1564,21 @@ const s = StyleSheet.create({
     overflow: "hidden",
   },
   healthLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold — health way label
+    fontFamily: F.uiBold,                     // Nunito Bold â€” health way label
     fontSize: 10,
-    color: C.muted,
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: 13,
   },
 
-  // ── Insights card ──
+  // â”€â”€ Insights card â”€â”€
   insightsCard: {
-    backgroundColor: C.white,
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     padding: 18,
-    shadowColor: C.terracotta,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
+    shadowOpacity: isDark ? 0.25 : 0.08,
     shadowRadius: 18,
     elevation: 3,
   },
@@ -1694,14 +1594,14 @@ const s = StyleSheet.create({
     gap: 8,
   },
   insightsTitle: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold — insights card title
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” insights card title
     fontSize: 15,
-    color: C.text,
+    color: colors.textPrimary,
   },
   seeMore: {
-    fontFamily: F.uiBold,                     // Nunito Bold — link text
+    fontFamily: F.uiBold,                     // Nunito Bold â€” link text
     fontSize: 13,
-    color: C.terracotta,
+    color: colors.primaryCTA,
   },
   insightsBody: {
     flexDirection: "row",
@@ -1710,15 +1610,15 @@ const s = StyleSheet.create({
   },
   insightsTextCol: { flex: 1 },
   insightsText: {
-    fontFamily: F.bodyMedium,                 // Cormorant Garamond Medium — body insight copy
+    fontFamily: F.bodyMedium,                 // Cormorant Garamond Medium â€” body insight copy
     fontSize: 15,
-    color: C.text,
-    lineHeight: 22,
+    color: colors.textPrimary,
+    lineHeight: 23,
   },
   insightsCheer: {
-    fontFamily: F.uiBold,                     // Nunito Bold — cheerful reinforcement
+    fontFamily: F.uiBold,                     // Nunito Bold â€” cheerful reinforcement
     fontSize: 12,
-    color: C.sage,
+    color: colors.primaryCTA,
     marginTop: 4,
   },
   chartWrap: {
@@ -1728,186 +1628,8 @@ const s = StyleSheet.create({
     overflow: "hidden",
   },
 
-  // ── Quick log sheet ──
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 30,
-    justifyContent: "flex-end",
-  },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(43,45,66,0.48)",
-  },
-  sheet: {
-    height: "90%",
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    backgroundColor: SHEET_BG,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -16 },
-    shadowOpacity: 0.32,
-    shadowRadius: 34,
-    elevation: 18,
-  },
-  grabber: {
-    width: 42, height: 5,
-    borderRadius: 999,
-    alignSelf: "center",
-    marginTop: 12, marginBottom: 18,
-    backgroundColor: "rgba(255,255,255,0.20)",
-  },
-  sheetHeader: {
-    paddingHorizontal: 24,
-    paddingBottom: 18,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 14,
-  },
-  sheetTitle: {
-    fontFamily: F.handwrittenBold,            // Caveat Bold — warm personal question
-    color: "#FFF0F5",
-    fontSize: 26,
-    lineHeight: 32,
-  },
-  sheetSub: {
-    fontFamily: F.uiBold,                     // Nunito Bold — sheet subtitle
-    color: "rgba(240,210,225,0.72)",
-    fontSize: 13, lineHeight: 19, marginTop: 4,
-  },
-  closeBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.10)",
-  },
-  sheetContent: { paddingHorizontal: 24, paddingBottom: 160, gap: 24 },
-  sheetSection: { gap: 12 },
-  sheetSectionTitle: {
-    fontFamily: F.uiBlack,                    // Nunito Black — uppercase section dividers
-    color: "rgba(240,210,225,0.62)",
-    fontSize: 11, lineHeight: 15,
-    letterSpacing: 1.4, textTransform: "uppercase",
-  },
-  moodWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  moodChip: {
-    minHeight: 44, borderRadius: 999,
-    paddingHorizontal: 14, paddingVertical: 10,
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: SHEET_CARD,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-  },
-  moodChipText: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — chip label
-    color: "rgba(240,210,225,0.52)",
-    fontSize: 13,
-  },
-  flowRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  flowCard: {
-    flex: 1, minHeight: 118, borderRadius: 26,
-    alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: SHEET_CARD,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-  },
-  flowCardSel: {
-    borderColor: "rgba(224,122,95,0.55)",
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.36, shadowRadius: 14,
-  },
-  dropShape: {
-    width: 44, height: 58,
-    borderTopLeftRadius: 26, borderTopRightRadius: 26,
-    borderBottomLeftRadius: 16, borderBottomRightRadius: 16,
-    alignItems: "center", justifyContent: "center",
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-  },
-  dropFill: {
-    position: "absolute", left: 0, right: 0, bottom: 0,
-    backgroundColor: "rgba(224,122,95,0.58)",
-  },
-  flowLabel: { fontFamily: F.uiBlack, color: "rgba(240,210,225,0.52)", fontSize: 11 },
-  symptomRow: { gap: 12, paddingRight: 24 },
-  symptomCard: {
-    width: 82, height: 88, borderRadius: 24,
-    alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: SHEET_CARD,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-  },
-  symptomCardSel: {
-    backgroundColor: "rgba(224,122,95,0.12)",
-    borderColor: "rgba(224,122,95,0.46)",
-  },
-  symptomLabel: {
-    fontFamily: F.uiBlack,                    // Nunito Black — compact symptom labels
-    color: "rgba(240,210,225,0.52)",
-    fontSize: 10, textAlign: "center",
-  },
-  sliderBlock: {
-    borderRadius: 22, padding: 16,
-    backgroundColor: SHEET_CARD,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-  },
-  sliderRow: {
-    flexDirection: "row", alignItems: "center",
-    justifyContent: "space-between", marginBottom: 12,
-  },
-  sliderLabel: {
-    fontFamily: F.uiBlack,                    // Nunito Black — uppercase slider label
-    color: "rgba(240,210,225,0.62)",
-    fontSize: 12,
-    textTransform: "uppercase", letterSpacing: 0.8,
-  },
-  sliderVal: { fontFamily: F.uiBlack, fontSize: 13 },
-  sliderTrack: { height: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.09)", overflow: "visible" },
-  sliderFill:  { height: 8, borderRadius: 999 },
-  sliderThumb: {
-    position: "absolute", top: -5,
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: "#FFF0F5", borderWidth: 2,
-  },
-  noteInput: {
-    fontFamily: F.uiBold,                     // Nunito Bold — note input text
-    minHeight: 92, borderRadius: 22, padding: 16,
-    color: "#FFF0F5",
-    fontSize: 14, lineHeight: 20,
-    backgroundColor: SHEET_CARD,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-  },
-  sheetFooter: {
-    position: "absolute", left: 0, right: 0, bottom: 0,
-    paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32,
-    alignItems: "center", gap: 12,
-    backgroundColor: "rgba(24,10,18,0.96)",
-  },
-  saveShell: {
-    width: "100%", borderRadius: 999,
-    shadowColor: C.terracotta,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.30, shadowRadius: 22, elevation: 8,
-  },
-  saveBtn: {
-    minHeight: 56, borderRadius: 999,
-    flexDirection: "row", alignItems: "center",
-    justifyContent: "center", gap: 10,
-  },
-  saveBtnText: {
-    fontFamily: F.uiBlack,                    // Nunito Black — CTA button label
-    color: "#FFFFFF", fontSize: 13,
-    letterSpacing: 1.2, textTransform: "uppercase",
-  },
-  skipText: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — skip link
-    color: "rgba(240,210,225,0.52)",
-    fontSize: 12,
-  },
 
-  // ── Health Overview Strip ──────────────────────────────────────────────────
+  // â”€â”€ Health Overview Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   overviewGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1915,14 +1637,12 @@ const s = StyleSheet.create({
   },
   overviewTile: {
     width: (W - SIDE_PAD * 2 - 10) / 2,
-    backgroundColor: C.white,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-    shadowColor: C.terracotta,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
+    shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 12,
     elevation: 2,
     gap: 8,
@@ -1939,9 +1659,9 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   overviewKicker: {
-    fontFamily: F.uiBold,                     // Nunito Bold — uppercase kicker
+    fontFamily: F.uiBold,                     // Nunito Bold â€” uppercase kicker
     fontSize: 11,
-    color: C.muted,
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
@@ -1951,15 +1671,15 @@ const s = StyleSheet.create({
     gap: 2,
   },
   overviewValue: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — metric value
+    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€” metric value
     fontSize: 22,
     lineHeight: 28,
-    color: C.text,
+    color: colors.textPrimary,
   },
   overviewUnit: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold — unit suffix
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” unit suffix
     fontSize: 12,
-    color: C.muted,
+    color: colors.textMuted,
     marginBottom: 2,
   },
   overviewLockRow: {
@@ -1969,22 +1689,22 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   overviewLockLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold — lock label
+    fontFamily: F.uiBold,                     // Nunito Bold â€” lock label
     fontSize: 11,
-    color: C.muted,
+    color: colors.textMuted,
   },
 
-  // ── Life Stage Module Card ─────────────────────────────────────────────────
+  // â”€â”€ Life Stage Module Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   lifeStageCard: {
-    backgroundColor: C.white,
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     padding: 18,
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    shadowColor: C.terracotta,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
+    shadowOpacity: isDark ? 0.25 : 0.08,
     shadowRadius: 18,
     elevation: 3,
     overflow: "hidden",
@@ -2001,32 +1721,30 @@ const s = StyleSheet.create({
     flex: 1,
   },
   lifeStageTitle: {
-    fontFamily: F.uiBold,                     // Nunito Bold — life stage card title
+    fontFamily: F.uiBold,                     // Nunito Bold â€” life stage card title
     fontSize: 16,
     lineHeight: 21,
-    color: C.text,
+    color: colors.textPrimary,
   },
   lifeStageSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular — descriptive subtitle
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” descriptive subtitle
     fontSize: 15,
-    color: C.muted,
+    color: colors.textMuted,
     marginTop: 3,
     lineHeight: 20,
   },
 
-  // ── Mental Health Hub Card ─────────────────────────────────────────────────
+  // â”€â”€ Mental Health Hub Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   mhCard: {
-    backgroundColor: "rgba(189,178,255,0.10)",
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     paddingTop: 4,
     paddingBottom: 14,
-    borderWidth: 1,
-    borderColor: "rgba(189,178,255,0.24)",
-    shadowColor: C.lavender,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: isDark ? 0.25 : 0.08,
+    shadowRadius: 18,
+    elevation: 3,
     overflow: "hidden",
   },
   mhArt: {
@@ -2035,9 +1753,8 @@ const s = StyleSheet.create({
     bottom: -16,
     width: 96,
     height: 96,
-    opacity: 0.20,
   },
-  // pressable inner row — icon + text + chevron
+  // pressable inner row â€” icon + text + chevron
   mhMainRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2051,7 +1768,7 @@ const s = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(189,178,255,0.18)",
+    backgroundColor: `${colors.textMuted}18`,
     flexShrink: 0,
   },
   mhTextCol: {
@@ -2059,15 +1776,15 @@ const s = StyleSheet.create({
     gap: 3,
   },
   mhTitle: {
-    fontFamily: F.uiBold,                     // Nunito Bold — MH hub card title
+    fontFamily: F.uiBold,                     // Nunito Bold â€” MH hub card title
     fontSize: 16,
     lineHeight: 21,
-    color: C.text,
+    color: colors.textPrimary,
   },
   mhSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular — descriptive text
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” descriptive text
     fontSize: 15,
-    color: C.muted,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   mhSupportRow: {
@@ -2079,7 +1796,7 @@ const s = StyleSheet.create({
   mhSupportLabel: {
     fontFamily: F.uiSemiBold,
     fontSize: 11,
-    color: C.sage,
+    color: colors.primaryCTA,
     letterSpacing: 0.2,
   },
   // "Talk to Bloop" pill under the main row
@@ -2092,18 +1809,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(189,178,255,0.38)",
-    backgroundColor: "rgba(189,178,255,0.10)",
+    backgroundColor: colors.surfaceRaised,
   },
   mhBloopText: {
     fontFamily: F.uiBold,
     fontSize: 12,
-    color: C.lavender,
+    color: colors.textMuted,
     letterSpacing: 0.2,
   },
 
-  // ── Shared horizontal scroll ───────────────────────────────────────────────
+  // â”€â”€ Shared horizontal scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   hScroll: {
     marginHorizontal: -SIDE_PAD,
   },
@@ -2113,16 +1828,16 @@ const s = StyleSheet.create({
     paddingRight: SIDE_PAD + 4,
   },
 
-  // ── Programs For You ───────────────────────────────────────────────────────
+  // â”€â”€ Programs For You â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   programCard: {
     width: 168,
-    backgroundColor: C.white,
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     padding: 18,
     gap: 8,
-    shadowColor: C.terracotta,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
+    shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 12,
     elevation: 2,
     overflow: "hidden",
@@ -2135,15 +1850,15 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   programTitle: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold — program card title
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” program card title
     fontSize: 14,
     lineHeight: 19,
-    color: C.text,
+    color: colors.textPrimary,
   },
   programSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular — program description
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” program description
     fontSize: 14,
-    color: C.muted,
+    color: colors.textMuted,
     lineHeight: 19,
   },
   programTag: {
@@ -2157,21 +1872,21 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   programTagText: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold — tag label
+    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€” tag label
     fontSize: 10,
     letterSpacing: 0.4,
   },
 
-  // ── Women Like You Also Explored ───────────────────────────────────────────
+  // â”€â”€ Women Like You Also Explored â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   exploredCard: {
     width: 152,
-    backgroundColor: C.white,
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     padding: 16,
     gap: 8,
-    shadowColor: C.text,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 12,
     elevation: 2,
     overflow: "hidden",
@@ -2184,29 +1899,29 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   exploredTitle: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold — explored card title
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” explored card title
     fontSize: 13,
     lineHeight: 18,
-    color: C.text,
+    color: colors.textPrimary,
   },
   exploredSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular — card description
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” card description
     fontSize: 14,
-    color: C.muted,
+    color: colors.textMuted,
     lineHeight: 19,
   },
 
-  // ── Your Companions Row ────────────────────────────────────────────────────
+  // â”€â”€ Your Companions Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   companionCard: {
     width: 112,
-    backgroundColor: C.white,
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     padding: 16,
     alignItems: "center",
     gap: 6,
-    shadowColor: C.terracotta,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
+    shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 12,
     elevation: 2,
   },
@@ -2229,23 +1944,21 @@ const s = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: C.muted,
+    backgroundColor: colors.surfaceRaised,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: C.white,
   },
   companionName: {
-    fontFamily: F.uiBold,                     // Nunito Bold — companion name
+    fontFamily: F.uiBold,                     // Nunito Bold â€” companion name
     fontSize: 13,
     lineHeight: 17,
-    color: C.text,
+    color: colors.textPrimary,
     textAlign: "center",
   },
   companionRole: {
-    fontFamily: F.uiBold,                     // Nunito Bold — role tag
+    fontFamily: F.uiBold,                     // Nunito Bold â€” role tag
     fontSize: 10,
-    color: C.muted,
+    color: colors.textMuted,
     textAlign: "center",
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -2257,36 +1970,133 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   companionPremiumText: {
-    fontFamily: F.uiBlack,                    // Nunito Black — premium badge
+    fontFamily: F.uiBlack,                    // Nunito Black â€” premium badge
     fontSize: 9,
     letterSpacing: 0.6,
     textTransform: "uppercase",
   },
 
+  gentleMovementCard: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 16,
+    borderRadius: 28,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  gentleMovementGradient: {
+    padding: 20,
+  },
+  gmHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  gmHeaderLeft: {
+    flex: 1,
+    gap: 4,
+  },
+  gmPill: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  gmPillText: {
+    fontFamily: F.uiBold,
+    fontSize: 10.5,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  gmTitle: {
+    fontFamily: F.uiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+    marginTop: 4,
+  },
+  gmPlayBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  gmSubtitle: {
+    fontFamily: F.uiRegular,
+    fontSize: 13.5,
+    lineHeight: 19,
+    color: colors.textMuted,
+    marginBottom: 14,
+  },
+  gmDivider: {
+    height: 1,
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+    marginBottom: 14,
+  },
+  gmFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  gmPoseRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    flex: 1,
+    marginRight: 10,
+  },
+  gmPoseBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  gmPoseText: {
+    fontFamily: F.uiMedium,
+    fontSize: 11,
+    color: colors.textPrimary,
+  },
+  gmDuration: {
+    fontFamily: F.uiBold,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+  },
   pressed: { transform: [{ scale: 0.96 }] },
 });
 
-// ── Premium Sheet styles ───────────────────────────────────────────────────────
-const ps = StyleSheet.create({
+// â”€â”€ Premium Sheet styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const getPremiumStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 40,
     justifyContent: "flex-end",
   },
   scrim: {
-    backgroundColor: "rgba(43,45,66,0.52)",
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
-    backgroundColor: "#FDFCFB",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 24,
     paddingBottom: 36,
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -12 },
-    shadowOpacity: 0.14,
+    shadowOpacity: isDark ? 0.35 : 0.08,
     shadowRadius: 28,
     elevation: 16,
   },
@@ -2294,7 +2104,7 @@ const ps = StyleSheet.create({
     width: 42, height: 5, borderRadius: 999,
     alignSelf: "center",
     marginTop: 12, marginBottom: 20,
-    backgroundColor: "rgba(43,45,66,0.12)",
+    backgroundColor: "rgba(255,255,255,0.20)",
   },
   crownRow: {
     alignItems: "center",
@@ -2302,15 +2112,14 @@ const ps = StyleSheet.create({
   },
   crownCircle: {
     width: 60, height: 60, borderRadius: 30,
-    backgroundColor: "rgba(224,122,95,0.10)",
-    borderWidth: 1, borderColor: "rgba(224,122,95,0.20)",
+    backgroundColor: `${colors.premium}22`,
     alignItems: "center", justifyContent: "center",
   },
   sheetTitle: {
     fontFamily: F.uiBold,
     fontSize: 20,
     lineHeight: 26,
-    color: C.text,
+    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 10,
   },
@@ -2318,7 +2127,7 @@ const ps = StyleSheet.create({
     fontFamily: F.bodyRegular,
     fontSize: 15,
     lineHeight: 22,
-    color: C.muted,
+    color: colors.textMuted,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -2334,14 +2143,14 @@ const ps = StyleSheet.create({
   benefitText: {
     fontFamily: F.uiMedium,
     fontSize: 14,
-    color: C.text,
+    color: colors.textPrimary,
     flex: 1,
   },
   exploreShell: {
     borderRadius: 999,
-    shadowColor: C.terracotta,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
+    shadowOpacity: isDark ? 0.30 : 0.15,
     shadowRadius: 14,
     elevation: 6,
     marginBottom: 14,
@@ -2356,7 +2165,7 @@ const ps = StyleSheet.create({
   },
   exploreBtnText: {
     fontFamily: F.uiBlack,
-    color: "#FFFFFF",
+    color: colors.background,
     fontSize: 13,
     letterSpacing: 0.8,
     textTransform: "uppercase",
@@ -2368,6 +2177,6 @@ const ps = StyleSheet.create({
   laterText: {
     fontFamily: F.uiBold,
     fontSize: 13,
-    color: C.muted,
+    color: colors.textMuted,
   },
 });

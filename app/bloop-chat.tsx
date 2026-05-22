@@ -34,24 +34,27 @@ import { useSafeBack } from "../hooks/useSafeBack";
 
 const { width: W } = Dimensions.get("window");
 
-// ── Palette ───────────────────────────────────────────────────────────────────
+// ── Palette — Midnight Plum dark theme ────────────────────────────────────────
+// All surface / text values are mapped to semantic tokens.
+// Informational accent colors (lavender, pink, sage, green) remain fixed —
+// same as NotificationCard category tints pattern.
 const C = {
-  bg1:      "#FFF8F8",
-  bg2:      "#FCF2F7",
-  bg3:      "#F4EAF7",
-  text:     "#161C2D",
-  muted:    "#9B8EAB",
-  faint:    "#D4C8E0",
-  lavender: "#9277C8",
-  purple:   "#8B63D6",
-  deepPurple:"#5A3B8B",
-  pink:     "#D45C82",
-  sage:     "#5E9B6B",
-  green:    "#82D0A4",
-  white:    "#FFFFFF",
-  cardBg:   "rgba(255,255,255,0.78)",
-  cardBdr:  "rgba(255,255,255,0.92)",
-  userBubble: "#EEDDFF",
+  bg1:       "#110812",   // background  (Midnight Plum)
+  bg2:       "#261E28",
+  bg3:       "#2A1E2C",
+  text:      "#F6E9EF",   // textPrimary (Moon Pearl)
+  muted:     "#B58AC8",   // textMuted   (Lavender Dust)
+  faint:     "#6E5680",   // dimmed muted for placeholders
+  lavender:  "#9277C8",   // informational accent
+  purple:    "#8B63D6",   // informational accent
+  deepPurple:"#5A3B8B",   // mascot eye stroke (kept)
+  pink:      "#D45C82",   // informational accent
+  sage:      "#5E9B6B",   // informational accent
+  green:     "#82D0A4",   // online dot
+  white:     "#FFFFFF",   // SVG specular + send button icon
+  cardBg:    "#2E2330",   // surface      (Blackberry Smoke)
+  cardBdr:   "#4A394D",   // border       (Velvet Mauve)
+  userBubble:"#EEDDFF",   // user chat bubble (intentionally light — contrast ok on light bg)
 } as const;
 
 // ── SVG Bloop mascot ──────────────────────────────────────────────────────────
@@ -203,24 +206,34 @@ function WaveBar({
 }
 
 // ── Chat data ─────────────────────────────────────────────────────────────────
-const INITIAL_MESSAGES = [
+interface Message {
+  id: string;
+  role: "bloop" | "user";
+  text: string;
+  time: string | null;
+  read: boolean;
+  cardType?: "butterfly" | "curriculum";
+  cardPhase?: "menstrual" | "follicular" | "ovulatory" | "luteal";
+}
+
+const INITIAL_MESSAGES: Message[] = [
   {
     id:   "1",
-    role: "bloop" as const,
+    role: "bloop",
     text: "Hi gorgeous, I'm here for you 💜\nHow are you feeling today?",
     time: null,
     read: false,
   },
   {
     id:   "2",
-    role: "user" as const,
+    role: "user",
     text: "I've been feeling anxious lately.",
     time: "9:40 AM",
     read: true,
   },
   {
     id:   "3",
-    role: "bloop" as const,
+    role: "bloop",
     text: "I'm here with you. I've noticed your stress has been a bit high this week. Want to try a calming reset together?",
     time: null,
     read: false,
@@ -326,18 +339,48 @@ function getBloopReply(text: string, sourceLabel = ""): string {
   if (t.includes("nightmare") || t.includes("dream"))
     return "Vivid dreams and nightmares often spike in the luteal phase when progesterone peaks then drops. Your brain is more emotionally active. Journaling before sleep can reduce the intensity — it gives your brain somewhere to 'file' things. Want me to guide you through a short evening release?";
 
-  // Cycle / hormones
-  if (t.includes("period") || t.includes("menstrual") || t.includes("bleed"))
+  // Cycle / hormones / period / cramps
+  if (t.includes("period") || t.includes("menstrual") || t.includes("bleed")) {
+    if (t.includes("yoga") || t.includes("care") || t.includes("move")) {
+      return "Beautiful soul, your body is in its winter season ❄️ This is the time for deep rest, release, and grounding.\n\nHere is your Menstrual Care Sequence, curated to relieve physical congestion and soothe your nervous system. These gentle poses are all about ease—no straining, just soft, restorative breathing. Let's move through them together.";
+    }
     return `${from}Your period is actually a fifth vital sign — it tells us so much about your overall health. Is it arriving on time, or has the timing or flow changed? Tell me more and I can help you decode what your body's signalling.`;
+  }
 
   if (t.includes("cramp") || t.includes("pain") || t.includes("ache"))
-    return "Cramps are caused by prostaglandins — the same chemicals that help your uterus shed its lining. Omega-3 foods like salmon and walnuts, heat therapy, and magnesium glycinate can all help. How intense is the pain on a scale of 1-10, and where exactly are you feeling it?";
+    return "Oh, sweet sister, I hear you 💜 Uterine cramps can be so exhausting and draining. Let's ease that pelvic tension together. Reclined Butterfly is a beautiful, gentle pose that opens your hips, relaxes your pelvic floor, and increases blood circulation to soothe those uterine muscles.\n\nLet's do this small sequence right now. I've laid out the steps below—tick them off as we go, and take all the time you need. I'm right here with you.";
 
   if (t.includes("pcos") || t.includes("endometriosis") || t.includes("endo"))
     return `${from}I see you 💜 Living with PCOS or endometriosis means your body needs extra care, not extra pressure. Tracking patterns — energy, pain, mood — helps you predict flare-ups and advocate for yourself with doctors. What's happening today that you'd like to understand better?`;
 
   if (t.includes("ovulat") || t.includes("fertile") || t.includes("fertility"))
     return `${from}Ovulation is your body's monthly power surge — energy, confidence, and libido often peak here because estrogen and LH are highest. Your fertile window is typically 5 days before ovulation plus ovulation day itself. Would you like to understand how to track it more precisely?`;
+
+  if (t.includes("menstrual care yoga") || t.includes("menstrual care") || t.includes("menstrual yoga"))
+    return "Beautiful soul, your body is in its winter season ❄️ This is the time for deep rest, release, and grounding.\n\nHere is your Menstrual Care Sequence, curated to relieve physical congestion and soothe your nervous system. These gentle poses are all about ease—no straining, just soft, restorative breathing. Let's move through them together.";
+
+  if (t.includes("follicular rise yoga") || t.includes("follicular rise") || t.includes("follicular yoga"))
+    return "Your energy is rising like the spring sun 🌸 As estrogen begins to climb, your body is primed for spinal mobility, chest opening, and building light heat.\n\nThis Follicular Rise flow is designed to spark your creativity, improve circulation, and build confidence. Enjoy the movement!";
+
+  if (t.includes("ovulatory vitality yoga") || t.includes("ovulatory vitality") || t.includes("ovulatory yoga"))
+    return "You are in your peak summer radiance ☀️ High estrogen and LH levels mean your body is strong, open, and vibrant.\n\nThis Ovulatory Vitality sequence focuses on radiant heart-openers and builds powerful physical confidence. Flow with your expansive energy today!";
+
+  if (t.includes("luteal calming yoga") || t.includes("luteal calming") || t.includes("luteal yoga"))
+    return "Your autumn season is here, inviting you to turn inward 🍂 Progesterone is high, making your body crave grounding, calming, and soothing practices to ease any physical or mental tension.\n\nLet's quiet the nervous system and anchor your energy.";
+
+  if (t.includes("yoga") || t.includes("pranayama")) {
+    if (t.includes("menstrual")) {
+      return "Beautiful soul, your body is in its winter season ❄️ This is the time for deep rest, release, and grounding.\n\nHere is your Menstrual Care Sequence, curated to relieve physical congestion and soothe your nervous system. Let's move through them together.";
+    } else if (t.includes("follicular")) {
+      return "Your energy is rising like the spring sun 🌸 As estrogen begins to climb, your body is primed for spinal mobility, chest opening, and building light heat.\n\nThis Follicular Rise flow is designed to spark your creativity, improve circulation, and build confidence. Enjoy the movement!";
+    } else if (t.includes("ovulat")) {
+      return "You are in your peak summer radiance ☀️ High estrogen and LH levels mean your body is strong, open, and vibrant.\n\nThis Ovulatory Vitality sequence focuses on radiant heart-openers and builds powerful physical confidence. Flow with your expansive energy today!";
+    } else if (t.includes("luteal")) {
+      return "Your autumn season is here, inviting you to turn inward 🍂 Progesterone is high, making your body crave grounding, calming, and soothing practices to ease any physical or mental tension.\n\nLet's quiet the nervous system and anchor your energy.";
+    } else {
+      return `${from}Yoga and breathing are incredibly nourishing for your cycle. Since we are on Day 18 (your Luteal Phase), your body is naturally craving grounding and calming energy. I highly recommend your Luteal Calming Flow below to quiet your nervous system and release any PMS physical tension. Would you like to try it?`;
+    }
+  }
 
   if (t.includes("cycle") || t.includes("hormone") || t.includes("phase"))
     return `${from}Your cycle has four distinct phases — menstrual, follicular, ovulatory, and luteal — and each one affects your energy, mood, focus, and appetite differently. Which phase do you want to understand better? Or tell me your cycle day and I'll decode exactly where you are.`;
@@ -352,8 +395,8 @@ function getBloopReply(text: string, sourceLabel = ""): string {
   if (t.includes("weight") || t.includes("bloat"))
     return "Cycle-related weight fluctuations of 1-3kg are completely normal — especially before your period when progesterone causes water retention. This isn't fat gain; it resolves within a few days of your period starting. Are you tracking this across your cycle, or does it feel unpredictable?";
 
-  // Movement / yoga
-  if (t.includes("exercise") || t.includes("workout") || t.includes("gym") || t.includes("yoga") || t.includes("move"))
+  // Movement / exercise / workout
+  if (t.includes("exercise") || t.includes("workout") || t.includes("gym") || t.includes("move"))
     return `${from}Your best workouts actually depend on your cycle phase. Follicular and ovulatory phases are ideal for high-intensity training. Luteal phase is better for strength and moderate effort. Your period is designed for rest and gentle movement. Which phase are you in — I can give you a specific recommendation.`;
 
   // Skin / body
@@ -384,6 +427,7 @@ function getBloopReply(text: string, sourceLabel = ""): string {
     `${from}Your wellbeing matters deeply. Can you tell me a little more so I can give you something truly useful, not just generic advice?`,
   ];
   return fallbacks[Math.abs(text.length) % fallbacks.length];
+return fallbacks[Math.abs(text.length) % fallbacks.length];
 }
 
 // Keep for route-context replies (already good, now also used internally)
@@ -402,6 +446,264 @@ const WAVE_BARS = 9;
 const WAVE_PHASES = Array.from({ length: WAVE_BARS * 2 }, (_, i) => i * 0.45);
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── Interactive Butterfly Card (Empathetic Pelvic Cramps Relief) ─────────────
+function InteractiveButterflyCard() {
+  const [steps, setSteps] = useState([
+    { id: 1, label: "Step 1: Recline on Back", desc: "Lie flat on a cozy surface. Put a pillow under your knees or lower back if you need extra support.", done: false },
+    { id: 2, label: "Step 2: Sole-to-Sole Connection", desc: "Bring the soles of your feet together, letting your knees fall outwards gently like butterfly wings.", done: false },
+    { id: 3, label: "Step 3: Deep Abdominal Breathing", desc: "Place your hands on your lower belly. Inhale deeply, letting it rise; exhale slowly, releasing all uterine tension.", done: false },
+  ]);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  const toggleStep = (id: number) => {
+    const updated = steps.map(s => s.id === id ? { ...s, done: !s.done } : s);
+    setSteps(updated);
+    
+    const allDone = updated.every(s => s.done);
+    setIsCompleted(allDone);
+  };
+
+  return (
+    <View style={styles.cardContainer}>
+      <LinearGradient
+        colors={["rgba(212, 92, 130, 0.15)", "rgba(146, 119, 200, 0.08)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardGradient}
+      >
+        <View style={styles.cardHeaderRow}>
+          <MaterialCommunityIcons name="butterfly" size={24} color={C.pink} />
+          <View style={styles.cardTitleCol}>
+            <Text style={styles.cardTitle}>Supta Baddha Konasana</Text>
+            <Text style={styles.cardSubtitle}>Reclined Butterfly • Pelvic Cramps Relief</Text>
+          </View>
+        </View>
+
+        <Text style={styles.cardIntro}>
+          Follow these gentle steps at your own cozy pace. Deep diaphragmatic breathing reduces uterine cramping and grounds your nervous system.
+        </Text>
+
+        <View style={styles.stepsList}>
+          {steps.map((step) => (
+            <Pressable
+              key={step.id}
+              onPress={() => toggleStep(step.id)}
+              style={({ pressed }) => [
+                styles.stepRow,
+                step.done && styles.stepRowDone,
+                pressed && styles.pressed
+              ]}
+            >
+              <View style={[styles.checkbox, step.done && styles.checkboxActive]}>
+                {step.done && <Ionicons name="checkmark" size={12} color={C.white} />}
+              </View>
+              <View style={styles.stepTextContainer}>
+                <Text style={[styles.stepLabel, step.done && styles.stepLabelDone]}>
+                  {step.label}
+                </Text>
+                <Text style={styles.stepDesc}>{step.desc}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+
+        {isCompleted && (
+          <View style={styles.celebrationContainer}>
+            <MaterialCommunityIcons name="heart-pulse" size={28} color={C.pink} style={styles.pulseIcon} />
+            <Text style={styles.celebrationText}>Proud of you for taking care of yourself 💜</Text>
+            <Text style={styles.celebrationSub}>You've given your body space to soften, breathe, and heal.</Text>
+          </View>
+        )}
+
+        <View style={styles.disclaimerContainer}>
+          <Text style={styles.disclaimerText}>
+            ⚠️ Listen to your body. Modify or rest whenever you need. Consult a physician for severe pain.
+          </Text>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+}
+
+// ── Cycle-Synced Curriculum Flow Card ─────────────────────────────────────────
+const CURRICULUM_DATA = {
+  menstrual: {
+    title: "Menstrual Care Sequence",
+    subtitle: "Menstrual Phase • Day 1-5 • Rest & Relieve",
+    color: C.pink,
+    icon: "water-outline" as const,
+    intro: "Your body is in its winter season ❄️ Focus on deep belly breathing and soft, grounding movements to release abdominal congestion and fatigue.",
+    poses: [
+      { name: "Supta Baddha Konasana", type: "Reclined Butterfly", duration: "5 mins", desc: "Relaxes pelvic muscles and eases cramps. Support your knees with pillows if they feel tight." },
+      { name: "Balasana", type: "Child’s Pose", duration: "3 mins", desc: "Helps release lower back tension and fatigue. Rest your forehead on a cozy cushion." },
+      { name: "Pavanmuktasana", type: "Knees-to-Chest Pose", duration: "2 mins", desc: "Gentle abdominal compression to soothe discomfort and release trapped tension." },
+    ],
+    breath: { name: "Deep Belly Breathing", duration: "3 mins", desc: "Place hands on lower belly. Inhale, letting it rise like a balloon; exhale slowly to relax pelvic muscles." }
+  },
+  follicular: {
+    title: "Follicular Rise Sequence",
+    subtitle: "Follicular Phase • Day 6-13 • Energy & Vitality",
+    color: C.lavender,
+    icon: "sprout" as const,
+    intro: "Your energy is rising like the spring sun 🌸 Estrogen begins to climb, priming your body for chest opening, spinal mobility, and mental clarity.",
+    poses: [
+      { name: "Marjariasana-Bitilasana", type: "Cat-Cow Flow", duration: "3 mins", desc: "Improves spinal mobility and circulation. Sync each arch and curl with your rising breath." },
+      { name: "Bhujangasana", type: "Cobra Pose", duration: "2 mins", desc: "Opens the chest, lifts fatigue, and boosts energy levels. Keep shoulders soft and low." },
+      { name: "Virabhadrasana II", type: "Warrior II", duration: "2 mins per side", desc: "Builds strength, pelvic circulation, and unlocks your creative, confident energy." },
+    ],
+    breath: { name: "Nadi Shodhana", duration: "3 mins", desc: "Alternate nostril breathing to balance hormones and bring beautiful mental clarity." }
+  },
+  ovulatory: {
+    title: "Ovulatory Vitality Sequence",
+    subtitle: "Ovulatory Phase • Day 14-16 • Radiant & Expansive",
+    color: C.purple,
+    icon: "flower-poppy" as const,
+    intro: "You are in your peak summer radiance ☀️ High estrogen and LH levels mean your body is strong, open, and vibrant. Enjoy heart openers and celebrate strength.",
+    poses: [
+      { name: "Trikonasana", type: "Triangle Pose", duration: "2 mins per side", desc: "Opens side body and pelvis, supporting healthy blood flow to reproductive organs." },
+      { name: "Anjaneyasana", type: "Low Lunge", duration: "2 mins per side", desc: "Stretches deep hip flexors, opens the heart, and builds elegant physical stamina." },
+      { name: "Ustrasana", type: "Supported Camel Pose", duration: "2 mins", desc: "Gentle heart opener that stimulates the thyroid and opens the throat chakra for self-expression." },
+    ],
+    breath: { name: "Surya Bhedan (Solar Breath)", duration: "3 mins", desc: "Inhale right nostril, exhale left nostril. Stokes digestive fire and boosts radiance." }
+  },
+  luteal: {
+    title: "Luteal Calming Sequence",
+    subtitle: "Luteal Phase • Day 17-28 • Ground & Calm",
+    color: C.sage,
+    icon: "leaf" as const,
+    intro: "Your autumn season is here, inviting you to turn inward 🍂 Quiet your nervous system, ground your energy, and relieve premenstrual tension.",
+    poses: [
+      { name: "Viparita Karani", type: "Legs-Up-the-Wall", duration: "8 mins", desc: "Drains pelvic congestion, calms a busy mind, and prepares the nervous system for rest." },
+      { name: "Janu Sirsasana", type: "Head-to-Knee Forward Bend", duration: "3 mins per side", desc: "Quiet forward bend that calms the brain and gently stretches tight lower back and hamstrings." },
+      { name: "Setu Bandhasana", type: "Supported Bridge", duration: "3 mins", desc: "Restores the endocrine system, releases tight hip flexors (psoas), and anchors the heart." },
+    ],
+    breath: { name: "4-7-8 Breathing", duration: "3 mins", desc: "Inhale 4s, hold 7s, exhale 8s. A powerful shift to activate deep calm and relieve PMS irritability." }
+  }
+};
+
+function CurriculumFlowCard({ phase }: { phase: "menstrual" | "follicular" | "ovulatory" | "luteal" }) {
+  const data = CURRICULUM_DATA[phase];
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const [completedItems, setCompletedItems] = useState<boolean[]>([false, false, false, false]); // 3 poses + 1 breath
+
+  const togglePose = (index: number) => {
+    setExpandedIndex(expandedIndex === index ? null : index);
+  };
+
+  const toggleComplete = (index: number) => {
+    const updated = [...completedItems];
+    updated[index] = !updated[index];
+    setCompletedItems(updated);
+  };
+
+  const allCompleted = completedItems.every(Boolean);
+
+  return (
+    <View style={styles.cardContainer}>
+      <LinearGradient
+        colors={[`${data.color}20`, "rgba(146, 119, 200, 0.08)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardGradient}
+      >
+        <View style={styles.cardHeaderRow}>
+          <MaterialCommunityIcons name={data.icon} size={24} color={data.color} />
+          <View style={styles.cardTitleCol}>
+            <Text style={styles.cardTitle}>{data.title}</Text>
+            <Text style={styles.cardSubtitle}>{data.subtitle}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.cardIntro}>{data.intro}</Text>
+
+        <View style={styles.posesList}>
+          {data.poses.map((pose, idx) => {
+            const isExpanded = expandedIndex === idx;
+            const isDone = completedItems[idx];
+            return (
+              <View key={idx} style={[styles.poseItem, isDone && styles.poseItemDone]}>
+                <View style={styles.poseItemHeader}>
+                  <Pressable
+                    onPress={() => toggleComplete(idx)}
+                    style={({ pressed }) => [styles.checkboxMini, isDone && styles.checkboxActiveMini, pressed && styles.pressed]}
+                  >
+                    {isDone && <Ionicons name="checkmark" size={10} color={C.white} />}
+                  </Pressable>
+                  <Pressable
+                    onPress={() => togglePose(idx)}
+                    style={({ pressed }) => [styles.poseItemTitlePressable, pressed && styles.pressed]}
+                  >
+                    <View style={styles.poseItemTitleCol}>
+                      <Text style={[styles.poseItemName, isDone && styles.poseItemNameDone]}>{pose.name}</Text>
+                      <Text style={styles.poseItemType}>{pose.type} • {pose.duration}</Text>
+                    </View>
+                    <Ionicons
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={16}
+                      color={C.muted}
+                    />
+                  </Pressable>
+                </View>
+                {isExpanded && (
+                  <View style={styles.poseItemDetail}>
+                    <Text style={styles.poseItemDesc}>{pose.desc}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+
+          {/* Breathwork item */}
+          <View style={[styles.poseItem, completedItems[3] && styles.poseItemDone]}>
+            <View style={styles.poseItemHeader}>
+              <Pressable
+                onPress={() => toggleComplete(3)}
+                style={({ pressed }) => [styles.checkboxMini, completedItems[3] && styles.checkboxActiveMini, pressed && styles.pressed]}
+              >
+                {completedItems[3] && <Ionicons name="checkmark" size={10} color={C.white} />}
+              </Pressable>
+              <Pressable
+                onPress={() => togglePose(3)}
+                style={({ pressed }) => [styles.poseItemTitlePressable, pressed && styles.pressed]}
+              >
+                <View style={styles.poseItemTitleCol}>
+                  <Text style={[styles.poseItemName, completedItems[3] && styles.poseItemNameDone]}>🌬️ {data.breath.name}</Text>
+                  <Text style={styles.poseItemType}>Breathwork • {data.breath.duration}</Text>
+                </View>
+                <Ionicons
+                  name={expandedIndex === 3 ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={C.muted}
+                />
+              </Pressable>
+            </View>
+            {expandedIndex === 3 && (
+              <View style={styles.poseItemDetail}>
+                <Text style={styles.poseItemDesc}>{data.breath.desc}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {allCompleted && (
+          <View style={[styles.celebrationContainer, { borderLeftWidth: 3, borderLeftColor: data.color }]}>
+            <MaterialCommunityIcons name="flower-tulip" size={28} color={data.color} style={styles.pulseIcon} />
+            <Text style={styles.celebrationText}>Beautifully done, sister 🌸</Text>
+            <Text style={styles.celebrationSub}>You've nourished your body in harmony with your natural biological rhythms.</Text>
+          </View>
+        )}
+
+        <View style={styles.disclaimerContainer}>
+          <Text style={styles.disclaimerText}>
+            ⚠️ Listen to your body. Modify or rest whenever you need. Consult a physician for severe pain.
+          </Text>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+}
+
 export default function BloopChatScreen() {
   const router    = useRouter();
   const params    = useLocalSearchParams<BloopRouteParams>();
@@ -412,7 +714,7 @@ export default function BloopChatScreen() {
   const [inputText,    setInputText]    = useState("");
   const [isTalking,    setIsTalking]    = useState(false);
   const [activeChip,   setActiveChip]   = useState<string | null>(null);
-  const [messages,     setMessages]     = useState(INITIAL_MESSAGES);
+  const [messages,     setMessages]     = useState<Message[]>(INITIAL_MESSAGES);
   const [insightOpen,  setInsightOpen]  = useState(false);
   const [bloopTyping,  setBloopTyping]  = useState(false);
 
@@ -434,10 +736,32 @@ export default function BloopChatScreen() {
 
     if (shouldAutoSend) {
       const now = Date.now();
+      const replyText = getContextualReply(prompt, sourceLabel);
+      
+      let cardType: "butterfly" | "curriculum" | undefined = undefined;
+      let cardPhase: "menstrual" | "follicular" | "ovulatory" | "luteal" | undefined = undefined;
+      
+      const t = prompt.toLowerCase();
+      if (t.includes("cramp") || t.includes("experiencing cramps")) {
+        cardType = "butterfly";
+      } else if (t.includes("menstrual care yoga") || t.includes("menstrual care") || t.includes("menstrual yoga")) {
+        cardType = "curriculum";
+        cardPhase = "menstrual";
+      } else if (t.includes("follicular rise yoga") || t.includes("follicular rise") || t.includes("follicular yoga")) {
+        cardType = "curriculum";
+        cardPhase = "follicular";
+      } else if (t.includes("ovulatory vitality yoga") || t.includes("ovulatory vitality") || t.includes("ovulatory yoga")) {
+        cardType = "curriculum";
+        cardPhase = "ovulatory";
+      } else if (t.includes("luteal calming yoga") || t.includes("luteal calming") || t.includes("luteal yoga")) {
+        cardType = "curriculum";
+        cardPhase = "luteal";
+      }
+
       setMessages((prev) => [
         ...prev,
         { id: `${now}-route-user`, role: "user", text: prompt, time: "Just now", read: false },
-        { id: `${now}-route-bloop`, role: "bloop", text: getContextualReply(prompt, sourceLabel), time: null, read: false },
+        { id: `${now}-route-bloop`, role: "bloop", text: replyText, time: null, read: false, cardType, cardPhase },
       ]);
       setInputText("");
     } else {
@@ -468,14 +792,56 @@ export default function BloopChatScreen() {
     const delay = 800 + Math.min(trimmed.length * 18, 1200); // 0.8-2s based on message length
     setTimeout(() => {
       setBloopTyping(false);
+      
+      const replyText = getBloopReply(trimmed);
+      let cardType: "butterfly" | "curriculum" | undefined = undefined;
+      let cardPhase: "menstrual" | "follicular" | "ovulatory" | "luteal" | undefined = undefined;
+      
+      const t = trimmed.toLowerCase();
+      if (t.includes("cramp") || t.includes("experiencing cramps")) {
+        cardType = "butterfly";
+      } else if (t.includes("menstrual care yoga") || t.includes("menstrual care") || t.includes("menstrual yoga")) {
+        cardType = "curriculum";
+        cardPhase = "menstrual";
+      } else if (t.includes("follicular rise yoga") || t.includes("follicular rise") || t.includes("follicular yoga")) {
+        cardType = "curriculum";
+        cardPhase = "follicular";
+      } else if (t.includes("ovulatory vitality yoga") || t.includes("ovulatory vitality") || t.includes("ovulatory yoga")) {
+        cardType = "curriculum";
+        cardPhase = "ovulatory";
+      } else if (t.includes("luteal calming yoga") || t.includes("luteal calming") || t.includes("luteal yoga")) {
+        cardType = "curriculum";
+        cardPhase = "luteal";
+      } else if (t.includes("yoga") || t.includes("pranayama")) {
+        if (t.includes("menstrual")) {
+          cardType = "curriculum";
+          cardPhase = "menstrual";
+        } else if (t.includes("follicular")) {
+          cardType = "curriculum";
+          cardPhase = "follicular";
+        } else if (t.includes("ovulat")) {
+          cardType = "curriculum";
+          cardPhase = "ovulatory";
+        } else if (t.includes("luteal")) {
+          cardType = "curriculum";
+          cardPhase = "luteal";
+        } else {
+          // Default to Luteal Day 18 flow
+          cardType = "curriculum";
+          cardPhase = "luteal";
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-bloop`,
           role: "bloop",
-          text: getBloopReply(trimmed),
+          text: replyText,
           time: null,
           read: false,
+          cardType,
+          cardPhase,
         },
       ]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -498,14 +864,8 @@ export default function BloopChatScreen() {
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safe}>
-      {/* Background */}
-      <LinearGradient
-        colors={[C.bg1, C.bg2, C.bg3]}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.3, y: 0 }}
-        end={{ x: 0.7, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Background — solid Midnight Plum */}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: C.bg1 }]} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -561,7 +921,7 @@ export default function BloopChatScreen() {
             {/* Squircle card that gives Bloop a professional "product image" crop */}
             <View style={styles.heroMascotFrame}>
               <LinearGradient
-                colors={["rgba(228,213,255,0.60)", "rgba(180,144,224,0.28)", "rgba(255,240,255,0.08)"]}
+                colors={["rgba(180,144,224,0.22)", "rgba(146,119,200,0.12)", "rgba(146,119,200,0.04)"]}
                 start={{ x: 0.2, y: 0 }}
                 end={{ x: 0.8, y: 1 }}
                 style={StyleSheet.absoluteFill}
@@ -573,13 +933,25 @@ export default function BloopChatScreen() {
           {/* Messages */}
           {messages.map((msg, idx) =>
             msg.role === "bloop" ? (
-              <View key={msg.id} style={styles.bloopRow}>
-                <View style={styles.bloopAvatar}>
-                  <Text style={styles.bloopAvatarStar}>✦</Text>
+              <View key={msg.id} style={{ marginBottom: 16 }}>
+                <View style={[styles.bloopRow, { marginBottom: msg.cardType ? 8 : 0 }]}>
+                  <View style={styles.bloopAvatar}>
+                    <Text style={styles.bloopAvatarStar}>♥</Text>
+                  </View>
+                  <View style={styles.bloopBubble}>
+                    <Text style={styles.bloopText}>{msg.text}</Text>
+                  </View>
                 </View>
-                <View style={styles.bloopBubble}>
-                  <Text style={styles.bloopText}>{msg.text}</Text>
-                </View>
+                {msg.cardType === "butterfly" && (
+                  <View style={{ paddingLeft: 52, paddingRight: 16, marginTop: -4 }}>
+                    <InteractiveButterflyCard />
+                  </View>
+                )}
+                {msg.cardType === "curriculum" && msg.cardPhase && (
+                  <View style={{ paddingLeft: 52, paddingRight: 16, marginTop: -4 }}>
+                    <CurriculumFlowCard phase={msg.cardPhase} />
+                  </View>
+                )}
               </View>
             ) : (
               <View key={msg.id} style={styles.userRow}>
@@ -609,7 +981,7 @@ export default function BloopChatScreen() {
           {bloopTyping && (
             <View style={styles.bloopRow}>
               <View style={styles.bloopAvatar}>
-                <Text style={styles.bloopAvatarStar}>✦</Text>
+                <Text style={styles.bloopAvatarStar}>♥</Text>
               </View>
               <View style={[styles.bloopBubble, styles.typingBubble]}>
                 <View style={styles.typingDots}>
@@ -664,7 +1036,7 @@ export default function BloopChatScreen() {
             </View>
             <View style={styles.insightText}>
               <View style={styles.insightTagRow}>
-                <Text style={styles.insightStar}>✦</Text>
+                <Text style={styles.insightStar}>♥</Text>
                 <Text style={styles.insightTag}>Insight for you</Text>
               </View>
               <Text style={styles.insightBody}>
@@ -692,12 +1064,7 @@ export default function BloopChatScreen() {
         </ScrollView>
 
         {/* ── Voice panel ─────────────────────────────────────────────── */}
-        <LinearGradient
-          colors={["rgba(232,218,255,0.72)", "rgba(248,240,255,0.80)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.voicePanel}
-        >
+        <View style={[styles.voicePanel, { backgroundColor: C.cardBg, borderColor: C.cardBdr }]}>
           {/* Waveform bars — left side */}
           <View style={styles.waveGroup}>
             {Array.from({ length: WAVE_BARS }, (_, i) => (
@@ -745,7 +1112,7 @@ export default function BloopChatScreen() {
           <Text style={styles.tapToTalk}>
             {isTalking ? "Listening…" : "Tap to talk"}
           </Text>
-        </LinearGradient>
+        </View>
 
         {/* ── Text input bar ───────────────────────────────────────────── */}
         <View style={styles.inputRow}>
@@ -842,7 +1209,7 @@ const styles = StyleSheet.create({
     borderWidth:      1,
     height:           40,
     justifyContent:   "center",
-    shadowColor:      "#D6C3B9",
+    shadowColor:      "#000000",
     shadowOffset:     { width: 0, height: 3 },
     shadowOpacity:    0.10,
     shadowRadius:     8,
@@ -901,7 +1268,7 @@ const styles = StyleSheet.create({
   },
   heroGlowRing: {
     // Ambient halo behind the squircle
-    backgroundColor:  "rgba(212,180,255,0.22)",
+    backgroundColor:  "rgba(146,119,200,0.12)",
     borderRadius:     999,
     height:           240,
     position:         "absolute",
@@ -955,7 +1322,7 @@ const styles = StyleSheet.create({
     flex:             1,
     maxWidth:         W * 0.72,
     padding:          14,
-    shadowColor:      "#D6C3B9",
+    shadowColor:      "#000000",
     shadowOffset:     { width: 0, height: 4 },
     shadowOpacity:    0.12,
     shadowRadius:     12,
@@ -1037,7 +1404,7 @@ const styles = StyleSheet.create({
     gap:              6,
     paddingHorizontal: 14,
     paddingVertical:  8,
-    shadowColor:      "#D6C3B9",
+    shadowColor:      "#000000",
     shadowOffset:     { width: 0, height: 2 },
     shadowOpacity:    0.08,
     shadowRadius:     6,
@@ -1060,7 +1427,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop:        4,
     padding:          14,
-    shadowColor:      "#D6C3B9",
+    shadowColor:      "#000000",
     shadowOffset:     { width: 0, height: 5 },
     shadowOpacity:    0.11,
     shadowRadius:     14,
@@ -1189,7 +1556,7 @@ const styles = StyleSheet.create({
     gap:              8,
     paddingHorizontal: 16,
     paddingVertical:  10,
-    shadowColor:      "#D6C3B9",
+    shadowColor:      "#000000",
     shadowOffset:     { width: 0, height: 4 },
     shadowOpacity:    0.12,
     shadowRadius:     12,
@@ -1236,6 +1603,212 @@ const styles = StyleSheet.create({
     color:      C.muted,
     fontFamily: F.uiMedium,
     fontSize:   12,
+  },
+
+  // Custom Yoga Cards
+  cardContainer: {
+    marginTop: 6,
+    marginBottom: 6,
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.cardBdr,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  cardGradient: {
+    padding: 16,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+  },
+  cardTitleCol: {
+    flex: 1,
+  },
+  cardTitle: {
+    color: C.text,
+    fontFamily: F.luxuryBold,
+    fontSize: 16.5,
+    letterSpacing: -0.2,
+  },
+  cardSubtitle: {
+    color: C.muted,
+    fontFamily: F.uiSemiBold,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  cardIntro: {
+    color: C.text,
+    fontFamily: F.uiRegular,
+    fontSize: 12.5,
+    lineHeight: 18,
+    opacity: 0.9,
+    marginBottom: 14,
+  },
+  stepsList: {
+    gap: 10,
+  },
+  stepRow: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 12,
+    backgroundColor: "rgba(38, 30, 40, 0.4)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.cardBdr,
+  },
+  stepRowDone: {
+    borderColor: "rgba(212, 92, 130, 0.35)",
+    backgroundColor: "rgba(212, 92, 130, 0.08)",
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: C.faint,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  checkboxActive: {
+    backgroundColor: C.pink,
+    borderColor: C.pink,
+  },
+  stepTextContainer: {
+    flex: 1,
+  },
+  stepLabel: {
+    color: C.text,
+    fontFamily: F.uiSemiBold,
+    fontSize: 13,
+  },
+  stepLabelDone: {
+    color: C.muted,
+    textDecorationLine: "line-through",
+  },
+  stepDesc: {
+    color: C.muted,
+    fontFamily: F.uiRegular,
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  celebrationContainer: {
+    marginTop: 14,
+    padding: 12,
+    backgroundColor: "rgba(146, 119, 200, 0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(146, 119, 200, 0.2)",
+    alignItems: "center",
+  },
+  pulseIcon: {
+    marginBottom: 4,
+  },
+  celebrationText: {
+    color: C.text,
+    fontFamily: F.uiSemiBold,
+    fontSize: 13,
+    textAlign: "center",
+  },
+  celebrationSub: {
+    color: C.muted,
+    fontFamily: F.uiRegular,
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  disclaimerContainer: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: C.cardBdr,
+    paddingTop: 8,
+  },
+  disclaimerText: {
+    color: C.faint,
+    fontFamily: F.uiRegular,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+
+  // Curriculum poses list
+  posesList: {
+    gap: 8,
+    marginBottom: 8,
+  },
+  poseItem: {
+    backgroundColor: "rgba(38, 30, 40, 0.3)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.cardBdr,
+    overflow: "hidden",
+  },
+  poseItemDone: {
+    borderColor: "rgba(146, 119, 200, 0.25)",
+    backgroundColor: "rgba(146, 119, 200, 0.04)",
+  },
+  poseItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+  },
+  checkboxMini: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: C.faint,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  checkboxActiveMini: {
+    backgroundColor: C.purple,
+    borderColor: C.purple,
+  },
+  poseItemTitlePressable: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  poseItemTitleCol: {
+    flex: 1,
+  },
+  poseItemName: {
+    color: C.text,
+    fontFamily: F.uiSemiBold,
+    fontSize: 13,
+  },
+  poseItemNameDone: {
+    color: C.muted,
+    textDecorationLine: "line-through",
+  },
+  poseItemType: {
+    color: C.muted,
+    fontFamily: F.uiRegular,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  poseItemDetail: {
+    padding: 12,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: C.cardBdr,
+  },
+  poseItemDesc: {
+    color: C.muted,
+    fontFamily: F.uiRegular,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
 
   pressed: {

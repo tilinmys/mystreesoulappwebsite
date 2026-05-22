@@ -1,6 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
   Dimensions,
@@ -12,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
+import { darkColors } from "../constants/colors";
 import { F } from "../constants/fonts";
 import { useSafeBack } from "../hooks/useSafeBack";
 
@@ -26,17 +28,17 @@ const { width: W } = Dimensions.get("window");
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 const C = {
-  bg:         "#FAF9F6",
-  white:      "#FFFFFF",
-  text:       "#2B2D42",
-  muted:      "#6B708D",
-  faint:      "#A89F9B",
-  terracotta: "#E07A5F",
-  peach:      "#F4A261",
-  sage:       "#81B29A",
-  lavender:   "#BDB2FF",
-  rose:       "#D7A6A1",
-  purple:     "#8B5CF6",
+  bg:         darkColors.background,      // #110812
+  white:      darkColors.surface,         // #2E2330
+  text:       darkColors.textPrimary,     // #F6E9EF
+  muted:      darkColors.textMuted,       // #B58AC8
+  faint:      darkColors.textHint,        // #8A6AA0
+  terracotta: darkColors.primaryCTA,      // #E8A6B6 (Bloom Pink)
+  peach:      "#F4B86E",                  // Peach/Gold (wellness reset border)
+  sage:       darkColors.fertileColor,    // #7EC8A0 (Sage)
+  lavender:   "#B58AC8",                  // Lavender Dust
+  rose:       darkColors.periodColor,     // #E88090 (Period Rose)
+  purple:     "#B58AC8",                  // Lavender Dust
 };
 
 const SIDE_PAD    = 20;
@@ -69,7 +71,7 @@ const COMPANIONS: Companion[] = [
     role:     "General wellness companion",
     status:   "accessible",
     color:    C.terracotta,
-    gradient: ["rgba(224,122,95,0.16)", "rgba(244,162,97,0.08)"] as const,
+    gradient: ["rgba(232, 166, 182, 0.14)", "rgba(232, 166, 182, 0.04)"] as const,
     image:    bloopCard,
   },
   {
@@ -78,7 +80,7 @@ const COMPANIONS: Companion[] = [
     role:     "Emotional check-ins",
     status:   "premium",
     color:    C.lavender,
-    gradient: ["rgba(189,178,255,0.18)", "rgba(189,178,255,0.06)"] as const,
+    gradient: ["rgba(181, 138, 200, 0.15)", "rgba(181, 138, 200, 0.04)"] as const,
     image:    jiggyImage,
   },
   {
@@ -87,7 +89,7 @@ const COMPANIONS: Companion[] = [
     role:     "Psychology & mental health",
     status:   "premium",
     color:    C.purple,
-    gradient: ["rgba(139,92,246,0.16)", "rgba(139,92,246,0.05)"] as const,
+    gradient: ["rgba(181, 138, 200, 0.15)", "rgba(181, 138, 200, 0.04)"] as const,
     image:    manchiImage,
   },
   {
@@ -96,7 +98,7 @@ const COMPANIONS: Companion[] = [
     role:     "Yoga & guided healing",
     status:   "premium",
     color:    C.sage,
-    gradient: ["rgba(129,178,154,0.18)", "rgba(129,178,154,0.06)"] as const,
+    gradient: ["rgba(126, 200, 160, 0.15)", "rgba(126, 200, 160, 0.04)"] as const,
     image:    yogiImage,
   },
 ];
@@ -109,6 +111,7 @@ export default function BloopScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <StatusBar style="light" backgroundColor={darkColors.background} translucent />
 
       {/* ── Navigation bar ────────────────────────────────────────────────── */}
       <View style={s.navBar}>
@@ -119,7 +122,7 @@ export default function BloopScreen() {
           style={({ pressed }) => [s.backBtn, pressed && s.pressed]}
           hitSlop={8}
         >
-          <Ionicons name="chevron-back" size={22} color={C.text} />
+          <Ionicons name="chevron-back" size={22} color={darkColors.primaryCTA} />
         </Pressable>
         <Text style={s.navTitle}>Your Companions</Text>
         {/* spacer mirrors back button width so title centres perfectly */}
@@ -140,7 +143,7 @@ export default function BloopScreen() {
         {/* ── Hero card ─────────────────────────────────────────────────────── */}
         <View style={s.heroCard}>
           <LinearGradient
-            colors={["rgba(224,122,95,0.15)", "rgba(244,162,97,0.07)"]}
+            colors={["rgba(232, 166, 182, 0.14)", "rgba(232, 166, 182, 0.04)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -163,7 +166,7 @@ export default function BloopScreen() {
               onPress={() => router.push("/bloop-chat" as any)}
               style={({ pressed }) => [s.heroCta, pressed && s.pressed]}
             >
-              <MaterialCommunityIcons name="chat-outline" size={16} color="#FFF" />
+              <MaterialCommunityIcons name="chat-outline" size={16} color={darkColors.background} />
               <Text style={s.heroCtaText}>Start with Bloop</Text>
             </Pressable>
           </View>
@@ -229,7 +232,7 @@ export default function BloopScreen() {
 
         {/* ── Safety footer ─────────────────────────────────────────────────── */}
         <View style={s.safetyCard}>
-          <MaterialCommunityIcons name="head-heart-outline" size={20} color={C.rose} />
+          <MaterialCommunityIcons name="head-heart-outline" size={20} color={darkColors.primaryCTA} />
           <Text style={s.safetyText}>
             If you feel unsafe or need urgent support, please contact local emergency services or a trusted person.
           </Text>
@@ -238,8 +241,7 @@ export default function BloopScreen() {
         <View style={{ height: 50 }} />
       </ScrollView>
     </SafeAreaView>
-  );
-}
+  );}
 
 // ── Companion card component ───────────────────────────────────────────────────
 function CompanionCard({
@@ -303,7 +305,7 @@ function CompanionCard({
       ) : (
         <View style={[s.statusPill, { backgroundColor: "rgba(129,178,154,0.18)" }]}>
           <Text style={[s.statusPillText, { color: C.sage }]}>
-            ✦ Active
+            Active
           </Text>
         </View>
       )}
@@ -328,11 +330,8 @@ const s = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: "center", justifyContent: "center",
     backgroundColor: C.white,
-    shadowColor: C.text,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   navTitle: {
     fontFamily: F.luxuryExtraBold,
@@ -410,7 +409,7 @@ const s = StyleSheet.create({
     flexDirection:    "row",
     alignItems:       "center",
     gap:              8,
-    backgroundColor:  C.text,
+    backgroundColor:  C.terracotta,
     borderRadius:     999,
     paddingHorizontal: 18,
     paddingVertical:  11,
@@ -421,7 +420,7 @@ const s = StyleSheet.create({
     borderColor: C.sage,
   },
   heroCtaText: {
-    color: "#FFFFFF", fontSize: 13,
+    color: C.bg, fontSize: 13,
     fontWeight: "800", letterSpacing: 0.3,
   },
   heroCtaTextReady: { color: C.sage },
@@ -457,12 +456,7 @@ const s = StyleSheet.create({
     paddingVertical:   10,
     backgroundColor: C.white,
     borderWidth:    1,
-    borderColor:    "rgba(0,0,0,0.06)",
-    shadowColor:    C.text,
-    shadowOffset:   { width: 0, height: 2 },
-    shadowOpacity:  0.05,
-    shadowRadius:   6,
-    elevation:      1,
+    borderColor:    "rgba(255,255,255,0.08)",
   },
   chipLabel: {
     fontSize: 13, fontWeight: "700",
@@ -483,11 +477,8 @@ const s = StyleSheet.create({
     padding:         16,
     alignItems:      "center",
     gap:             6,
-    shadowColor:     C.text,
-    shadowOffset:    { width: 0, height: 6 },
-    shadowOpacity:   0.07,
-    shadowRadius:    16,
-    elevation:       3,
+    borderWidth:     1,
+    borderColor:     "rgba(255,255,255,0.08)",
   },
   lockBadge: {
     position:        "absolute",
@@ -496,7 +487,7 @@ const s = StyleSheet.create({
     flexDirection:   "row",
     alignItems:      "center",
     gap:             3,
-    backgroundColor: "rgba(43,45,66,0.62)",
+    backgroundColor: "rgba(20, 14, 22, 0.85)",
     borderRadius:    999,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -513,13 +504,13 @@ const s = StyleSheet.create({
     borderRadius: 44,
     overflow:     "hidden",
     borderWidth:  2,
-    borderColor:  "rgba(0,0,0,0.06)",
+    borderColor:  "rgba(255,255,255,0.1)",
     marginBottom: 4,
   },
   avatarImage: { width: 88, height: 88 },
   avatarDim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(250,249,246,0.48)",
+    backgroundColor: "rgba(17,8,18,0.65)",
   },
   companionName: {
     fontFamily: F.luxuryExtraBold,
@@ -548,11 +539,11 @@ const s = StyleSheet.create({
     flexDirection:   "row",
     alignItems:      "flex-start",
     gap:             12,
-    backgroundColor: "rgba(215,166,161,0.10)",
+    backgroundColor: "rgba(232, 166, 182, 0.06)",
     borderRadius:    20,
     padding:         16,
     borderWidth:     1,
-    borderColor:     "rgba(215,166,161,0.22)",
+    borderColor:     "rgba(232, 166, 182, 0.12)",
   },
   safetyText: {
     flex:       1,

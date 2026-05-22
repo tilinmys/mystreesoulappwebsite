@@ -24,8 +24,11 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Defs, Path as SvgPath, LinearGradient as SvgLinearGradient, Stop as SvgStop } from "react-native-svg";
 import { CachedImage } from "../CachedImage";
+import { darkColors, lightColors, type AppColors } from "../../constants/colors";
 import { F } from "../../constants/fonts";
+import { useColorMode } from "../../hooks/useColorMode";
 import { useDailyLogStore } from "../../store/dailyLogStore";
 
 const imgBloop = require("../../public/images/bloop-welcome.webp");
@@ -33,29 +36,29 @@ const imgBloop = require("../../public/images/bloop-welcome.webp");
 const { width: W, height: H } = Dimensions.get("window");
 const SHEET_HEIGHT = H * 0.88;
 
-// ── Palette ───────────────────────────────────────────────────────────────────
+// ── Palette — Midnight Plum dark theme ────────────────────────────────────────
 const C = {
-  bg:         "#FFFDFB",
-  text:       "#1C1528",
-  muted:      "#8A7A9A",
-  faint:      "#C4B8D4",
-  terracotta: "#E07A5F",
-  lavender:   "#9277C8",
-  pink:       "#D45C82",
-  gold:       "#C9A040",
-  sage:       "#5E9B6B",
-  peach:      "#F4A261",
-  navy:       "#3D4B7C",
-  white:      "#FFFFFF",
-  cardBg:     "rgba(255,255,255,0.82)",
-  border:     "rgba(255,255,255,0.88)",
-  softPeach:  "#FFF5F0",
-  softLav:    "#F5F0FF",
+  bg:         "#2E2330",   // surface      (Blackberry Smoke — sheet base)
+  text:       "#F6E9EF",   // textPrimary  (Moon Pearl)
+  muted:      "#B58AC8",   // textMuted    (Lavender Dust)
+  faint:      "#6E5680",   // dimmed muted
+  terracotta: "#E07A5F",   // informational accent (kept)
+  lavender:   "#9277C8",   // informational accent (kept)
+  pink:       "#D45C82",   // informational accent (kept)
+  gold:       "#C9A040",   // informational accent (kept)
+  sage:       "#5E9B6B",   // informational accent (kept)
+  peach:      "#F4A261",   // informational accent (kept)
+  navy:       "#3D4B7C",   // informational accent (kept)
+  white:      "#FFFFFF",   // send button + SVG highlights
+  cardBg:     "#3A2D3E",   // slightly raised surface card
+  border:     "#4A394D",   // Velvet Mauve (border / surfaceRaised)
+  softPeach:  "#2E1E18",   // dark rose tinted surface (flow active)
+  softLav:    "#28203A",   // dark lavender tinted surface
 } as const;
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const MOODS = [
-  { key: "calm",        label: "Calm",        emoji: "😌", color: C.lavender, bg: "rgba(146,119,200,0.12)" },
+  { key: "calm",        label: "Calm",        emoji: "😌", color: C.muted, bg: "rgba(146,119,200,0.12)" },
   { key: "sensitive",   label: "Sensitive",   emoji: "🥹", color: C.pink,     bg: "rgba(212,92,130,0.12)"  },
   { key: "tired",       label: "Tired",       emoji: "😴", color: C.navy,     bg: "rgba(61,75,124,0.10)"   },
   { key: "energetic",   label: "Energetic",   emoji: "🤩", color: C.gold,     bg: "rgba(201,160,64,0.12)"  },
@@ -71,7 +74,7 @@ const FLOWS = [
 ] as const;
 
 const SYMPTOMS = [
-  { key: "cramps",      label: "Cramps",      icon: "lightning-bolt"            as const, color: C.lavender  },
+  { key: "cramps",      label: "Cramps",      icon: "lightning-bolt"            as const, color: C.muted  },
   { key: "bloating",    label: "Bloating",    icon: "water-plus-outline"        as const, color: C.peach     },
   { key: "headache",    label: "Headache",    icon: "head-dots-horizontal"      as const, color: C.navy      },
   { key: "acne",        label: "Acne",        icon: "face-woman-shimmer-outline" as const, color: C.pink     },
@@ -84,10 +87,10 @@ const SYMPTOMS = [
 ] as const;
 
 const BODY_SIGNALS = [
-  { key: "sleep",          label: "Sleep",          value: "Good",    icon: "moon-waning-crescent" as const, dot: C.sage    },
-  { key: "hydration",      label: "Hydration",      value: "Good",    icon: "water-outline"        as const, dot: C.lavender},
-  { key: "body_temp",      label: "Body Temp.",      value: "Normal",  icon: "thermometer"          as const, dot: C.peach   },
-  { key: "cervical_mucus", label: "Cervical Mucus", value: "Creamy",  icon: "flower-outline"       as const, dot: C.pink    },
+  { key: "sleep",          label: "Sleep",       icon: "moon-waning-crescent" as const, dot: C.sage     },
+  { key: "hydration",      label: "Hydration",   icon: "water-outline"        as const, dot: C.lavender },
+  { key: "body_temp",      label: "Body temp",   icon: "thermometer"          as const, dot: C.peach    },
+  { key: "cervical_mucus", label: "Body fluids", icon: "flower-outline"       as const, dot: C.pink     },
 ] as const;
 
 // ── Slider component ──────────────────────────────────────────────────────────
@@ -161,7 +164,7 @@ function CycleSlider({ value, onChange, gradientColors, labels }: SliderProps) {
 const slStyles = StyleSheet.create({
   wrap: { flex: 1 },
   track: {
-    backgroundColor: "rgba(196,184,212,0.22)",
+    backgroundColor: "rgba(74,57,77,0.60)",
     borderRadius: 8,
     height: 8,
     justifyContent: "center",
@@ -183,13 +186,13 @@ const slStyles = StyleSheet.create({
     width: 28,
   },
   thumb: {
-    backgroundColor: C.white,
+    backgroundColor: "#F6E9EF",
     borderRadius: 14,
     elevation: 4,
     height: 22,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.30,
     shadowRadius: 6,
     width: 22,
   },
@@ -204,29 +207,68 @@ const slStyles = StyleSheet.create({
   },
 });
 
-// ── Drop icon (custom SVG-free droplet via View) ──────────────────────────────
-function Droplet({ color, size = 14 }: { color: string; size?: number }) {
-  return (
-    <View style={{
-      width: size,
-      height: size * 1.3,
-      borderRadius: size * 0.5,
-      borderTopLeftRadius: size * 0.5,
-      borderTopRightRadius: size * 0.5,
-      borderBottomLeftRadius: size * 0.5,
-      borderBottomRightRadius: size * 1.4,
-      backgroundColor: color,
-      transform: [{ rotate: "180deg" }],
-    }} />
-  );
-}
+// ── Premium SVG Droplet — dynamic fill rises with flow selection ──────────────
+const DROP_VP_W = 36;
+const DROP_VP_H = 48;
+const DROP_PATH = "M18 2C18 2 34 18 34 32A16 16 0 1 1 2 32C2 18 18 2 18 2Z";
 
-function FlowDrop({ color, fill, active }: { color: string; fill: number; active: boolean }) {
+function SvgDroplet({
+  color,
+  fill,
+  active,
+  outlineColor,
+  periodColor,
+}: {
+  color: string;
+  fill: number;
+  active: boolean;
+  outlineColor: string;
+  periodColor?: string;
+}) {
+  // Unique gradient ID per color — avoids ID collisions when 4 droplets render simultaneously
+  const gradId = `drop_grad_${color.replace(/#/g, "").slice(0, 6)}`;
+  
+  // Fill rises from bottom: y1=1 (bottom) to y2=0 (top)
+  const fillPct = fill * 100;
+  
+  // The empty part overlay opacity: reads elegantly on dark theme surface cards
+  const emptyColor = active ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.15)";
+  const fillColor = active ? color : `${color}A0`; // slightly transparent if inactive but still vibrant
+  
   return (
-    <View style={[styles.flowDropShell, active && { borderColor: color }]}>
-      <View style={[styles.flowBloodFill, { backgroundColor: color, height: `${Math.round(fill * 100)}%` as any }]} />
-      <View style={styles.flowDropShine} />
-    </View>
+    <Svg width={DROP_VP_W} height={DROP_VP_H} viewBox={`0 0 ${DROP_VP_W} ${DROP_VP_H}`}>
+      <Defs>
+        <SvgLinearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+          <SvgStop offset="0%" stopColor={fillColor} stopOpacity={1} />
+          <SvgStop offset={`${fillPct}%`} stopColor={fillColor} stopOpacity={1} />
+          <SvgStop offset={`${fillPct + 0.5}%`} stopColor={emptyColor} stopOpacity={1} />
+          <SvgStop offset="100%" stopColor={emptyColor} stopOpacity={1} />
+        </SvgLinearGradient>
+      </Defs>
+
+      {/* Symmetric droplet shape filled with blood accordingly (exact droplet shape) */}
+      <SvgPath
+        d={DROP_PATH}
+        fill={`url(#${gradId})`}
+      />
+
+      {/* Soft highlight reflection curve inside droplet for absolute visual premiumness */}
+      <SvgPath
+        d="M11 14C8 18 8 22 8 22"
+        fill="none"
+        stroke="rgba(255, 255, 255, 0.24)"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+
+      {/* Crisp outline border */}
+      <SvgPath
+        d={DROP_PATH}
+        stroke={active ? color : outlineColor}
+        strokeWidth={active ? 2.0 : 1.5}
+        fill="none"
+      />
+    </Svg>
   );
 }
 
@@ -249,8 +291,22 @@ type Props = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+let darkStyles: ReturnType<typeof getStyles> | null = null;
+let lightStyles: ReturnType<typeof getStyles> | null = null;
+
+function useStyles() {
+  const { colors, isDark } = useColorMode();
+  if (isDark) {
+    if (!darkStyles) darkStyles = getStyles(darkColors, true);
+    return { colors, isDark, s: darkStyles };
+  }
+  if (!lightStyles) lightStyles = getStyles(lightColors, false);
+  return { colors, isDark, s: lightStyles };
+}
+
 export function DailyLogSheet({ visible, onClose, onSave }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors, s } = useStyles();
   const saveLog = useDailyLogStore((s) => s.saveLog);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -262,12 +318,20 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
   const [selectedSymptoms, setSelectedSymptoms] = useState<Set<string>>(new Set());
   const [journalText,      setJournalText]      = useState("");
   const [showSuccess,      setShowSuccess]      = useState(false);
+  const [selectedBodySignals, setSelectedBodySignals] = useState<Set<string>>(new Set());
 
   // ── Animations ─────────────────────────────────────────────────────────────
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const backdropOp = useRef(new Animated.Value(0)).current;
   const successOp  = useRef(new Animated.Value(0)).current;
-  const bloopScale = useRef(new Animated.Value(0.8)).current;
+  const bloopScale = useRef(new Animated.Value(0.93)).current;
+  const checkScale = useRef(new Animated.Value(0.5)).current;
+  const textY      = useRef(new Animated.Value(12)).current;
+  const textOp     = useRef(new Animated.Value(0)).current;
+  const haloScale1 = useRef(new Animated.Value(0.8)).current;
+  const haloOp1    = useRef(new Animated.Value(0)).current;
+  const haloScale2 = useRef(new Animated.Value(0.8)).current;
+  const haloOp2    = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
@@ -276,8 +340,15 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
         closeTimerRef.current = null;
       }
       setShowSuccess(false);
-      bloopScale.setValue(0.8);
+      bloopScale.setValue(0.93);
       successOp.setValue(0);
+      checkScale.setValue(0.5);
+      textY.setValue(12);
+      textOp.setValue(0);
+      haloScale1.setValue(0.8);
+      haloOp1.setValue(0);
+      haloScale2.setValue(0.8);
+      haloOp2.setValue(0);
       Animated.parallel([
         Animated.spring(translateY, { toValue: 0,   useNativeDriver: true, tension: 65, friction: 11 }),
         Animated.timing(backdropOp, { toValue: 1,   useNativeDriver: true, duration: 280, easing: Easing.out(Easing.ease) }),
@@ -294,7 +365,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
         closeTimerRef.current = null;
       }
     };
-  }, [visible, backdropOp, bloopScale, successOp, translateY]);
+  }, [visible, backdropOp, translateY]);
 
   // Swipe-down to dismiss
   const sheetPan = useRef(
@@ -315,8 +386,8 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
 
   const handleClose = () => {
     Animated.parallel([
-      Animated.timing(translateY, { toValue: SHEET_HEIGHT, useNativeDriver: true, duration: 280, easing: Easing.in(Easing.ease) }),
-      Animated.timing(backdropOp, { toValue: 0,            useNativeDriver: true, duration: 240 }),
+      Animated.timing(translateY, { toValue: SHEET_HEIGHT, useNativeDriver: true, duration: 300, easing: Easing.in(Easing.ease) }),
+      Animated.timing(backdropOp, { toValue: 0,            useNativeDriver: true, duration: 260 }),
     ]).start(() => onClose());
   };
 
@@ -330,30 +401,155 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
       energyLevel:  Math.round(energyLevel),
       stressLevel:  Math.round(stressLevel),
       symptoms:     Array.from(selectedSymptoms),
-      bodySignals:  Object.fromEntries(BODY_SIGNALS.map(b => [b.key, b.value])),
+      bodySignals:  Object.fromEntries([...selectedBodySignals].map(k => [k, "selected"])),
       journalEntry: journalText.trim(),
     };
     saveLog(payload);
     onSave?.(payload);
     setShowSuccess(true);
 
-    // Animate success
+    // Reset values for perfect start states
+    bloopScale.setValue(0.93);
+    successOp.setValue(0);
+    checkScale.setValue(0.5);
+    textY.setValue(12);
+    textOp.setValue(0);
+    haloScale1.setValue(0.8);
+    haloOp1.setValue(0);
+    haloScale2.setValue(0.8);
+    haloOp2.setValue(0);
+
+    // Animate coordinated success sequence
     Animated.parallel([
-      Animated.spring(bloopScale, { toValue: 1, useNativeDriver: true, tension: 70, friction: 8 }),
-      Animated.timing(successOp,  { toValue: 1, useNativeDriver: true, duration: 380 }),
+      // 1. Success overlay background fade-in
+      Animated.timing(successOp, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      // 2. Success Card spring scaling
+      Animated.spring(bloopScale, {
+        toValue: 1,
+        tension: 80,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      // 3. Staggered checkmark badge spring scaling
+      Animated.sequence([
+        Animated.delay(100),
+        Animated.spring(checkScale, {
+          toValue: 1,
+          tension: 100,
+          friction: 6,
+          useNativeDriver: true,
+        }),
+      ]),
+      // 4. Staggered content reveal (text translation & opacity)
+      Animated.sequence([
+        Animated.delay(150),
+        Animated.parallel([
+          Animated.timing(textOp, {
+            toValue: 1,
+            duration: 250,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(textY, {
+            toValue: 0,
+            duration: 300,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+      // 5. First concentric halo wave ripple
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(haloOp1, {
+            toValue: 0.45,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(haloScale1, {
+            toValue: 1.8,
+            duration: 700,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(haloOp1, {
+          toValue: 0,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+      ]),
+      // 6. Second concentric halo wave ripple (slightly delayed)
+      Animated.sequence([
+        Animated.delay(120),
+        Animated.parallel([
+          Animated.timing(haloOp2, {
+            toValue: 0.35,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(haloScale2, {
+            toValue: 2.5,
+            duration: 800,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(haloOp2, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
 
+    // Auto-dismiss after 1.6 seconds of beautiful celebration
     closeTimerRef.current = setTimeout(() => {
-      setShowSuccess(false);
-      bloopScale.setValue(0.8);
-      successOp.setValue(0);
-      handleClose();
-    }, 1150);
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: SHEET_HEIGHT,
+          duration: 380,
+          easing: Easing.bezier(0.32, 0.72, 0, 1),
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOp, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowSuccess(false);
+        bloopScale.setValue(0.93);
+        successOp.setValue(0);
+        checkScale.setValue(0.5);
+        textY.setValue(12);
+        textOp.setValue(0);
+        haloScale1.setValue(0.8);
+        haloOp1.setValue(0);
+        haloScale2.setValue(0.8);
+        haloOp2.setValue(0);
+        onClose();
+      });
+    }, 1600);
   };
 
   const toggleSymptom = (key: string) => {
     Haptics.selectionAsync().catch(() => {});
     setSelectedSymptoms(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const toggleBodySignal = (key: string) => {
+    Haptics.selectionAsync().catch(() => {});
+    setSelectedBodySignals(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -379,39 +575,53 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
       onRequestClose={handleClose}
     >
       {/* ── Backdrop ──────────────────────────────────────────────────────── */}
-      <Animated.View style={[styles.backdrop, { opacity: backdropOp }]}>
+      <Animated.View style={[s.backdrop, { opacity: backdropOp }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
       </Animated.View>
 
       {/* ── Sheet ─────────────────────────────────────────────────────────── */}
-      <Animated.View style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
+      <Animated.View style={[s.sheetWrap, { transform: [{ translateY }] }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
           keyboardVerticalOffset={0}
         >
-          <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={[s.sheet, { paddingBottom: insets.bottom + 16 }]}>
 
             {/* Drag handle area */}
-            <View {...sheetPan.panHandlers} style={styles.handleArea}>
-              <View style={styles.handle} />
+            <View {...sheetPan.panHandlers} style={s.handleArea}>
+              <View style={s.handle} />
+            </View>
+
+            {/* Sheet top bar — title + close X */}
+            <View style={s.sheetTopBar}>
+              <Text style={s.sheetTopTitle}>Today's log</Text>
+              <Pressable
+                onPress={handleClose}
+                hitSlop={12}
+                style={({ pressed }) => [s.closeXBtn, pressed && s.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Close log"
+              >
+                <Ionicons name="close" size={20} color={colors.textMuted} />
+              </Pressable>
             </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.scrollContent}
+              contentContainerStyle={s.scrollContent}
               bounces={false}
             >
               {/* ── "Today feels…" ──────────────────────────────────────── */}
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionStar}>✦</Text>
-                <Text style={styles.sectionTitle}>Today feels…</Text>
+              <View style={s.sectionHeader}>
+                <Text style={s.sectionStar}>♥</Text>
+                <Text style={s.sectionTitle}>Today feels…</Text>
               </View>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.moodScroll}
+                style={s.moodScroll}
                 contentContainerStyle={{ paddingHorizontal: 2, gap: 8 }}
               >
                 {MOODS.map((m) => {
@@ -421,14 +631,14 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
                       key={m.key}
                       onPress={() => selectMood(m.key)}
                       style={({ pressed }) => [
-                        styles.moodChip,
-                        { backgroundColor: active ? m.bg : "rgba(255,255,255,0.72)" },
+                        s.moodChip,
+                        { backgroundColor: active ? m.bg : colors.surfaceRaised },
                         active && { borderColor: m.color, borderWidth: 1.5 },
-                        pressed && styles.pressed,
+                        pressed && s.pressed,
                       ]}
                     >
-                      <Text style={styles.moodEmoji}>{m.emoji}</Text>
-                      <Text style={[styles.moodLabel, active && { color: m.color, fontFamily: F.uiSemiBold }]}>
+                      <Text style={s.moodEmoji}>{m.emoji}</Text>
+                      <Text style={[s.moodLabel, active && { color: m.color, fontFamily: F.uiSemiBold }]}>
                         {m.label}
                       </Text>
                     </Pressable>
@@ -437,11 +647,11 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
               </ScrollView>
 
               {/* ── Flow ─────────────────────────────────────────────────── */}
-              <View style={styles.sectionHeader}>
-                <Droplet color={C.terracotta} size={13} />
-                <Text style={styles.sectionTitle}>Period flow</Text>
+              <View style={s.sectionHeader}>
+                <MaterialCommunityIcons name="water" size={15} color={C.terracotta} />
+                <Text style={s.sectionTitle}>Period flow</Text>
               </View>
-              <View style={styles.flowGrid}>
+              <View style={s.flowGrid}>
                 {FLOWS.map((f) => {
                   const active = selectedFlow === f.key;
                   return (
@@ -449,13 +659,23 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
                       key={f.key}
                       onPress={() => selectFlow(f.key)}
                       style={({ pressed }) => [
-                        styles.flowCard,
-                        active && { borderColor: f.color, borderWidth: 1.5, backgroundColor: C.softPeach },
-                        pressed && styles.pressed,
+                        s.flowCard,
+                        {
+                          backgroundColor: active ? `${f.color}1E` : colors.surfaceRaised,
+                          borderColor: active ? f.color : colors.border,
+                          borderWidth: 1.5,
+                        },
+                        pressed && s.pressed,
                       ]}
                     >
-                      <FlowDrop color={f.color} fill={f.fill} active={active} />
-                      <Text style={[styles.flowLabel, active && { color: f.color, fontFamily: F.uiSemiBold }]}>
+                      <SvgDroplet
+                        color={f.color}
+                        fill={f.fill}
+                        active={active}
+                        outlineColor={colors.textMuted}
+                        periodColor={colors.periodColor}
+                      />
+                      <Text style={[s.flowLabel, active && { color: f.color, fontFamily: F.uiSemiBold }]}>
                         {f.label}
                       </Text>
                     </Pressable>
@@ -464,11 +684,11 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
               </View>
 
               {/* ── Energy + Stress ──────────────────────────────────────── */}
-              <View style={styles.slidersRow}>
-                <View style={styles.sliderSection}>
-                  <View style={styles.sliderHeader}>
+              <View style={s.slidersRow}>
+                <View style={s.sliderSection}>
+                  <View style={s.sliderHeader}>
                     <MaterialCommunityIcons name="lightning-bolt" size={14} color={C.gold} />
-                    <Text style={styles.sliderTitle}>Energy</Text>
+                    <Text style={s.sliderTitle}>Energy</Text>
                   </View>
                   <CycleSlider
                     value={energyLevel}
@@ -477,10 +697,10 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
                     labels={["Low", "Balanced", "High"]}
                   />
                 </View>
-                <View style={styles.sliderSection}>
-                  <View style={styles.sliderHeader}>
+                <View style={s.sliderSection}>
+                  <View style={s.sliderHeader}>
                     <MaterialCommunityIcons name="flower-tulip-outline" size={14} color={C.pink} />
-                    <Text style={styles.sliderTitle}>Stress</Text>
+                    <Text style={s.sliderTitle}>Stress</Text>
                   </View>
                   <CycleSlider
                     value={stressLevel}
@@ -492,30 +712,30 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
               </View>
 
               {/* ── Symptoms ─────────────────────────────────────────────── */}
-              <View style={styles.sectionHeader}>
+              <View style={s.sectionHeader}>
                 <MaterialCommunityIcons name="flower-pollen-outline" size={16} color={C.pink} />
-                <Text style={styles.sectionTitle}>What are you experiencing?</Text>
+                <Text style={s.sectionTitle}>What are you experiencing?</Text>
               </View>
-              <View style={styles.symptomsWrap}>
-                {SYMPTOMS.map((s) => {
-                  const active = selectedSymptoms.has(s.key);
+              <View style={s.symptomsWrap}>
+                {SYMPTOMS.map((symptom) => {
+                  const active = selectedSymptoms.has(symptom.key);
                   return (
                     <Pressable
-                      key={s.key}
-                      onPress={() => toggleSymptom(s.key)}
+                      key={symptom.key}
+                      onPress={() => toggleSymptom(symptom.key)}
                       style={({ pressed }) => [
-                        styles.symptomPill,
-                        active && { backgroundColor: s.color + "18", borderColor: s.color + "60" },
-                        pressed && styles.pressed,
+                        s.symptomPill,
+                        active && s.symptomPillActive,
+                        pressed && s.pressed,
                       ]}
                     >
                       <MaterialCommunityIcons
-                        name={s.icon}
+                        name={symptom.icon}
                         size={14}
-                        color={active ? s.color : C.muted}
+                        color={active ? colors.background : colors.textPrimary}
                       />
-                      <Text style={[styles.symptomLabel, active && { color: s.color, fontFamily: F.uiSemiBold }]}>
-                        {s.label}
+                      <Text style={[s.symptomLabel, active && s.symptomLabelActive]}>
+                        {symptom.label}
                       </Text>
                     </Pressable>
                   );
@@ -523,50 +743,56 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
               </View>
 
               {/* ── Body signals ─────────────────────────────────────────── */}
-              <View style={styles.sectionHeader}>
+              <View style={s.sectionHeader}>
                 <MaterialCommunityIcons name="pulse" size={15} color={C.terracotta} />
-                <Text style={styles.sectionTitle}>Body signals</Text>
+                <Text style={s.sectionTitle}>How is your body feeling today?</Text>
               </View>
-              <View style={styles.bodyGrid}>
-                {BODY_SIGNALS.map((b) => (
-                  <View
-                    key={b.key}
-                    style={styles.bodyCard}
-                  >
-                    <View style={styles.bodyIconBubble}>
-                      <MaterialCommunityIcons name={b.icon} size={16} color={C.muted} />
-                    </View>
-                    <View>
-                      <Text style={styles.bodyLabel}>{b.label}</Text>
-                      <View style={styles.bodyValueRow}>
-                        <View style={[styles.bodyDot, { backgroundColor: b.dot }]} />
-                        <Text style={[styles.bodyValue, { color: b.dot }]}>{b.value}</Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
+              <View style={s.chipGrid}>
+                {BODY_SIGNALS.map((b) => {
+                  const active = selectedBodySignals.has(b.key);
+                  return (
+                    <Pressable
+                      key={b.key}
+                      onPress={() => toggleBodySignal(b.key)}
+                      style={({ pressed }) => [
+                        s.chipPill,
+                        active && s.chipPillActive,
+                        pressed && s.pressed,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={b.icon}
+                        size={14}
+                        color={active ? colors.background : colors.textPrimary}
+                      />
+                      <Text style={[s.chipLabel, active && s.chipLabelActive]}>
+                        {b.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
 
               {/* ── Journal moment ───────────────────────────────────────── */}
-              <View style={styles.sectionHeader}>
+              <View style={s.sectionHeader}>
                 <Ionicons name="leaf-outline" size={15} color={C.sage} />
-                <Text style={styles.sectionTitle}>Journal moment</Text>
-                <Text style={styles.optionalLabel}>(optional)</Text>
+                <Text style={s.sectionTitle}>Journal moment</Text>
+                <Text style={s.optionalLabel}>(optional)</Text>
               </View>
-              <View style={styles.journalCard}>
+              <View style={s.journalCard}>
                 <TextInput
                   value={journalText}
                   onChangeText={setJournalText}
                   placeholder="Anything unusual today?"
                   placeholderTextColor={C.faint}
                   multiline
-                  style={styles.journalInput}
+                  style={s.journalInput}
                 />
                 <Ionicons
                   name="pencil"
                   size={16}
                   color={C.faint}
-                  style={styles.journalIcon}
+                  style={s.journalIcon}
                 />
               </View>
 
@@ -574,29 +800,56 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
               <Pressable
                 onPress={handleSave}
                 disabled={showSuccess}
-                style={({ pressed }) => [styles.doneBtn, showSuccess && styles.doneBtnDisabled, pressed && !showSuccess && styles.pressed]}
+                style={({ pressed }) => [s.doneBtn, showSuccess && s.doneBtnDisabled, pressed && !showSuccess && s.pressed]}
               >
                 <LinearGradient
-                  colors={["#F4A261", "#E07A5F"]}
+                  colors={[colors.warning, colors.periodColor]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.doneBtnInner}
+                  style={s.doneBtnInner}
                 >
-                  <Ionicons name="checkmark-circle-outline" size={20} color={C.white} />
-                  <Text style={styles.doneBtnText}>Done</Text>
+                  <Ionicons name="checkmark-circle-outline" size={20} color={colors.background} />
+                  <Text style={s.doneBtnText}>Done</Text>
                 </LinearGradient>
               </Pressable>
 
               <View style={{ height: 8 }} />
             </ScrollView>
             {showSuccess && (
-              <Animated.View pointerEvents="none" style={[styles.successOverlay, { opacity: successOp }]}>
-                <Animated.View style={[styles.successCard, { transform: [{ scale: bloopScale }] }]}>
-                  <CachedImage source={imgBloop} style={styles.successBloop} />
-                  <View style={styles.successCopy}>
-                    <Text style={styles.successTitle}>Saved beautifully</Text>
-                    <Text style={styles.successText}>Bloop logged your rhythm. You are all set.</Text>
+              <Animated.View pointerEvents="none" style={[s.successOverlay, { opacity: successOp }]}>
+                {/* Concentric Halos */}
+                <Animated.View
+                  style={[
+                    s.successHalo,
+                    {
+                      transform: [{ scale: haloScale1 }],
+                      opacity: haloOp1,
+                      borderColor: colors.periodColor,
+                    },
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    s.successHalo,
+                    {
+                      transform: [{ scale: haloScale2 }],
+                      opacity: haloOp2,
+                      borderColor: colors.warning,
+                    },
+                  ]}
+                />
+
+                <Animated.View style={[s.successCard, { transform: [{ scale: bloopScale }] }]}>
+                  <View style={s.bloopCheckContainer}>
+                    <CachedImage source={imgBloop} style={s.successBloop} />
+                    <Animated.View style={[s.checkmarkBadge, { transform: [{ scale: checkScale }] }]}>
+                      <Ionicons name="checkmark-sharp" size={12} color={colors.background} />
+                    </Animated.View>
                   </View>
+                  <Animated.View style={[s.successCopy, { opacity: textOp, transform: [{ translateY: textY }] }]}>
+                    <Text style={s.successTitle}>Saved beautifully</Text>
+                    <Text style={s.successText}>Bloop logged your rhythm. You are all set.</Text>
+                  </Animated.View>
                 </Animated.View>
               </Animated.View>
             )}
@@ -608,10 +861,10 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(28,21,40,0.45)",
+    backgroundColor: `${colors.background}CC`,
   },
   sheetWrap: {
     bottom: 0,
@@ -621,14 +874,14 @@ const styles = StyleSheet.create({
     height: SHEET_HEIGHT,
   },
   sheet: {
-    backgroundColor: "#FFFDFB",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     flex: 1,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: colors.background,
     shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.10,
+    shadowOpacity: isDark ? 0.36 : 0.16,
     shadowRadius: 24,
   },
   handleArea: {
@@ -637,7 +890,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   handle: {
-    backgroundColor: "#D4C8DC",
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 3,
     height: 4,
     width: 44,
@@ -656,16 +909,16 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sectionStar: {
-    color: C.lavender,
+    color: colors.textMuted,
     fontSize: 13,
   },
   sectionTitle: {
-    color: C.text,
+    color: colors.textPrimary,
     fontFamily: F.uiBold,
     fontSize: 15,
   },
   optionalLabel: {
-    color: C.faint,
+    color: colors.textHint,
     fontFamily: F.uiRegular,
     fontSize: 12,
     marginLeft: -2,
@@ -677,7 +930,8 @@ const styles = StyleSheet.create({
   },
   moodChip: {
     alignItems: "center",
-    borderColor: "rgba(196,184,212,0.30)",
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.border,
     borderRadius: 20,
     borderWidth: 1,
     height: 86,
@@ -689,7 +943,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   moodLabel: {
-    color: C.muted,
+    color: colors.textMuted,
     fontFamily: F.uiMedium,
     fontSize: 11,
   },
@@ -697,13 +951,14 @@ const styles = StyleSheet.create({
   // Flow
   flowGrid: {
     flexDirection: "row",
-    gap: 8,
+    flexWrap: "wrap",
+    gap: 12,
   },
   flowCard: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.80)",
-    borderColor: "rgba(196,184,212,0.30)",
-    borderRadius: 18,
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.border,
+    borderRadius: 20,
     borderWidth: 1,
     flex: 1,
     height: 80,
@@ -711,8 +966,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   flowDropShell: {
-    backgroundColor: "rgba(255,245,242,0.88)",
-    borderColor: "rgba(224,122,95,0.22)",
+    backgroundColor: "#2E1E18",
+    borderColor: "rgba(224,122,95,0.30)",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     borderBottomLeftRadius: 16,
@@ -732,7 +987,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   flowDropShine: {
-    backgroundColor: "rgba(255,255,255,0.58)",
+    backgroundColor: "rgba(255,255,255,0.20)",
     borderRadius: 5,
     height: 10,
     left: 9,
@@ -759,7 +1014,7 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   flowLabel: {
-    color: C.muted,
+    color: colors.textMuted,
     fontFamily: F.uiMedium,
     fontSize: 11,
   },
@@ -770,8 +1025,8 @@ const styles = StyleSheet.create({
     gap: 16,
     marginTop: 20,
     marginBottom: 2,
-    backgroundColor: "rgba(255,255,255,0.80)",
-    borderColor: "rgba(196,184,212,0.25)",
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.border,
     borderRadius: 20,
     borderWidth: 1,
     padding: 16,
@@ -786,84 +1041,96 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sliderTitle: {
-    color: C.text,
+    color: colors.textPrimary,
     fontFamily: F.uiBold,
     fontSize: 13,
   },
 
-  // Symptoms
-  symptomsWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  symptomPill: {
+  // Sheet top bar (title + close X)
+  sheetTopBar: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.80)",
-    borderColor: "rgba(196,184,212,0.30)",
-    borderRadius: 24,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+  sheetTopTitle: {
+    color: colors.textPrimary,
+    fontFamily: F.uiBold,
+    fontSize: 15,
+    letterSpacing: 0.2,
+  },
+  closeXBtn: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.border,
+    borderRadius: 20,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  symptomLabel: {
-    color: C.muted,
-    fontFamily: F.uiMedium,
-    fontSize: 12,
-  },
-
-  // Body signals
-  bodyGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  bodyCard: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.80)",
-    borderColor: "rgba(196,184,212,0.25)",
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    padding: 12,
-    width: (W - 40 - 10) / 2,
-  },
-  bodyIconBubble: {
-    alignItems: "center",
-    backgroundColor: "rgba(196,184,212,0.15)",
-    borderRadius: 12,
     height: 36,
     justifyContent: "center",
     width: 36,
   },
-  bodyLabel: {
-    color: C.muted,
-    fontFamily: F.uiMedium,
-    fontSize: 11,
-    marginBottom: 2,
-  },
-  bodyValueRow: {
-    alignItems: "center",
+
+  // Symptoms — premium chip grid
+  symptomsWrap: {
     flexDirection: "row",
-    gap: 4,
+    flexWrap: "wrap",
+    gap: 12,
   },
-  bodyDot: {
-    borderRadius: 4,
-    height: 7,
-    width: 7,
+  symptomPill: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceRaised,   // surfaceRaised — unselected
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
   },
-  bodyValue: {
-    fontFamily: F.uiSemiBold,
+  symptomPillActive: {
+    backgroundColor: colors.primaryCTA,   // primaryCTA — selected
+  },
+  symptomLabel: {
+    color: colors.textPrimary,             // textPrimary — unselected
+    fontFamily: F.uiMedium,
     fontSize: 12,
+  },
+  symptomLabelActive: {
+    color: colors.background,             // background — AAA contrast on primaryCTA
+    fontFamily: F.uiSemiBold,
+  },
+
+  // Body signals — premium chip grid (same spec as symptoms)
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  chipPill: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  chipPillActive: {
+    backgroundColor: colors.primaryCTA,
+  },
+  chipLabel: {
+    color: colors.textPrimary,
+    fontFamily: F.uiMedium,
+    fontSize: 12,
+  },
+  chipLabelActive: {
+    color: colors.background,
+    fontFamily: F.uiSemiBold,
   },
 
   // Journal
   journalCard: {
-    backgroundColor: "rgba(255,255,255,0.70)",
-    borderColor: "rgba(255,255,255,0.92)",
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.border,
     borderRadius: 18,
     borderWidth: 1,
     minHeight: 72,
@@ -871,7 +1138,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   journalInput: {
-    color: C.text,
+    color: colors.textPrimary,
     fontFamily: F.uiRegular,
     fontSize: 13,
     lineHeight: 20,
@@ -902,7 +1169,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   doneBtnText: {
-    color: C.white,
+    color: colors.background,
     fontFamily: F.uiBold,
     fontSize: 16,
     letterSpacing: 0.4,
@@ -922,41 +1189,75 @@ const styles = StyleSheet.create({
   successOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
-    backgroundColor: "rgba(255,253,251,0.42)",
+    backgroundColor: `${colors.background}D8`,
     justifyContent: "center",
     paddingHorizontal: 24,
   },
+  successHalo: {
+    position: "absolute",
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    opacity: 0,
+  },
+  bloopCheckContainer: {
+    position: "relative",
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkmarkBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: C.gold,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   successCard: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderColor: "rgba(255,255,255,0.98)",
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.border,
     borderRadius: 28,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
     maxWidth: 320,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     shadowColor: C.terracotta,
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.28,
     shadowRadius: 24,
+    zIndex: 10,
   },
   successBloop: {
-    height: 44,
-    width: 44,
+    height: 48,
+    width: 48,
+    borderRadius: 12,
   },
   successCopy: {
     flex: 1,
   },
   successTitle: {
-    color: C.text,
+    color: colors.textPrimary,
     fontFamily: F.uiBold,
-    fontSize: 15,
-    marginBottom: 2,
+    fontSize: 16,
+    marginBottom: 4,
   },
   successText: {
-    color: C.muted,
+    color: colors.textMuted,
     fontFamily: F.uiMedium,
     fontSize: 12,
     lineHeight: 17,
@@ -966,3 +1267,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
   },
 });
+
+
+

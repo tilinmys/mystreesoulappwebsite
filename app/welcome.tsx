@@ -176,9 +176,9 @@ function MoonPhases({ compact }: { compact: boolean }) {
 
   return (
     <View style={[styles.moonWrap, compact && styles.moonWrapCompact]}>
-      <View style={styles.starTopA}><Sparkle size={8} /></View>
-      <View style={styles.starTopB}><Sparkle size={10} /></View>
-      <View style={styles.starTopC}><Sparkle size={6} /></View>
+      <View style={styles.softDotTopA}><SoftDot size={8} /></View>
+      <View style={styles.softDotTopB}><SoftDot size={10} /></View>
+      <View style={styles.softDotTopC}><SoftDot size={6} /></View>
       {moons.map((moon, index) => (
         <View key={`${moon.mask}-${index}`} style={[styles.moonSlot, { width: size, height: size }]}>
           <Svg width={size} height={size} viewBox="0 0 40 40">
@@ -236,7 +236,7 @@ function BotanicalScene({ width, height }: { width: number; height: number }) {
         <SageBranch flip />
       </View>
       <View style={[styles.bottomSparkle, { left: width * 0.80, bottom: 24 }]}>
-        <Sparkle size={26} pale />
+        <SoftDot size={26} pale />
       </View>
     </View>
   );
@@ -310,10 +310,10 @@ function PetalBloom() {
   );
 }
 
-function Sparkle({ size, pale = false }: { size: number; pale?: boolean }) {
+function SoftDot({ size, pale = false }: { size: number; pale?: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 1.8C13.7 8.3 15.7 10.3 22.2 12C15.7 13.7 13.7 15.7 12 22.2C10.3 15.7 8.3 13.7 1.8 12C8.3 10.3 10.3 8.3 12 1.8Z" fill={pale ? "rgba(255,255,255,0.74)" : C.gold} opacity={pale ? 0.86 : 0.72} />
+      <Circle cx={12} cy={12} r={pale ? 5.2 : 4.2} fill={pale ? "rgba(255,255,255,0.74)" : C.gold} opacity={pale ? 0.72 : 0.62} />
     </Svg>
   );
 }
@@ -443,17 +443,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  starTopA: {
+  softDotTopA: {
     position: "absolute",
     left: 18,
     top: -2,
   },
-  starTopB: {
+  softDotTopB: {
     position: "absolute",
     left: 96,
     top: -8,
   },
-  starTopC: {
+  softDotTopC: {
     position: "absolute",
     right: 32,
     top: 0,

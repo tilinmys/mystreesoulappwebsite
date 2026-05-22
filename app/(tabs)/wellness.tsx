@@ -38,23 +38,124 @@ import { openBloopWithContext } from "../../lib/openBloopWithContext";
 
 // ── Assets ────────────────────────────────────────────────────────────────────
 const imgBloop = require("../../public/images/bloop-welcome.webp");
+const imgYogaMenstrual = require("../../public/images/yoga_menstrual.png");
+const imgYogaFollicular = require("../../public/images/yoga_follicular.png");
+const imgYogaOvulation  = require("../../public/images/yoga_ovulation.png");
+const imgYogaLuteal     = require("../../public/images/yoga_luteal.png");
 
-// ── Palette ───────────────────────────────────────────────────────────────────
+// ── Helper to map cycle day to active phase ──────────────────────────────────
+function getPhaseForDay(day: number): PhaseKey {
+  if (day >= 1 && day <= 5) return "menstrual";
+  if (day >= 6 && day <= 13) return "follicular";
+  if (day >= 14 && day <= 16) return "ovulation";
+  return "luteal";
+}
+
+// ── Yoga & Pranayama Curriculum ─────────────────────────────────────────────
+const YOGA_CURRICULUM: Record<PhaseKey, {
+  title: string;
+  level: string;
+  duration: string;
+  bgImage: any;
+  gradientColors: [string, string];
+  glowColor: string;
+  poses: { name: string; desc: string; flowStep: string }[];
+  breathingTitle: string;
+  breathingDesc: string;
+}> = {
+  menstrual: {
+    title: "Menstrual Care Yoga",
+    level: "Gentle Recovery",
+    duration: "15 min",
+    bgImage: imgYogaMenstrual,
+    gradientColors: ["#3D2520", "#1C100E"],
+    glowColor: "#E07A5F",
+    breathingTitle: "Menstrual Breathing: Deep Belly",
+    breathingDesc: "Deep belly breaths to soothe uterine cramps",
+    poses: [
+      { name: "Supta Baddha Konasana", desc: "Reclined Butterfly relaxes pelvic walls and relieves cramps.", flowStep: "Step 1 of 3: Relieve cramps" },
+      { name: "Balasana", desc: "Child's Pose stretches the lower spine and eases physical exhaustion.", flowStep: "Step 2 of 3: Release back fatigue" },
+      { name: "Pavanmuktasana", desc: "Knees-to-Chest Pose provides soft compression for bloating.", flowStep: "Step 3 of 3: Soothe bloating" }
+    ]
+  },
+  follicular: {
+    title: "Follicular Rise Yoga",
+    level: "Energising & Bright",
+    duration: "18 min",
+    bgImage: imgYogaFollicular,
+    gradientColors: ["#3D2A1C", "#1B172E"],
+    glowColor: "#F4A261",
+    breathingTitle: "Follicular Breathing: Nadi Shodhana",
+    breathingDesc: "Alternate nostril breathing for hormonal balance",
+    poses: [
+      { name: "Marjariasana-Bitilasana", desc: "Cat-Cow flow to warm up your spine and lower pelvic floor.", flowStep: "Step 1 of 3: Spinal mobility" },
+      { name: "Bhujangasana", desc: "Cobra Pose opens the chest, boosting energy and circulation.", flowStep: "Step 2 of 3: Energy boost" },
+      { name: "Virabhadrasana II", desc: "Warrior II builds leg strength and boosts confidence.", flowStep: "Step 3 of 3: Power & focus" }
+    ]
+  },
+  ovulation: {
+    title: "Ovulatory Vitality Yoga",
+    level: "Expansive & Radiant",
+    duration: "20 min",
+    bgImage: imgYogaOvulation,
+    gradientColors: ["#3A2C18", "#1E1810"],
+    glowColor: "#F6C177",
+    breathingTitle: "Ovulatory Breathing: Kapalabhati",
+    breathingDesc: "Shining skull breathing to generate warmth",
+    poses: [
+      { name: "Ustrasana", desc: "Camel Pose is a deep heart opener to release emotional blocks.", flowStep: "Step 1 of 3: Emotional release" },
+      { name: "Trikonasana", desc: "Triangle Pose improves pelvic blood supply and hip stability.", flowStep: "Step 2 of 3: Pelvic circulation" },
+      { name: "Adho Mukha Svanasana", desc: "Downward Dog inversion to reverse blood flow and boost focus.", flowStep: "Step 3 of 3: Clarity inversion" }
+    ]
+  },
+  luteal: {
+    title: "Luteal Calming Yoga",
+    level: "Grounded & Calming",
+    duration: "15 min",
+    bgImage: imgYogaLuteal,
+    gradientColors: ["#1E2C24", "#151522"],
+    glowColor: "#81B29A",
+    breathingTitle: "Luteal Breathing: Bhramari",
+    breathingDesc: "Humming bee breath to soothe pre-menstrual irritability",
+    poses: [
+      { name: "Setu Bandhasana", desc: "Bridge Pose opens hip flexors and gently massages abdomen.", flowStep: "Step 1 of 3: Abdominal relief" },
+      { name: "Viparita Karani", desc: "Legs-Up-The-Wall Pose combats fluid retention and leg fatigue.", flowStep: "Step 2 of 3: Venous drainage" },
+      { name: "Uttanasana", desc: "Standing Forward Fold is a cooling inversion to calm the mind.", flowStep: "Step 3 of 3: Calming inversion" }
+    ]
+  },
+  pms: {
+    title: "PMS Recovery Yoga",
+    level: "Soft & Supportive",
+    duration: "15 min",
+    bgImage: imgYogaLuteal,
+    gradientColors: ["#2E1E34", "#1A101C"],
+    glowColor: "#BDB2FF",
+    breathingTitle: "PMS Recovery: Bhramari",
+    breathingDesc: "Calming hummingbird breath to soothe physical tension",
+    poses: [
+      { name: "Setu Bandhasana", desc: "Bridge Pose opens hip flexors and gently massages abdomen.", flowStep: "Step 1 of 3: Soothe tension" },
+      { name: "Viparita Karani", desc: "Legs-Up-The-Wall Pose combats fluid retention and fatigue.", flowStep: "Step 2 of 3: Restless leg relief" },
+      { name: "Uttanasana", desc: "Standing Forward Fold is a cooling inversion to calm the mind.", flowStep: "Step 3 of 3: Deep mental quiet" }
+    ]
+  }
+};
+
+// ── Palette — Midnight Plum dark theme ────────────────────────────────────────
 const C = {
-  bg1:     "#FDF8F8",
-  bg2:     "#F5E8F7",
-  bg3:     "#FEF2F0",
-  text:    "#161C2D",
-  muted:   "#9B8EAB",
-  faint:   "#D4C8E0",
-  lavender:"#9277C8",
-  purple:  "#8B63D6",
-  pink:    "#D45C82",
-  peach:   "#F4A261",
-  sage:    "#5E9B6B",
-  white:   "#FFFFFF",
-  cardBg:  "rgba(255,255,255,0.72)",
-  cardBdr: "rgba(255,255,255,0.92)",
+  bg1:     "#110812",   // background  (Midnight Plum)
+  bg2:     "#261E28",
+  bg3:     "#2A1E2C",
+  text:    "#F6E9EF",   // textPrimary (Moon Pearl)
+  muted:   "#B58AC8",   // textMuted   (Lavender Dust)
+  faint:   "#6E5680",   // dimmed muted
+  lavender:"#9277C8",   // informational accent
+  purple:  "#8B63D6",   // informational accent
+  pink:    "#D45C82",   // informational accent
+  peach:   "#F4A261",   // informational accent
+  sage:    "#5E9B6B",   // informational accent
+  white:   "#FFFFFF",   // rec card play icon overlay
+  cardBg:  "#2E2330",   // surface     (Blackberry Smoke)
+  cardBdr: "#4A394D",   // border      (Velvet Mauve)
 } as const;
 
 // ── Dimensions ────────────────────────────────────────────────────────────────
@@ -135,24 +236,24 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
         title:    "Restorative\nYoga",
         duration: "15 min",
         icon:     "yoga",
-        colors:   ["#DDD8F5", "#B8AEE0"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "heat",
         title:    "Warm Heat\nTherapy",
         duration: "10 min",
         icon:     "fire",
-        colors:   ["#F9D0C4", "#F2A99C"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "nourish",
         title:    "Iron-Rich\nNourish",
         duration: "5 min",
         icon:     "food-apple",
-        colors:   ["#C5E8C9", "#8DC993"],
-        iconBg:   "rgba(255,255,255,0.28)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
     ],
     support: [
@@ -196,30 +297,30 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
         title:    "Morning Flow\nYoga",
         duration: "20 min",
         icon:     "yoga",
-        colors:   ["#C5E8C9", "#7DC47A"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "creative",
         title:    "Creative\nJournaling",
         duration: "10 min",
         icon:     "pencil-outline",
-        colors:   ["#FDE9B8", "#FBCC7A"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "cardio",
         title:    "Gentle\nCardio",
         duration: "25 min",
         icon:     "run",
-        colors:   ["#FDDFC4", "#F9C490"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
     ],
     support: [
       {
         key:      "newthings",
-        icon:     "star-four-points-outline",
+        icon:     "flower-outline",
         color:    C.peach,
         bg:       "rgba(244,162,97,0.12)",
         text:     "Good time to\ntry new things",
@@ -257,24 +358,24 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
         title:    "Dance\nFlow",
         duration: "20 min",
         icon:     "music",
-        colors:   ["#FDDFC4", "#F9A870"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "hiit",
         title:    "HIIT Lite\nWorkout",
         duration: "15 min",
         icon:     "lightning-bolt",
-        colors:   ["#FDE8B8", "#FBC56A"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "connect",
         title:    "Connect &\nCommunicate",
         duration: "10 min",
         icon:     "account-heart-outline",
-        colors:   ["#F9D5D3", "#F2A09C"],
-        iconBg:   "rgba(255,255,255,0.28)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
     ],
     support: [
@@ -318,24 +419,24 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
         title:    "Yin\nYoga",
         duration: "25 min",
         icon:     "yoga",
-        colors:   ["#C5C0F0", "#9B8DDC"],
-        iconBg:   "rgba(255,255,255,0.25)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "walk",
         title:    "Calming\nNature Walk",
         duration: "20 min",
         icon:     "walk",
-        colors:   ["#C5E8C9", "#8DC993"],
-        iconBg:   "rgba(255,255,255,0.28)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "nourishreset",
         title:    "Nourish\nReset",
         duration: "10 min",
         icon:     "food-apple",
-        colors:   ["#FDDFC4", "#F9C490"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
     ],
     support: [
@@ -379,24 +480,24 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
         title:    "Gentle\nStretching",
         duration: "15 min",
         icon:     "human-handsup",
-        colors:   ["#DDD8F5", "#B8AEE0"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "bath",
         title:    "Warm Bath\nRitual",
         duration: "20 min",
         icon:     "hot-tub",
-        colors:   ["#F9D0C4", "#F2A99C"],
-        iconBg:   "rgba(255,255,255,0.30)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
       {
         key:      "breathe",
         title:    "Mindful\nBreathing",
         duration: "10 min",
         icon:     "meditation",
-        colors:   ["#C5C0F0", "#9B8DDC"],
-        iconBg:   "rgba(255,255,255,0.25)",
+        colors:   ["#3D2E50", "#2A1E3A"],
+        iconBg:   "rgba(255,255,255,0.12)",
       },
     ],
     support: [
@@ -473,13 +574,14 @@ function HeroGlow() {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WellnessScreen() {
   const router = useRouter();
-  const { isDark } = useColorMode();
+  useColorMode(); // keep hook for future use
 
-  const [activePhase, setActivePhase] = useState<PhaseKey>("menstrual");
+  const [activePhase, setActivePhase] = useState<PhaseKey>(getPhaseForDay(18));
   const [isBreathing, setIsBreathing] = useState(false);
 
   // Derive all phase-specific content from the active phase
   const pc = PHASE_CONTENT[activePhase];
+  const curriculum = YOGA_CURRICULUM[activePhase];
 
   // ── Breathing animation (preserved exactly) ───────────────────────────────
   const breathValue = useRef(new Animated.Value(0)).current;
@@ -534,9 +636,9 @@ export default function WellnessScreen() {
   }
 
   return (
-    <SafeAreaView edges={["top"]} style={[styles.safe, isDark && styles.safeDark]}>
+    <SafeAreaView edges={["top"]} style={styles.safe}>
       <LinearGradient
-        colors={isDark ? ["#111827", "#211B32", "#291B24"] : [C.bg1, C.bg2, C.bg3]}
+        colors={[C.bg1, C.bg2, C.bg3]}
         locations={[0, 0.5, 1]}
         start={{ x: 0.3, y: 0 }}
         end={{ x: 0.7, y: 1 }}
@@ -645,12 +747,12 @@ export default function WellnessScreen() {
           })}
         </ScrollView>
 
-        {/* ── Recommended for you (phase-driven) ──────────────────────── */}
+        {/* ── Today's Cycle-Synced Movement (phase-driven) ───────────── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel2}>Recommended for you</Text>
+          <Text style={styles.sectionLabel2}>Today's Cycle-Synced Movement</Text>
           <Pressable
             onPress={() =>
-              askBloop(`Show me more wellness recommendations for my ${pc.pillLabel.toLowerCase()} phase.`)
+              askBloop(`Show me more about the ${curriculum.title} sequence for my ${pc.pillLabel.toLowerCase()} phase.`)
             }
             style={({ pressed }) => [styles.viewAllBtn, pressed && styles.pressed]}
             accessibilityLabel="View all recommendations"
@@ -665,36 +767,58 @@ export default function WellnessScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recScroll}
         >
-          {pc.recs.map((r, i) => (
+          {curriculum.poses.map((pose, idx) => (
             <Pressable
-              key={r.key}
-              onPress={() => askBloop(`Tell me more about "${r.title.replace("\n", " ")}" for my ${pc.pillLabel.toLowerCase()} phase.`)}
+              key={idx}
+              onPress={() =>
+                askBloop(`I'd like to do the ${curriculum.title} pose: "${pose.name}". Can you guide me through this practice?`)
+              }
               style={({ pressed }) => [
-                styles.recCard,
-                i === 0 && { marginLeft: 20 },
+                styles.movementCard,
+                idx === 0 && { marginLeft: 20 },
                 pressed && styles.pressed,
               ]}
-              accessibilityLabel={r.title.replace("\n", " ")}
+              accessibilityLabel={pose.name}
             >
               <LinearGradient
-                colors={r.colors}
+                colors={curriculum.gradientColors}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 0.6, y: 1 }}
-                style={styles.recCardInner}
+                end={{ x: 0.8, y: 1 }}
+                style={styles.movementCardInner}
               >
-                <View style={[styles.recIconWrap, { backgroundColor: r.iconBg }]}>
-                  <MaterialCommunityIcons name={r.icon} size={36} color={C.white} />
+                {/* Silhouette Background */}
+                <View style={styles.movementSilhouetteWrap}>
+                  <CachedImage
+                    source={curriculum.bgImage}
+                    style={styles.movementSilhouette}
+                    contentFit="contain"
+                  />
                 </View>
-                <View style={styles.recBottom}>
-                  <View style={styles.recBottomLeft}>
-                    <Text style={styles.recTitle}>{r.title}</Text>
-                    <View style={styles.recMeta}>
-                      <MaterialCommunityIcons name="clock-outline" size={11} color="rgba(255,255,255,0.70)" />
-                      <Text style={styles.recDuration}>{r.duration}</Text>
-                    </View>
+
+                {/* Glass overlay */}
+                <View style={[styles.movementGlassOverlay, { backgroundColor: "rgba(25, 18, 30, 0.42)" }]} />
+
+                {/* Pill tag on top right */}
+                <View style={styles.movementCardTop}>
+                  <Text style={styles.movementStepText}>{pose.flowStep}</Text>
+                  <View style={[styles.movementPillTag, { backgroundColor: `${curriculum.glowColor}25`, borderColor: `${curriculum.glowColor}40` }]}>
+                    <Text style={[styles.movementPillTagText, { color: curriculum.glowColor }]}>{curriculum.level}</Text>
                   </View>
-                  <View style={styles.recPlayBtn}>
-                    <MaterialCommunityIcons name="play" size={16} color={C.text} />
+                </View>
+
+                {/* Content */}
+                <View style={styles.movementCardBottom}>
+                  <Text style={styles.movementPoseName}>{pose.name}</Text>
+                  <Text style={styles.movementPoseDesc} numberOfLines={3}>{pose.desc}</Text>
+                  
+                  <View style={styles.movementPlayRow}>
+                    <View style={styles.movementMetaRow}>
+                      <MaterialCommunityIcons name="clock-outline" size={13} color="rgba(255, 255, 255, 0.6)" />
+                      <Text style={styles.movementDurationText}>{curriculum.duration}</Text>
+                    </View>
+                    <View style={[styles.movementPlayBtn, { shadowColor: curriculum.glowColor }]}>
+                      <MaterialCommunityIcons name="play" size={18} color="#110812" />
+                    </View>
                   </View>
                 </View>
               </LinearGradient>
@@ -702,7 +826,7 @@ export default function WellnessScreen() {
           ))}
         </ScrollView>
 
-        {/* ── Breathing Space (preserved exactly) ─────────────────────── */}
+        {/* ── Breathing Space (calibrated and phase-appropriate) ───────── */}
         <View style={styles.breathingCard}>
           <Svg
             width={BCARD_W}
@@ -716,8 +840,8 @@ export default function WellnessScreen() {
           </Svg>
 
           <View style={styles.breathLeft}>
-            <Text style={styles.breathTitle}>Breathing space</Text>
-            <Text style={styles.breathSub}>Take a moment for you</Text>
+            <Text style={styles.breathTitle} numberOfLines={1}>{curriculum.breathingTitle}</Text>
+            <Text style={styles.breathSub} numberOfLines={2}>{curriculum.breathingDesc}</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={isBreathing ? "Pause breathing exercise" : "Start breathing exercise"}
@@ -734,7 +858,7 @@ export default function WellnessScreen() {
 
           <View style={styles.breathCenter}>
             <View style={styles.breathOrbWrap}>
-              <Animated.View style={[styles.breathOrb, breathAnimStyle]} />
+              <Animated.View style={[styles.breathOrb, breathAnimStyle, { backgroundColor: curriculum.glowColor, shadowColor: curriculum.glowColor }]} />
             </View>
             <Text style={styles.breathPhaseLabel}>Inhale · Hold · Exhale</Text>
           </View>
@@ -806,9 +930,6 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg1,
     flex: 1,
   },
-  safeDark: {
-    backgroundColor: "#111827",
-  },
   scrollView: { flex: 1, backgroundColor: "transparent" },
   scroll: {
     paddingTop: 8,
@@ -851,7 +972,7 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     height:          40,
     justifyContent:  "center",
-    shadowColor:     "#D6C3B9",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 3 },
     shadowOpacity:   0.12,
     shadowRadius:    8,
@@ -946,7 +1067,7 @@ const styles = StyleSheet.create({
     justifyContent:    "center",
     gap:               8,
     paddingHorizontal: 8,
-    shadowColor:       "#D6C3B9",
+    shadowColor:       "#000000",
     shadowOffset:      { width: 0, height: 3 },
     shadowOpacity:     0.10,
     shadowRadius:      8,
@@ -984,6 +1105,103 @@ const styles = StyleSheet.create({
     fontSize:   12,
   },
 
+  // Movement Carousel Cards
+  movementCard: {
+    width: 280,
+    height: 340,
+    borderRadius: 28,
+    marginRight: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  movementCardInner: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "space-between",
+    position: "relative",
+  },
+  movementSilhouetteWrap: {
+    position: "absolute",
+    bottom: -10,
+    right: -10,
+    width: 180,
+    height: 180,
+    opacity: 0.35,
+  },
+  movementSilhouette: {
+    width: "100%",
+    height: "100%",
+  },
+  movementGlassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  movementCardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  movementStepText: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontFamily: F.uiMedium,
+    fontSize: 11,
+  },
+  movementPillTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  movementPillTagText: {
+    fontFamily: F.uiBold,
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  movementCardBottom: {
+    gap: 6,
+    zIndex: 10,
+  },
+  movementPoseName: {
+    color: "#FFFFFF",
+    fontFamily: F.luxuryBold || F.uiBold,
+    fontSize: 20,
+  },
+  movementPoseDesc: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontFamily: F.uiRegular,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  movementPlayRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  movementMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  movementDurationText: {
+    color: "rgba(255, 255, 255, 0.6)",
+    fontFamily: F.uiMedium,
+    fontSize: 12,
+  },
+  movementPlayBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+  },
+
   // Recommendation cards
   recScroll: {
     gap:          12,
@@ -993,7 +1211,7 @@ const styles = StyleSheet.create({
     borderRadius:  24,
     height:        200,
     overflow:      "hidden",
-    shadowColor:   "#D6C3B9",
+    shadowColor:   "#000000",
     shadowOffset:  { width: 0, height: 6 },
     shadowOpacity: 0.16,
     shadowRadius:  14,
@@ -1060,10 +1278,10 @@ const styles = StyleSheet.create({
     height:            BCARD_H,
     justifyContent:    "space-between",
     marginHorizontal:  20,
-    marginTop:         0,
+    marginTop:         20,
     overflow:          "hidden",
     paddingHorizontal: 16,
-    shadowColor:       "#D6C3B9",
+    shadowColor:       "#000000",
     shadowOffset:      { width: 0, height: 6 },
     shadowOpacity:     0.12,
     shadowRadius:      18,
@@ -1088,7 +1306,7 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     height:          40,
     justifyContent:  "center",
-    shadowColor:     "#D6C3B9",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 3 },
     shadowOpacity:   0.12,
     shadowRadius:    8,
@@ -1178,7 +1396,7 @@ const styles = StyleSheet.create({
     minWidth:        (W - 40 - 10) / 3 - 1,
     flex:            1,
     padding:         12,
-    shadowColor:     "#D6C3B9",
+    shadowColor:     "#000000",
     shadowOffset:    { width: 0, height: 3 },
     shadowOpacity:   0.10,
     shadowRadius:    8,

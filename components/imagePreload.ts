@@ -3,6 +3,9 @@ import { Image, type ImageRef } from "expo-image";
 const criticalImages = [
   require("../public/images/bloop-welcome.webp"),
   require("../public/images/bloop-nav.webp"),
+  require("../public/images/cycle_track_bg.webp"),
+  require("../public/images/nourish_her_bg.webp"),
+  require("../public/images/wellness_reset_bg.webp"),
   require("../public/images/bloop-calm.webp"),
   require("../public/images/bloop-voice.webp"),
   require("../public/images/bloop-profile-meditation-cutout.webp"),
@@ -48,6 +51,7 @@ const routeImages = [
   require("../public/images/bloop-learning-private.webp"),
   require("../public/images/fertility-glow-visual.webp"),
   require("../public/images/pregnancy-journey-visual.webp"),
+  require("../public/images/menopause-transition-visual.webp"),
   require("../public/images/menopause-cooling-breath.webp"),
   require("../public/images/menopause-evening-recovery.webp"),
   require("../public/images/menopause-gentle-strength.webp"),

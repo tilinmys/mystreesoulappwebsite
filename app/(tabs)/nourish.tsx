@@ -24,35 +24,37 @@ import {
 } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
+import { darkColors } from "../../constants/colors";
 import { useColorMode } from "../../hooks/useColorMode";
 import { openBloopWithContext } from "../../lib/openBloopWithContext";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
-  bg1:       "#FCF7F6",
-  bg2:       "#FDF5F2",
-  bg3:       "#F8EFEA",
-  deep:      "#2D2B32",
-  muted:     "#8A8799",
-  faint:     "#C4BDD8",
-  sage:      "#7A907C",
-  sagePale:  "#EAF0EB",
-  sageLight: "#C4D4C8",
-  teal:      "#82B5B2",
-  tealPale:  "#E4F2F1",
-  rose:      "#E07A5F",
-  rosePale:  "#FFF0EC",
-  pink:      "#F4A0A8",
-  pinkPale:  "#FFF0F2",
-  lavender:  "#9B82C8",
-  lavPale:   "#F3EEFF",
-  gold:      "#C9A040",
-  goldPale:  "#FBF3E2",
-  peach:     "#F4A261",
-  peachPale: "#FFF4EC",
-  cardBg:    "rgba(255,255,255,0.75)",
-  border:    "rgba(255,255,255,0.90)",
-  sheetBg:   "#FFFCF9",
+  bg1:       darkColors.background,
+  bg2:       darkColors.background,
+  bg3:       darkColors.background,
+  deep:      darkColors.textPrimary,
+  muted:     darkColors.textMuted,
+  faint:     darkColors.textHint,
+  sage:      darkColors.fertileColor,
+  sagePale:  darkColors.surfaceRaised,
+  sageLight: darkColors.fertileColor,
+  teal:      darkColors.fertileColor,
+  tealPale:  darkColors.surfaceRaised,
+  rose:      darkColors.periodColor,
+  rosePale:  darkColors.surfaceRaised,
+  pink:      darkColors.primaryCTA,
+  pinkPale:  darkColors.surfaceRaised,
+  lavender:  darkColors.textMuted,
+  lavPale:   darkColors.surfaceRaised,
+  gold:      darkColors.warning,
+  goldPale:  darkColors.surfaceRaised,
+  peach:     darkColors.warning,
+  peachPale: darkColors.surfaceRaised,
+  surfaceRaised: darkColors.surfaceRaised,
+  cardBg:    darkColors.surface,
+  border:    darkColors.border,
+  sheetBg:   darkColors.surface,
 };
 
 const { width: W, height: H } = Dimensions.get("window");
@@ -66,9 +68,9 @@ const FILL_PCT  = CURRENT_GLASSES / TARGET_GLASSES;
 
 // ── Condition badge colours ───────────────────────────────────────────────────
 const CONDITION_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
-  "PCOS-friendly": { bg: "rgba(155,130,200,0.22)", text: "#8A6ABE", dot: "#9B82C8" },
-  "Endo-friendly": { bg: "rgba(224,122,95,0.20)",  text: "#C05A40", dot: "#E07A5F" },
-  "Low-energy":    { bg: "rgba(201,160,64,0.22)",  text: "#A07820", dot: "#C9A040" },
+  "PCOS-friendly": { bg: darkColors.surfaceRaised, text: darkColors.textPrimary, dot: darkColors.textMuted },
+  "Endo-friendly": { bg: darkColors.surfaceRaised, text: darkColors.textPrimary, dot: darkColors.periodColor },
+  "Low-energy":    { bg: darkColors.surfaceRaised, text: darkColors.textPrimary, dot: darkColors.warning },
 };
 
 // ── Phase filter data ──────────────────────────────────────────────────────────
@@ -491,7 +493,7 @@ function BotanicalHero() {
       <Svg width={128} height={128} viewBox="0 0 128 128">
         <Defs>
           <SvgRadialGradient id="heroGlow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0"   stopColor="#FFFFFF"  stopOpacity="0.95" />
+            <Stop offset="0"   stopColor={C.deep}  stopOpacity="0.95" />
             <Stop offset="0.6" stopColor="#F2EFE8"  stopOpacity="0.7"  />
             <Stop offset="1"   stopColor="#F2EFE8"  stopOpacity="0"    />
           </SvgRadialGradient>
@@ -501,15 +503,15 @@ function BotanicalHero() {
           </SvgGradient>
         </Defs>
         <Circle cx="64" cy="64" r="54" fill="url(#heroGlow)" />
-        <Circle cx="64" cy="80" r="38" fill="rgba(255,255,255,0.82)" />
+        <Circle cx="64" cy="80" r="38" fill={C.deep} opacity="0.82" />
         <Path d="M 36 82 Q 36 100 64 100 Q 92 100 92 82 Z" fill="none" stroke="#7A907C" strokeWidth="2.5" strokeLinecap="round" />
         <Path d="M 32 82 L 96 82" stroke="#7A907C" strokeWidth="2.5" strokeLinecap="round" />
         <Path d="M 64 82 L 64 76" stroke="#7A907C" strokeWidth="2" strokeLinecap="round" />
         <Path d="M 64 75 C 64 68, 60 58, 56 44" stroke="#7A907C" strokeWidth="2.2" strokeLinecap="round" fill="none" />
         <Path d="M 60 60 C 44 52, 38 38, 50 28 C 56 38, 58 52, 60 60 Z" fill="url(#leafGrad)" opacity="0.9" />
-        <Path d="M 60 60 C 52 48, 46 36, 50 28" stroke="rgba(255,255,255,0.45)" strokeWidth="1" fill="none" strokeLinecap="round" />
+        <Path d="M 60 60 C 52 48, 46 36, 50 28" stroke={C.deep} opacity="0.45" strokeWidth="1" fill="none" strokeLinecap="round" />
         <Path d="M 62 55 C 76 44, 88 32, 82 20 C 74 28, 66 44, 62 55 Z" fill="url(#leafGrad)" opacity="0.85" />
-        <Path d="M 62 55 C 72 40, 80 28, 82 20" stroke="rgba(255,255,255,0.4)" strokeWidth="1" fill="none" strokeLinecap="round" />
+        <Path d="M 62 55 C 72 40, 80 28, 82 20" stroke={C.deep} opacity="0.4" strokeWidth="1" fill="none" strokeLinecap="round" />
         <Path d="M 56 50 C 46 46, 40 40, 44 32 C 50 36, 54 44, 56 50 Z" fill="#9BBF9E" opacity="0.75" />
         <Path d="M 56 44 C 54 38, 56 32, 58 28" stroke="#7A907C" strokeWidth="1.8" strokeLinecap="round" fill="none" />
         <Path d="M 58 30 C 58 26, 62 22, 66 24" stroke="#7A907C" strokeWidth="1.6" strokeLinecap="round" fill="none" />
@@ -574,7 +576,7 @@ function HydrationRing() {
 // ── Main screen ────────────────────────────────────────────────────────────────
 export default function NourishScreen() {
   const router = useRouter();
-  const { isDark } = useColorMode();
+  const { colors } = useColorMode();
   const [activePhase, setActivePhase] = useState<NourishPhaseId>("menstrual");
   const nc = NOURISH_CONTENT[activePhase];
 
@@ -627,8 +629,8 @@ export default function NourishScreen() {
   const activePhaseData = PHASES.find(p => p.id === activePhase)!;
 
   return (
-    <LinearGradient colors={isDark ? ["#111827", "#16251F", "#261B22"] : [C.bg1, C.bg2, C.bg3]} style={styles.root}>
-      <SafeAreaView style={[styles.safe, isDark && styles.safeDark]} edges={["top"]}>
+    <LinearGradient colors={[colors.background, colors.background, colors.background]} style={styles.root}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["top"]}>
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <View style={styles.header}>
@@ -653,7 +655,7 @@ export default function NourishScreen() {
               style={styles.headerBtn}
               onPress={() => askBloop(`Give me a personalised 1-day meal plan for my ${activePhase} phase that supports my hormones and energy.`)}
             >
-              <MaterialCommunityIcons name="star-four-points" size={18} color={C.lavender} />
+              <MaterialCommunityIcons name="silverware-fork-knife" size={18} color={C.lavender} />
             </Pressable>
           </View>
         </View>
@@ -664,13 +666,13 @@ export default function NourishScreen() {
           {/* ── Hero banner ─────────────────────────────────────────────── */}
           <View style={styles.heroCard}>
             <LinearGradient
-              colors={["#F4EFE7", "#EDE8DE", "#E8E3D8"]}
+              colors={[colors.surface, colors.surfaceRaised, colors.surface]}
               start={{ x: 0.1, y: 0 }}
               end={{ x: 0.9, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-            <View style={[styles.heroBlob, { top: -20, right: 20, backgroundColor: "rgba(201,160,64,0.10)", width: 100, height: 100 }]} />
-            <View style={[styles.heroBlob, { bottom: -10, left: 30, backgroundColor: "rgba(122,144,124,0.08)", width: 80, height: 80 }]} />
+            <View style={[styles.heroBlob, { top: -20, right: 20, backgroundColor: `${colors.warning}18`, width: 100, height: 100 }]} />
+            <View style={[styles.heroBlob, { bottom: -10, left: 30, backgroundColor: `${colors.fertileColor}14`, width: 80, height: 80 }]} />
             <BotanicalHero />
             <Text style={styles.heroTitle}>{nc.heroTitle}</Text>
             <Text style={styles.heroSubtitle}>{nc.heroSub}</Text>
@@ -729,12 +731,12 @@ export default function NourishScreen() {
           {/* ── Insight banner ───────────────────────────────────────────── */}
           <Pressable style={styles.insightCard} onPress={() => askBloop(nc.insightBloopMsg)}>
             <LinearGradient
-              colors={["#F6EEFF", "#F0E8FF", "#FAF5FF"]}
+              colors={[colors.surface, colors.surfaceRaised, colors.surface]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
             <InsightSparkles />
-            <View style={[styles.insightIconWrap, { backgroundColor: "rgba(155,130,200,0.15)" }]}>
+            <View style={[styles.insightIconWrap, { backgroundColor: colors.surfaceRaised }]}>
               <MaterialCommunityIcons name="flower-tulip-outline" size={22} color={C.lavender} />
             </View>
             <View style={styles.insightText}>
@@ -802,7 +804,7 @@ export default function NourishScreen() {
               <Pressable key={i} style={styles.mealCard} onPress={() => openMeal(meal)}>
                 <CachedImage source={MEAL_IMGS[meal.imgIdx]} style={styles.mealImage} />
                 <LinearGradient
-                  colors={["transparent", "rgba(44,40,50,0.62)"]}
+                  colors={["transparent", `${colors.background}DD`]}
                   style={styles.mealOverlay}
                 />
                 {/* Phase tag */}
@@ -951,7 +953,7 @@ export default function NourishScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1 },
-  safeDark: { backgroundColor: "transparent" },
+  safeDark: { backgroundColor: C.bg1 },
 
   // Header
   header: {
@@ -973,12 +975,12 @@ const styles = StyleSheet.create({
   headerBtn: {
     width: 38, height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: C.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.border,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#D6C3B9",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.14,
     shadowRadius: 8,
@@ -1005,7 +1007,7 @@ const styles = StyleSheet.create({
     paddingBottom: 22,
     paddingHorizontal: 16,
     marginBottom: 20,
-    shadowColor: "#C4B8A8",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 20,
@@ -1016,7 +1018,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontFamily: F.luxuryBold,
     fontSize: 20,
-    color: "#3A3526",
+    color: C.deep,
     letterSpacing: -0.2,
     textAlign: "center",
   },
@@ -1037,7 +1039,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderWidth: 1,
-    borderColor: "rgba(122,144,124,0.25)",
+    borderColor: C.border,
   },
   heroBtnText: { fontFamily: F.uiSemiBold, fontSize: 13, color: C.sage },
 
@@ -1049,10 +1051,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.75)",
+    backgroundColor: C.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.90)",
-    shadowColor: "#D6C3B9",
+    borderColor: C.border,
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -1065,7 +1067,7 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.04)",
+    backgroundColor: C.sagePale,
   },
   phaseLabel: { fontFamily: F.uiMedium, fontSize: 10.5, color: C.muted, textAlign: "center" },
   phaseDot: { position: "absolute", bottom: -8, width: 6, height: 6, borderRadius: 3 },
@@ -1084,20 +1086,20 @@ const styles = StyleSheet.create({
   // Today's focus
   focusCard: {
     marginHorizontal: 20,
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: C.cardBg,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.border,
     flexDirection: "row",
     paddingVertical: 18,
-    shadowColor: "#D6C3B9",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 14,
     elevation: 2,
   },
   focusItem: { flex: 1, alignItems: "center", gap: 8 },
-  focusItemBorder: { borderRightWidth: 1, borderRightColor: "rgba(0,0,0,0.05)" },
+  focusItemBorder: { borderRightWidth: 1, borderRightColor: C.border },
   focusIconCircle: { width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" },
   focusLabel: { fontFamily: F.uiSemiBold, fontSize: 12, color: C.deep },
 
@@ -1112,8 +1114,8 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: "rgba(196,168,232,0.3)",
-    shadowColor: "#B490E0",
+    borderColor: C.border,
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -1133,8 +1135,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.88)",
-    shadowColor: "#D6C3B9",
+    borderColor: C.border,
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -1146,15 +1148,15 @@ const styles = StyleSheet.create({
   hydrationCard: {
     marginHorizontal: 20,
     marginTop: 14,
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: C.cardBg,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.border,
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     gap: 14,
-    shadowColor: "#D6C3B9",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 14,
@@ -1178,7 +1180,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
     justifyContent: "flex-end",
-    shadowColor: "#C0B0A8",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -1194,13 +1196,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mealTag: {
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: C.surfaceRaised,
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
     alignSelf: "flex-start",
   },
-  mealTagText: { fontFamily: F.uiSemiBold, fontSize: 9.5, color: "#FFFFFF", letterSpacing: 0.3 },
+  mealTagText: { fontFamily: F.uiSemiBold, fontSize: 9.5, color: C.deep, letterSpacing: 0.3 },
   mealConditionBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -1215,23 +1217,23 @@ const styles = StyleSheet.create({
   mealLabel: {
     fontFamily: F.uiSemiBold,
     fontSize: 12.5,
-    color: "#FFFFFF",
+    color: C.deep,
     paddingHorizontal: 10,
     paddingBottom: 12,
     lineHeight: 17,
   },
 
   // Shared sheet primitives
-  sheetScrim: { backgroundColor: "rgba(0,0,0,0.40)", zIndex: 40 },
+  sheetScrim: { backgroundColor: `${C.bg1}CC`, zIndex: 40 },
   sheetHandle: {
     width: 38, height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(0,0,0,0.13)",
+    backgroundColor: C.surfaceRaised,
     alignSelf: "center",
     marginBottom: 18,
   },
   sheetCloseBtn: { alignSelf: "center", paddingVertical: 10, paddingHorizontal: 24, marginTop: 6 },
-  sheetCloseText: { fontFamily: F.uiMedium, fontSize: 13.5, color: "rgba(45,43,50,0.38)" },
+  sheetCloseText: { fontFamily: F.uiMedium, fontSize: 13.5, color: C.muted },
 
   // Quick idea tip sheet
   ideaSheet: {
@@ -1243,12 +1245,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.border,
     paddingHorizontal: 24,
     paddingBottom: 36,
     paddingTop: 14,
     zIndex: 50,
-    shadowColor: "#000",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -1281,11 +1283,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.border,
     paddingHorizontal: 24,
     paddingTop: 14,
     zIndex: 50,
-    shadowColor: "#000",
+    shadowColor: C.bg1,
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -1352,7 +1354,7 @@ const styles = StyleSheet.create({
     gap: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(155,130,200,0.30)",
+    borderColor: C.border,
     paddingHorizontal: 18,
     paddingVertical: 15,
     overflow: "hidden",

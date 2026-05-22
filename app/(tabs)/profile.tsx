@@ -59,7 +59,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <LinearGradient colors={isDark ? ["#111827", "#231B2C"] : ["#FCF6F5", "#FFF0EA"]} style={styles.screenGradient}>
+    <LinearGradient colors={["#110812", "#1E1220", "#110812"]} style={styles.screenGradient}>
       <SafeAreaView edges={["top"]} style={[styles.screen, isDark && styles.screenDark]}>
         <View style={styles.auraPeach} />
         <View style={styles.auraLavender} />
@@ -108,7 +108,7 @@ function Header({ onNotifications, onSettings }: { onNotifications: () => void; 
 
 function HeroCard({ name, onEdit }: { name: string; onEdit: () => void }) {
   return (
-    <LinearGradient colors={["#FFEDE9", "#FCE3F0", "#E9DEFA"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.heroCard}>
+    <LinearGradient colors={["#2E1E2C", "#2C1A30", "#261A38"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.heroCard}>
       <View style={styles.heroMoon} />
       <View style={styles.sparkleOne} />
       <View style={styles.sparkleTwo} />
@@ -175,7 +175,7 @@ function WellnessSummary() {
   return (
     <View style={styles.summaryCard}>
       <View style={styles.summaryHeader}>
-        <MaterialCommunityIcons name="star-four-points-outline" size={18} color={palette.peach} />
+        <MaterialCommunityIcons name="heart-pulse" size={18} color={palette.peach} />
         <Text style={styles.summaryTitle}>Your wellness summary</Text>
       </View>
       <View style={styles.summaryGrid}>
@@ -263,7 +263,7 @@ function ThemeCard() {
                 pressed && styles.pressed,
               ]}
             >
-              <View style={[styles.themeIconBubble, { backgroundColor: active ? `${opt.color}26` : "rgba(255,255,255,0.78)" }]}>
+              <View style={[styles.themeIconBubble, { backgroundColor: active ? `${opt.color}26` : "#3A2D3E" }]}>
                 <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
               </View>
               <Text style={[styles.themeOptionLabel, active && { color: opt.color }]}>{opt.label}</Text>
@@ -282,7 +282,7 @@ function ThemeCard() {
 
 function PremiumCard({ onPress }: { onPress: () => void }) {
   return (
-    <LinearGradient colors={["#D4C4F8", "#F3CCEB"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.premiumCard}>
+    <LinearGradient colors={["#3A2850", "#3C2240"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.premiumCard}>
       <View style={styles.premiumLotus}>
         <CachedImage source={premiumLotus} style={styles.premiumLotusImage} contentFit="cover" />
       </View>
@@ -317,16 +317,16 @@ function IconButton({ accessibilityLabel, icon, onPress }: { accessibilityLabel:
 }
 
 const palette = {
-  background: "#FCF6F5",
-  deepCharcoal: "#2B2D42",
-  ink: "#1A1F36",
-  muted: "#6B708D",
-  softMuted: "#8E8A95",
-  terracotta: "#E07A5F",
-  sage: "#81B29A",
-  peach: "#F4A261",
-  lavender: "#BDB2FF",
-  warmShadow: "#D6C3B9"
+  background:   "#110812",   // Midnight Plum
+  deepCharcoal: "#F6E9EF",   // Moon Pearl  (was dark text — now primary text on dark bg)
+  ink:          "#F6E9EF",   // textPrimary
+  muted:        "#6E5680",   // dimmed muted
+  softMuted:    "#B58AC8",   // textMuted  (Lavender Dust)
+  terracotta:   "#E07A5F",   // informational accent (kept)
+  sage:         "#81B29A",   // informational accent (kept)
+  peach:        "#F4A261",   // informational accent (kept)
+  lavender:     "#BDB2FF",   // informational accent (kept)
+  warmShadow:   "#000000",   // shadow → black for dark UI
 };
 
 const styles = StyleSheet.create({
@@ -334,42 +334,42 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "transparent" },
   screenDark: { backgroundColor: "transparent" },
   scrollView: { flex: 1, backgroundColor: "transparent" },
-  auraPeach: { position: "absolute", top: -80, right: -90, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(244,162,97,0.18)" },
-  auraLavender: { position: "absolute", top: 220, left: -110, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(189,178,255,0.18)" },
-  auraSage: { position: "absolute", bottom: 120, right: -120, width: 280, height: 280, borderRadius: 140, backgroundColor: "rgba(129,178,154,0.13)" },
+  auraPeach: { position: "absolute", top: -80, right: -90, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(232,166,182,0.07)" },
+  auraLavender: { position: "absolute", top: 220, left: -110, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(146,119,200,0.08)" },
+  auraSage: { position: "absolute", bottom: 120, right: -120, width: 280, height: 280, borderRadius: 140, backgroundColor: "rgba(129,178,154,0.06)" },
   content: { paddingHorizontal: SIDE, paddingTop: 8, paddingBottom: 28, gap: 10, flexGrow: 1 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
   headerTitle: { color: palette.ink, fontFamily: F.luxuryExtraBold, fontSize: 34, lineHeight: 38 },
   headerSubRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
   headerSub: { color: palette.softMuted, fontFamily: F.uiRegular, fontSize: 14, lineHeight: 19 },
   headerActions: { flexDirection: "row", gap: 11 },
-  iconButton: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2 },
-  unreadDot: { position: "absolute", top: 7, right: 8, width: 9, height: 9, borderRadius: 5, backgroundColor: palette.terracotta, borderWidth: 1, borderColor: "#FFFFFF" },
-  heroCard: { minHeight: 154, borderRadius: 30, padding: 15, flexDirection: "row", alignItems: "center", overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.68)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 3 },
-  heroMoon: { position: "absolute", right: 30, top: 20, width: 40, height: 40, borderRadius: 20, borderRightWidth: 6, borderRightColor: "rgba(255,255,255,0.70)" },
-  sparkleOne: { position: "absolute", right: 142, top: 28, width: 5, height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.88)" },
-  sparkleTwo: { position: "absolute", right: 88, bottom: 36, width: 4, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.90)" },
+  iconButton: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "#2E2330", borderWidth: 1, borderColor: "#4A394D", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 24, elevation: 2 },
+  unreadDot: { position: "absolute", top: 7, right: 8, width: 9, height: 9, borderRadius: 5, backgroundColor: palette.terracotta, borderWidth: 1, borderColor: "#110812" },
+  heroCard: { minHeight: 154, borderRadius: 30, padding: 15, flexDirection: "row", alignItems: "center", overflow: "hidden", borderWidth: 1, borderColor: "rgba(146,119,200,0.28)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.36, shadowRadius: 24, elevation: 3 },
+  heroMoon: { position: "absolute", right: 30, top: 20, width: 40, height: 40, borderRadius: 20, borderRightWidth: 6, borderRightColor: "rgba(146,119,200,0.45)" },
+  sparkleOne: { position: "absolute", right: 142, top: 28, width: 5, height: 5, borderRadius: 3, backgroundColor: "rgba(232,166,182,0.70)" },
+  sparkleTwo: { position: "absolute", right: 88, bottom: 36, width: 4, height: 4, borderRadius: 2, backgroundColor: "rgba(201,160,64,0.60)" },
   avatarWrap: { width: 92, height: 92, alignItems: "center", justifyContent: "center" },
-  avatarGlow: { position: "absolute", width: 92, height: 92, borderRadius: 46, backgroundColor: "rgba(255,255,255,0.72)" },
-  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: "#FFFFFF" },
-  privacyBadge: { position: "absolute", right: 0, bottom: 0, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.82)", borderWidth: 1, borderColor: "rgba(255,255,255,0.90)" },
+  avatarGlow: { position: "absolute", width: 92, height: 92, borderRadius: 46, backgroundColor: "rgba(74,57,77,0.50)" },
+  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: "#4A394D" },
+  privacyBadge: { position: "absolute", right: 0, bottom: 0, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "#3A2D3E", borderWidth: 1, borderColor: "#4A394D" },
   heroCopy: { flex: 1, minWidth: 0, paddingLeft: 13, paddingRight: 88 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   profileName: { flexShrink: 1, color: palette.ink, fontFamily: F.luxuryBold, fontSize: 21, lineHeight: 27 },
   verifiedBadge: { width: 19, height: 19, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: palette.terracotta },
   profileSub: { color: palette.softMuted, fontFamily: F.uiMedium, fontSize: 12, lineHeight: 17, marginTop: 4 },
-  editButton: { alignSelf: "flex-start", minHeight: 34, borderRadius: 17, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, marginTop: 11, backgroundColor: "rgba(255,255,255,0.64)", borderWidth: 1, borderColor: "rgba(255,255,255,0.82)" },
+  editButton: { alignSelf: "flex-start", minHeight: 34, borderRadius: 17, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, marginTop: 11, backgroundColor: "rgba(74,57,77,0.60)", borderWidth: 1, borderColor: "#4A394D" },
   editText: { color: palette.ink, fontFamily: F.uiBold, fontSize: 12, lineHeight: 16 },
-  heroBloop: { position: "absolute", right: 9, bottom: 14, width: 96, height: 96, borderRadius: 48, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.20)" },
+  heroBloop: { position: "absolute", right: 9, bottom: 14, width: 96, height: 96, borderRadius: 48, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(146,119,200,0.12)" },
   heroBloopImage: { width: 92, height: 92 },
   chipRow: { gap: 8, paddingRight: 20 },
-  identityChip: { minHeight: 34, borderRadius: 17, paddingHorizontal: 11, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2 },
+  identityChip: { minHeight: 34, borderRadius: 17, paddingHorizontal: 11, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#2E2330", borderWidth: 1, borderColor: "#4A394D", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 24, elevation: 2 },
   identityText: { color: palette.ink, fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP },
-  quickCard: { width: QUICK_CARD_W, minWidth: 0, minHeight: 70, borderRadius: 20, padding: 11, flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2 },
+  quickCard: { width: QUICK_CARD_W, minWidth: 0, minHeight: 70, borderRadius: 20, padding: 11, flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: "#2E2330", borderWidth: 1, borderColor: "#4A394D", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 24, elevation: 2 },
   quickIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   quickLabel: { flex: 1, flexShrink: 1, minWidth: 0, color: palette.ink, fontFamily: F.luxuryBold, fontSize: 13, lineHeight: 16 },
-  summaryCard: { borderRadius: 26, padding: 15, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2 },
+  summaryCard: { borderRadius: 26, padding: 15, backgroundColor: "#2E2330", borderWidth: 1, borderColor: "#4A394D", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 24, elevation: 2 },
   summaryHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   summaryTitle: { color: palette.ink, fontFamily: F.luxuryBold, fontSize: 16, lineHeight: 21 },
   summaryGrid: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
@@ -378,26 +378,26 @@ const styles = StyleSheet.create({
   ringIcon: { position: "absolute" },
   summaryLabel: { color: palette.ink, fontFamily: F.uiSemiBold, fontSize: 9.5, lineHeight: 12, marginTop: 6, minHeight: 24, textAlign: "center", flexShrink: 1 },
   summaryValue: { fontFamily: F.uiBold, fontSize: 10, lineHeight: 13, marginTop: 3, maxWidth: "100%", textAlign: "center" },
-  themeCard: { borderRadius: 26, padding: 16, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2, gap: 14 },
+  themeCard: { borderRadius: 26, padding: 16, backgroundColor: "#2E2330", borderWidth: 1, borderColor: "#4A394D", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 24, elevation: 2, gap: 14 },
   themeHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   themeHeaderCopy: { flex: 1 },
   themeTitle: { color: palette.ink, fontFamily: F.luxuryBold, fontSize: 15, lineHeight: 20 },
-  themeSub: { color: palette.muted, fontFamily: F.uiMedium, fontSize: 11.5, lineHeight: 15, marginTop: 2 },
+  themeSub: { color: palette.softMuted, fontFamily: F.uiMedium, fontSize: 11.5, lineHeight: 15, marginTop: 2 },
   themeRow: { flexDirection: "row", gap: 10 },
-  themeOption: { flex: 1, minHeight: 92, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.62)", borderWidth: 1.5, borderColor: "rgba(232,225,230,0.70)" },
+  themeOption: { flex: 1, minHeight: 92, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#3A2D3E", borderWidth: 1.5, borderColor: "#4A394D" },
   themeOptionActive: { borderWidth: 1.5 },
   themeIconBubble: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   themeOptionLabel: { color: palette.ink, fontFamily: F.uiBold, fontSize: 12, lineHeight: 16 },
   themeCheck: { position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  premiumCard: { minHeight: 96, borderRadius: 26, padding: 14, flexDirection: "row", alignItems: "center", gap: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: "#D6C3B9", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 2 },
-  premiumLotus: { width: 56, height: 56, borderRadius: 28, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.22)" },
+  premiumCard: { minHeight: 96, borderRadius: 26, padding: 14, flexDirection: "row", alignItems: "center", gap: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(146,119,200,0.30)", shadowColor: "#000000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.36, shadowRadius: 24, elevation: 2 },
+  premiumLotus: { width: 56, height: 56, borderRadius: 28, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(146,119,200,0.15)" },
   premiumLotusImage: { width: 56, height: 56 },
   premiumCopy: { flex: 1 },
-  premiumTitle: { color: palette.ink, fontFamily: F.luxuryBold, fontSize: 19, lineHeight: 24 },
-  premiumSub: { color: palette.ink, opacity: 0.72, fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15, marginTop: 2 },
-  premiumButton: { minHeight: 38, borderRadius: 19, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, backgroundColor: "rgba(255,255,255,0.40)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)" },
-  premiumButtonText: { color: palette.ink, fontFamily: F.uiBold, fontSize: 11, lineHeight: 15 },
-  logoutButton: { minHeight: 52, borderRadius: 26, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "rgba(255,255,255,0.86)", borderWidth: 1, borderColor: "rgba(255,255,255,0.60)", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.20, shadowRadius: 22, elevation: 1 },
+  premiumTitle: { color: "#F6E9EF", fontFamily: F.luxuryBold, fontSize: 19, lineHeight: 24 },
+  premiumSub: { color: "#B58AC8", fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15, marginTop: 2 },
+  premiumButton: { minHeight: 38, borderRadius: 19, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, backgroundColor: "rgba(74,57,77,0.60)", borderWidth: 1, borderColor: "rgba(146,119,200,0.40)" },
+  premiumButtonText: { color: "#F6E9EF", fontFamily: F.uiBold, fontSize: 11, lineHeight: 15 },
+  logoutButton: { minHeight: 52, borderRadius: 26, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#2E2330", borderWidth: 1, borderColor: "#4A394D", shadowColor: palette.warmShadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.28, shadowRadius: 22, elevation: 1 },
   logoutText: { color: palette.terracotta, fontFamily: F.uiBold, fontSize: 15, lineHeight: 19 },
   pressed: { transform: [{ scale: 0.97 }] }
 });

@@ -20,10 +20,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
 import { getPersonalizationDefaults } from "../../constants/onboardingAdaptation";
+import { darkColors } from "../../constants/colors";
 import { useOnboardingStore } from "../../store/onboardingStore";
+
+const colors = darkColors;
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get("window");
@@ -54,14 +58,14 @@ function orbitPos(angleDeg: number) {
 const imgBloop = require("../../public/images/bloop-welcome.webp");
 const imgBloopCalm = require("../../public/images/bloop-calm.webp");
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
+// ─── Dark palette aliases (for readability in this file) ─────────────────────
 const C = {
-  terra:     "#E07A5F",
-  terraLight:"#F4A27D",
-  onSurface: "#221B1C",
-  onVariant: "#6B4C55",
-  surface:   "rgba(255,255,255,0.66)",
-  border:    "rgba(255,255,255,0.82)",
+  terra:     darkColors.primaryCTA,   // Bloom Pink
+  terraLight:darkColors.warning,      // Golden Sand
+  onSurface: darkColors.textPrimary,  // Moon Pearl
+  onVariant: darkColors.textMuted,    // Lavender Dust
+  surface:   darkColors.surface,      // Blackberry Smoke
+  border:    darkColors.border,       // rgba(255,255,255,0.12)
 };
 
 // ─── Orbit items ──────────────────────────────────────────────────────────────
@@ -75,12 +79,12 @@ type OrbitItem = {
 };
 
 const ORBIT_ITEMS: OrbitItem[] = [
-  { angle: -100, iconLib: "ion", icon: "water",     iconColor: "#3A8BC8", bg: "#D4EEFF", driftPhase: 0    },
-  { angle:  -35, iconLib: "mci", icon: "run",        iconColor: "#4A9060", bg: "#D4EED9", driftPhase: 0.18 },
-  { angle:   15, iconLib: "ion", icon: "moon",       iconColor: "#7B52CC", bg: "#E4D4F4", driftPhase: 0.34 },
-  { angle:   80, iconLib: "ion", icon: "heart",      iconColor: "#C04870", bg: "#FFD4E8", driftPhase: 0.50 },
-  { angle:  145, iconLib: "ion", icon: "sunny",      iconColor: "#C09020", bg: "#FEF0C0", driftPhase: 0.66 },
-  { angle: -155, iconLib: "mci", icon: "spa",        iconColor: "#8060B0", bg: "#E4D4F4", driftPhase: 0.82 },
+  { angle: -100, iconLib: "ion", icon: "water",     iconColor: "#5EB8FF", bg: "rgba(62,140,220,0.20)", driftPhase: 0    },
+  { angle:  -35, iconLib: "mci", icon: "run",        iconColor: "#7EC8A0", bg: "rgba(94,180,140,0.18)", driftPhase: 0.18 },
+  { angle:   15, iconLib: "ion", icon: "moon",       iconColor: "#B58AC8", bg: "rgba(130,100,200,0.20)", driftPhase: 0.34 },
+  { angle:   80, iconLib: "ion", icon: "heart",      iconColor: "#E8A6B6", bg: "rgba(220,100,140,0.18)", driftPhase: 0.50 },
+  { angle:  145, iconLib: "ion", icon: "sunny",      iconColor: "#D8B07C", bg: "rgba(210,160,100,0.18)", driftPhase: 0.66 },
+  { angle: -155, iconLib: "mci", icon: "spa",        iconColor: "#A888D4", bg: "rgba(140,100,200,0.20)", driftPhase: 0.82 },
 ];
 
 // ─── Wellness cards ───────────────────────────────────────────────────────────
@@ -98,38 +102,38 @@ const WELLNESS: WellnessCard[] = [
   {
     id: "better_sleep", label: "Better Sleep",
     iconLib: "ion", icon: "moon",
-    iconColor: "#6040A0", grad: ["#B8A0E8", "#CEBCF4", "#E8E0FA"],
-    labelColor: "#3E287A",
+    iconColor: "#B58AC8", grad: ["#B8A0E8", "#CEBCF4", "#E8E0FA"],
+    labelColor: "#B58AC8",
   },
   {
     id: "hydration", label: "Hydration",
     iconLib: "ion", icon: "water",
-    iconColor: "#2878B8", grad: ["#90C8F0", "#B4DCF8", "#D8F0FE"],
-    labelColor: "#184878",
+    iconColor: "#5EB8FF", grad: ["#90C8F0", "#B4DCF8", "#D8F0FE"],
+    labelColor: "#5EB8FF",
   },
   {
     id: "gentle_move", label: "Gentle Movement",
     iconLib: "mci", icon: "human-handsup",
-    iconColor: "#326848", grad: ["#90CC98", "#B4DEB8", "#D4EED8"],
-    labelColor: "#1E4830",
+    iconColor: "#7EC8A0", grad: ["#90CC98", "#B4DEB8", "#D4EED8"],
+    labelColor: "#7EC8A0",
   },
   {
     id: "mindful", label: "Mindful Routine",
     iconLib: "mci", icon: "meditation",
-    iconColor: "#A85038", grad: ["#F0B090", "#F8CCAA", "#FEE8D4"],
-    labelColor: "#703020",
+    iconColor: "#F4A261", grad: ["#F0B090", "#F8CCAA", "#FEE8D4"],
+    labelColor: "#F4A261",
   },
   {
     id: "energy", label: "Energy Balance",
     iconLib: "ion", icon: "sunny",
-    iconColor: "#9C7000", grad: ["#FAD060", "#FDE89A", "#FEF6D4"],
-    labelColor: "#6A4800",
+    iconColor: "#D8B07C", grad: ["#FAD060", "#FDE89A", "#FEF6D4"],
+    labelColor: "#D8B07C",
   },
   {
     id: "stress_rec", label: "Stress Recovery",
     iconLib: "mci", icon: "weather-cloudy",
-    iconColor: "#6040A0", grad: ["#B4A4E0", "#CAC0F0", "#E4DFF8"],
-    labelColor: "#3C2870",
+    iconColor: "#9B72CB", grad: ["#B4A4E0", "#CAC0F0", "#E4DFF8"],
+    labelColor: "#9B72CB",
   },
 ];
 
@@ -165,7 +169,7 @@ const RHYTHMS: RhythmCard[] = [
   },
   {
     id: "night", label: "Late Night Mind",
-    iconLib: "mci", icon: "star-four-points",
+    iconLib: "mci", icon: "moon-waning-crescent",
     iconColor: "#C8B8F8", grad: ["#18103C", "#2A1C60", "#40308A", "#5848B0"],
     labelColor: "#C8B8F8",
   },
@@ -186,7 +190,7 @@ const MOVEMENTS: MovementChip[] = [
   { id: "stretch",  label: "Stretching",     iconLib: "mci", icon: "human-handsup", iconColor: "#7B52CC" },
   { id: "dance",    label: "Dance",          iconLib: "mci", icon: "music-note",    iconColor: "#8060B0" },
   { id: "workouts", label: "Light Workouts", iconLib: "mci", icon: "dumbbell",      iconColor: "#4A9060" },
-  { id: "rest",     label: "Rest & Recovery",iconLib: "ion", icon: "heart",         iconColor: "#C04870" },
+  { id: "rest",     label: "Rest & Recovery",iconLib: "ion", icon: "leaf",          iconColor: "#C04870" },
 ];
 
 // ─── Root component ───────────────────────────────────────────────────────────
@@ -271,6 +275,7 @@ export default function PersonalizationScreen() {
 
   return (
     <View style={s.root}>
+      <StatusBar style="light" backgroundColor="#110812" translucent />
       {/* Ambient blobs — atmosphere only */}
       <View pointerEvents="none" style={s.blob1} />
       <View pointerEvents="none" style={s.blob2} />
@@ -285,23 +290,23 @@ export default function PersonalizationScreen() {
             style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={20} color={C.onVariant} />
+            <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
           </Pressable>
           <View style={s.headerCenter}>
             <Text style={s.brandName}>MyStree Soul</Text>
             <Text style={s.brandSub}>Built around your rhythm.</Text>
           </View>
-          {/* Step 4/4+ badge — personalization is the final setup step */}
-          <View style={s.progressRingOuter}>
+          {/* Step 5/5 badge — Bloom Pink → Golden Sand (matches health-setup badge) */}
+          <View style={[s.progressRingOuter, { shadowColor: colors.primaryCTA }]}>
             <LinearGradient
-              colors={["#E07A5F", "#F4A27D"]}
+              colors={[colors.primaryCTA, colors.warning]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.progressRing}
             >
-              <Text style={s.progressNum}>4</Text>
+              <Text style={s.progressNum}>5</Text>
               <Text style={s.progressSlash}>/</Text>
-              <Text style={s.progressDenom}>4</Text>
+              <Text style={s.progressDenom}>5</Text>
             </LinearGradient>
           </View>
         </View>
@@ -398,7 +403,7 @@ export default function PersonalizationScreen() {
           {/* ── Auto-selection notice ─────────────────────────────────── */}
           {adaptation.wellness.length > 0 && (
             <View style={s.autoSelectBanner}>
-              <MaterialCommunityIcons name="magic-staff" size={14} color={C.terra} />
+              <MaterialCommunityIcons name="tune-variant" size={14} color={colors.primaryCTA} />
               <Text style={s.autoSelectText}>
                 Based on your goals, we selected a few starting points. You can change them.
               </Text>
@@ -474,18 +479,32 @@ export default function PersonalizationScreen() {
                     onPress={() => toggleMovement(chip.id)}
                     style={({ pressed }) => [
                       s.chip,
-                      isSel && s.chipSelected,
+                      {
+                        backgroundColor: isSel ? colors.primaryCTA : colors.surface,
+                        borderColor: isSel ? colors.primaryCTA : colors.border,
+                        shadowColor: isSel ? colors.primaryCTA : colors.background,
+                      },
                       pressed && s.pressed,
                     ]}
                   >
-                    <View style={[s.chipIcon, { backgroundColor: chip.iconColor + "1A" }]}>
+                    <View style={[
+                      s.chipIcon,
+                      { backgroundColor: isSel ? `${colors.background}18` : `${chip.iconColor}1A` },
+                    ]}>
                       {chip.iconLib === "ion" ? (
-                        <Ionicons name={chip.icon as any} size={15} color={chip.iconColor} />
+                        <Ionicons name={chip.icon as any} size={18} color={isSel ? colors.background : chip.iconColor} />
                       ) : (
-                        <MaterialCommunityIcons name={chip.icon as any} size={15} color={chip.iconColor} />
+                        <MaterialCommunityIcons name={chip.icon as any} size={18} color={isSel ? colors.background : chip.iconColor} />
                       )}
                     </View>
-                    <Text style={[s.chipText, isSel && s.chipTextSel]}>{chip.label}</Text>
+                    <Text style={[s.chipText, { color: isSel ? colors.background : colors.textPrimary }]}>
+                      {chip.label}
+                    </Text>
+                    {isSel && (
+                      <View style={s.chipCheck}>
+                        <Ionicons name="checkmark" size={10} color={colors.primaryCTA} />
+                      </View>
+                    )}
                   </Pressable>
                 );
               })}
@@ -495,7 +514,7 @@ export default function PersonalizationScreen() {
           {/* ── AI building preview banner ────────────────────────────── */}
           <View style={s.aiBanner}>
             <LinearGradient
-              colors={["#D8CCEE", "#E8DCFA", "#F4ECFE"]}
+              colors={[colors.surface, colors.surfaceRaised]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.aiBannerGrad}
@@ -510,18 +529,18 @@ export default function PersonalizationScreen() {
               </View>
 
               {/* Center text */}
-              <Text style={s.aiText}>
+              <Text style={[s.aiText, { color: colors.textMuted }]}>
                 {adaptation.aiCopy}
               </Text>
 
-              {/* Right — cosmic heart */}
-              <View style={s.aiHeartWrap}>
-                <Animated.View style={[s.aiHeartRing, { opacity: aiGlow }]} />
+              {/* Right — guidance badge */}
+              <View style={s.aiSparkleWrap}>
+                <Animated.View style={[s.aiSparkleRing, { opacity: aiGlow }]} />
                 <LinearGradient
                   colors={["#E07A5F", "#F4A27D"]}
-                  style={s.aiHeartCircle}
+                  style={s.aiSparkleCircle}
                 >
-                  <Ionicons name="heart" size={16} color="#FFF" />
+                  <MaterialCommunityIcons name="heart-pulse" size={16} color="#FFF" />
                 </LinearGradient>
               </View>
             </LinearGradient>
@@ -533,13 +552,13 @@ export default function PersonalizationScreen() {
             style={({ pressed }) => [s.ctaShell, pressed && s.pressed]}
           >
             <LinearGradient
-              colors={["#E07A5F", "#F4A27D"]}
+              colors={[colors.primaryCTA, colors.warning]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.ctaBtn}
             >
               <Text style={s.ctaText}>Create My Space</Text>
-              <Ionicons name="chevron-forward" size={20} color="#FFF" />
+              <Ionicons name="chevron-forward" size={20} color={colors.background} />
             </LinearGradient>
           </Pressable>
 
@@ -558,6 +577,8 @@ export default function PersonalizationScreen() {
 }
 
 // ─── WellnessCardItem ─────────────────────────────────────────────────────────
+// Unselected → colors.surface bg, subtle border
+// Selected   → colors.surfaceRaised bg, 2px colors.primaryCTA border, bloom shadow
 function WellnessCardItem({
   card,
   isSelected,
@@ -584,8 +605,8 @@ function WellnessCardItem({
       style={({ pressed }) => [
         s.wellnessShell,
         isSelected && {
-          shadowColor: card.iconColor,
-          shadowOpacity: 0.30,
+          shadowColor: colors.primaryCTA,
+          shadowOpacity: 0.28,
           shadowRadius: 18,
           elevation: 6,
         },
@@ -593,15 +614,13 @@ function WellnessCardItem({
       ]}
     >
       <Animated.View style={{ transform: [{ scale: pulse }] }}>
-        <LinearGradient
-          colors={card.grad}
-          start={{ x: 0.1, y: 0 }}
-          end={{ x: 0.9, y: 1 }}
+        <View
           style={[
             s.wellnessCard,
-            isSelected && {
-              borderWidth: 2,
-              borderColor: card.iconColor,
+            {
+              backgroundColor: isSelected ? colors.surfaceRaised : colors.surface,
+              borderColor: isSelected ? colors.primaryCTA : colors.border,
+              borderWidth: isSelected ? 2 : 1,
             },
           ]}
         >
@@ -610,7 +629,7 @@ function WellnessCardItem({
             <View
               style={[
                 s.wellnessIconCircle,
-                { backgroundColor: "rgba(255,255,255,0.45)" },
+                { backgroundColor: `${card.iconColor}22` },
               ]}
             >
               {card.iconLib === "ion" ? (
@@ -619,25 +638,22 @@ function WellnessCardItem({
                 <MaterialCommunityIcons name={card.icon as any} size={32} color={card.iconColor} />
               )}
             </View>
-            {/* Decorative sparkle dots */}
-            <View style={[s.sparkle, { top: 8, right: 14 }]} />
-            <View style={[s.sparkle, s.sparkleSm, { bottom: 10, left: 12 }]} />
           </View>
 
-          {/* Label */}
+          {/* Label — always textPrimary on dark surface */}
           <View style={s.wellnessLabelArea}>
-            <Text style={[s.wellnessLabel, { color: card.labelColor }]} numberOfLines={2}>
+            <Text style={[s.wellnessLabel, { color: isSelected ? colors.primaryCTA : colors.textPrimary }]} numberOfLines={2}>
               {card.label}
             </Text>
           </View>
 
           {/* Selection badge */}
           {isSelected && (
-            <View style={[s.wellnessBadge, { backgroundColor: C.terra }]}>
-              <Ionicons name="checkmark" size={12} color="#FFF" />
+            <View style={[s.wellnessBadge, { backgroundColor: colors.primaryCTA }]}>
+              <Ionicons name="checkmark" size={12} color={colors.background} />
             </View>
           )}
-        </LinearGradient>
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -647,25 +663,25 @@ function WellnessCardItem({
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: darkColors.background,
   },
   safe: { flex: 1 },
 
-  // Blobs — atmosphere only, 8-10% opacity
+  // Blobs — subtle dark atmosphere
   blob1: {
     position: "absolute", top: -140, left: -110,
     width: 400, height: 400, borderRadius: 200,
-    backgroundColor: "rgba(255,183,183,0.10)",
+    backgroundColor: "rgba(232,166,182,0.05)",
   },
   blob2: {
     position: "absolute", top: 320, right: -160,
     width: 380, height: 380, borderRadius: 190,
-    backgroundColor: "rgba(189,172,255,0.08)",
+    backgroundColor: "rgba(181,138,200,0.04)",
   },
   blob3: {
     position: "absolute", bottom: -80, left: -90,
     width: 340, height: 340, borderRadius: 170,
-    backgroundColor: "rgba(162,202,178,0.08)",
+    backgroundColor: "rgba(126,200,160,0.04)",
   },
 
   // Header
@@ -681,14 +697,14 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(248,244,248,0.96)",
+    backgroundColor: darkColors.surfaceRaised,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
-    shadowColor: C.onVariant,
+    borderColor: darkColors.border,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 2,
     flexShrink: 0,
@@ -700,17 +716,17 @@ const s = StyleSheet.create({
   brandName: {
     fontFamily: F.luxuryBold,
     fontSize: 20,
-    color: C.onSurface,
+    color: darkColors.textPrimary,
     letterSpacing: 0.3,
   },
   brandSub: {
     fontFamily: F.bodyRegular,
     fontSize: 13,
-    color: C.onVariant,
+    color: darkColors.textMuted,
     marginTop: 1,
   },
   progressRingOuter: {
-    shadowColor: "#E07A5F",
+    shadowColor: darkColors.primaryCTA,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,
     shadowRadius: 14,
@@ -721,27 +737,20 @@ const s = StyleSheet.create({
     width: 56, height: 56, borderRadius: 28,
     alignItems: "center", justifyContent: "center",
     flexDirection: "row", gap: 1,
+    borderWidth: 1,
+    borderColor: darkColors.border,
   },
-  progressNum: {
-    fontFamily: F.uiExtraBold,
-    fontSize: 18, color: "#FFF", lineHeight: 22,
-  },
-  progressSlash: {
-    fontFamily: F.uiLight,
-    fontSize: 14, color: "rgba(255,255,255,0.70)", lineHeight: 22,
-  },
-  progressDenom: {
-    fontFamily: F.uiMedium,
-    fontSize: 13, color: "rgba(255,255,255,0.80)", lineHeight: 22,
-  },
+  progressNum:   { fontFamily: F.uiExtraBold, fontSize: 18, color: "#FFF", lineHeight: 22 },
+  progressSlash: { fontFamily: F.uiLight,     fontSize: 14, color: "rgba(255,255,255,0.70)", lineHeight: 22 },
+  progressDenom: { fontFamily: F.uiMedium,    fontSize: 13, color: "rgba(255,255,255,0.80)", lineHeight: 22 },
   lotusBtn: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(248,244,248,0.96)",
-    borderWidth: 1, borderColor: "rgba(232,225,230,0.70)",
-    shadowColor: "#8B5E6D",
+    backgroundColor: darkColors.surfaceRaised,
+    borderWidth: 1, borderColor: darkColors.border,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    shadowOpacity: 0.18, shadowRadius: 10, elevation: 2,
     flexShrink: 0,
   },
 
@@ -775,7 +784,7 @@ const s = StyleSheet.create({
   orbitRing: {
     position: "absolute",
     borderWidth: 1,
-    borderColor: "rgba(224,180,100,0.30)",
+    borderColor: `${darkColors.primaryCTA}20`,
     borderStyle: "solid",
   },
   orbitBadge: {
@@ -786,10 +795,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.70)",
-    shadowColor: "#8B5E6D",
+    borderColor: "rgba(255,255,255,0.12)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.22,
     shadowRadius: 10,
     elevation: 3,
   },
@@ -797,16 +806,16 @@ const s = StyleSheet.create({
     position: "absolute",
     width: 160, height: 160, borderRadius: 80,
     borderWidth: 1.5,
-    borderColor: "rgba(224,122,95,0.18)",
+    borderColor: `${darkColors.primaryCTA}18`,
     left: HERO_CX - 80,
     top: HERO_CY - 80,
   },
   heroAura2: {
     position: "absolute",
     width: 116, height: 116, borderRadius: 58,
-    backgroundColor: "rgba(240,190,200,0.20)",
+    backgroundColor: `${darkColors.primaryCTA}10`,
     borderWidth: 1.5,
-    borderColor: "rgba(224,122,95,0.28)",
+    borderColor: `${darkColors.primaryCTA}22`,
     left: HERO_CX - 58,
     top: HERO_CY - 58,
   },
@@ -822,7 +831,7 @@ const s = StyleSheet.create({
   bloopGlow: {
     position: "absolute",
     width: 96, height: 96, borderRadius: 48,
-    backgroundColor: "rgba(255,220,180,0.44)",
+    backgroundColor: `${darkColors.primaryCTA}16`,
   },
   bloopImg: {
     width: 112,
@@ -842,7 +851,7 @@ const s = StyleSheet.create({
     fontFamily: F.luxuryBold,
     fontSize: 34,
     lineHeight: 40,
-    color: C.onSurface,
+    color: darkColors.textPrimary,
     textAlign: "center",
     letterSpacing: 0.2,
     marginTop: 2,
@@ -852,7 +861,7 @@ const s = StyleSheet.create({
   headingSub: {
     fontFamily: F.uiMedium,
     fontSize: 14,
-    color: C.onVariant,
+    color: darkColors.textMuted,
     textAlign: "center",
     marginBottom: 22,
     alignSelf: "stretch",
@@ -878,8 +887,6 @@ const s = StyleSheet.create({
     height: CARD_H,
     borderRadius: 24,
     overflow: "hidden",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.70)",
     alignItems: "center",
     paddingTop: 14,
     paddingBottom: 12,
@@ -894,7 +901,7 @@ const s = StyleSheet.create({
     width: 58, height: 58, borderRadius: 29,
     alignItems: "center", justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.60)",
+    borderColor: "rgba(255,255,255,0.20)",
   },
   wellnessLabelArea: {
     paddingHorizontal: 10,
@@ -923,18 +930,18 @@ const s = StyleSheet.create({
   glassCard: {
     borderRadius: 28,
     padding: 18,
-    backgroundColor: "rgba(250,247,249,0.98)",
-    borderWidth: 1, borderColor: "rgba(232,225,230,0.70)",
-    shadowColor: "#8B5E6D",
+    backgroundColor: darkColors.surface,
+    borderWidth: 1, borderColor: darkColors.border,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07, shadowRadius: 20, elevation: 3,
+    shadowOpacity: 0.18, shadowRadius: 20, elevation: 3,
     alignSelf: "stretch",
     marginBottom: 14,
   },
   cardTitle: {
     fontFamily: F.uiBold,
     fontSize: 14,
-    color: C.onSurface,
+    color: darkColors.textPrimary,
     marginBottom: 14,
     letterSpacing: 0.2,
   },
@@ -959,12 +966,12 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     gap: 5,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.60)",
+    borderColor: "rgba(255,255,255,0.16)",
   },
   rhythmSelected: {
     borderWidth: 2,
-    borderColor: C.terra,
-    shadowColor: C.terra,
+    borderColor: darkColors.primaryCTA,
+    shadowColor: darkColors.primaryCTA,
     shadowOpacity: 0.28,
     shadowRadius: 14,
     elevation: 5,
@@ -981,9 +988,9 @@ const s = StyleSheet.create({
     position: "absolute",
     top: 5, right: 5,
     width: 16, height: 16, borderRadius: 8,
-    backgroundColor: C.terra,
+    backgroundColor: darkColors.primaryCTA,
     alignItems: "center", justifyContent: "center",
-    shadowColor: C.terra,
+    shadowColor: darkColors.primaryCTA,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.40, shadowRadius: 6, elevation: 3,
   },
@@ -992,40 +999,45 @@ const s = StyleSheet.create({
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    justifyContent: "space-between",
+    rowGap: 10,
+    alignItems: "stretch",
   },
   chip: {
+    width: "48.3%",
+    height: 82,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 3,
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(248,244,248,0.98)",
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
-    shadowColor: "#8B5E6D",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
-  },
-  chipSelected: {
-    backgroundColor: "rgba(224,122,95,0.12)",
-    borderColor: "rgba(224,122,95,0.42)",
-    shadowColor: C.terra,
-    shadowOpacity: 0.16, shadowRadius: 12, elevation: 3,
+    gap: 10,
   },
   chipIcon: {
-    width: 26, height: 26, borderRadius: 13,
+    width: 34, height: 34, borderRadius: 13,
     alignItems: "center", justifyContent: "center",
   },
   chipText: {
-    fontFamily: F.uiMedium,
-    fontSize: 13,
-    color: C.onVariant,
-  },
-  chipTextSel: {
-    color: C.terra,
+    flex: 1,
     fontFamily: F.uiSemiBold,
+    fontSize: 12.5,
+    lineHeight: 16,
+  },
+  chipCheck: {
+    position: "absolute",
+    top: 9,
+    right: 9,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: darkColors.background,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // ── AI banner ─────────────────────────────────────────────────────────
@@ -1045,7 +1057,7 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.80)",
+    borderColor: darkColors.border,
     borderRadius: 24,
   },
   aiBloopWrap: {
@@ -1056,12 +1068,12 @@ const s = StyleSheet.create({
     position: "absolute",
     width: 52, height: 52, borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: "rgba(140,100,200,0.42)",
+    borderColor: `${darkColors.textMuted}55`,
   },
   aiBloopGlow: {
     position: "absolute",
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: "rgba(160,120,220,0.22)",
+    backgroundColor: `${darkColors.textMuted}18`,
   },
   aiBloopImg: {
     width: 46, height: 42,
@@ -1071,19 +1083,19 @@ const s = StyleSheet.create({
     fontFamily: F.uiMedium,
     fontSize: 12,
     lineHeight: 18,
-    color: C.onVariant,
+    color: darkColors.textMuted,
   },
-  aiHeartWrap: {
+  aiSparkleWrap: {
     width: 44, height: 44,
     alignItems: "center", justifyContent: "center",
   },
-  aiHeartRing: {
+  aiSparkleRing: {
     position: "absolute",
     width: 44, height: 44, borderRadius: 22,
     borderWidth: 1.5,
     borderColor: "rgba(224,122,95,0.50)",
   },
-  aiHeartCircle: {
+  aiSparkleCircle: {
     width: 32, height: 32, borderRadius: 16,
     alignItems: "center", justifyContent: "center",
   },
@@ -1091,7 +1103,7 @@ const s = StyleSheet.create({
   // ── CTA ───────────────────────────────────────────────────────────────
   ctaShell: {
     borderRadius: 999,
-    shadowColor: C.terra,
+    shadowColor: darkColors.primaryCTA,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.26, shadowRadius: 22, elevation: 6,
     alignSelf: "stretch",
@@ -1107,7 +1119,7 @@ const s = StyleSheet.create({
   ctaText: {
     fontFamily: F.uiBlack,
     fontSize: 17,
-    color: "#FFF",
+    color: darkColors.background,
     letterSpacing: 0.3,
   },
 
@@ -1120,11 +1132,11 @@ const s = StyleSheet.create({
   },
   dotActive: {
     width: 26, height: 8, borderRadius: 4,
-    backgroundColor: C.terra,
+    backgroundColor: darkColors.primaryCTA,
   },
   dot: {
     width: 8, height: 8, borderRadius: 4,
-    backgroundColor: "rgba(224,122,95,0.28)",
+    backgroundColor: `${darkColors.primaryCTA}44`,
   },
 
   // Auto-select notice
@@ -1133,10 +1145,10 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
     gap: 8,
     alignSelf: "stretch",
-    backgroundColor: "rgba(224,122,95,0.08)",
+    backgroundColor: `${darkColors.primaryCTA}10`,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(224,122,95,0.22)",
+    borderColor: `${darkColors.primaryCTA}28`,
     paddingHorizontal: 14,
     paddingVertical: 10,
     marginBottom: 14,
@@ -1145,7 +1157,7 @@ const s = StyleSheet.create({
     flex: 1,
     fontFamily: F.uiMedium,
     fontSize: 12.5,
-    color: C.onVariant,
+    color: darkColors.textMuted,
     lineHeight: 18,
   },
 

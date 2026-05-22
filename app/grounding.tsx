@@ -103,7 +103,7 @@ function AudioWave() {
   );
 }
 
-// ── Background sparkles ───────────────────────────────────────────────────────
+// ── Background ambient dots ───────────────────────────────────────────────────
 function BackgroundSparkles() {
   const H = 820;
   const items = [
@@ -120,8 +120,7 @@ function BackgroundSparkles() {
     { cx: 80,  cy: 160, r: 1.2, o: 0.18 },
     { cx: W-80, cy: 420, r: 1.2, o: 0.16 },
   ];
-  // Star paths (4-point sparkle)
-  const stars = [
+  const softDots = [
     { x: 54,   y: 136, s: 5,  o: 0.30 },
     { x: W-62, y: 290, s: 5,  o: 0.25 },
     { x: 42,   y: 580, s: 4.5,o: 0.20 },
@@ -138,10 +137,12 @@ function BackgroundSparkles() {
       {items.map((d, i) => (
         <Circle key={i} cx={d.cx} cy={d.cy} r={d.r} fill="#8A56D8" opacity={d.o} />
       ))}
-      {stars.map((s, i) => (
-        <Path
+      {softDots.map((s, i) => (
+        <Circle
           key={i}
-          d={`M ${s.x} ${s.y - s.s} L ${s.x + 1.2} ${s.y - 1.2} L ${s.x + s.s} ${s.y} L ${s.x + 1.2} ${s.y + 1.2} L ${s.x} ${s.y + s.s} L ${s.x - 1.2} ${s.y + 1.2} L ${s.x - s.s} ${s.y} L ${s.x - 1.2} ${s.y - 1.2} Z`}
+          cx={s.x}
+          cy={s.y}
+          r={s.s * 0.38}
           fill="#B490E0"
           opacity={s.o}
         />
@@ -493,7 +494,7 @@ export default function GroundingScreen() {
               You don't need to carry{"\n"}everything alone.
             </Text>
             <View style={styles.empathySparkle}>
-              <Text style={{ fontSize: 18 }}>✦</Text>
+              <Text style={{ fontSize: 18 }}>♥</Text>
             </View>
           </View>
 

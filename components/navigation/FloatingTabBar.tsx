@@ -1,3 +1,20 @@
+/**
+ * FloatingTabBar — Midnight Plum  v2
+ *
+ * Token mapping
+ * ─────────────
+ *  Nav pill surface (dark)  →  colors.surface    (#2E2330 Blackberry Smoke)
+ *  Active icon / label      →  per-tab accent    (primaryCTA or warning — never old brand hex)
+ *  Inactive icon / label    →  colors.textMuted  (#B58AC8 Lavender Dust)
+ *  Active bubble fill       →  accent at 13% opacity (legible against surface)
+ *  Active dot               →  accent
+ *  More-sheet surface       →  colors.surface (dark) / near-white (light)
+ *
+ * Mascot constraint (Bloop button)
+ * ──────────────────────────────────
+ *  The Bloop image is NEVER tinted, filtered, or overlaid.
+ *  Only the LinearGradient behind it is theme-adjusted.
+ */
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -11,220 +28,194 @@ import { CachedImage } from "../CachedImage";
 
 const bloop = require("../../public/images/bloop-nav.webp");
 
-const palette = {
-  deepCharcoal: "#2B2D42",
-  muted: "#6B708D",
-  terracotta: "#E07A5F",
-  peach: "#F4A261",
-  sage: "#81B29A",
-  lavender: "#BDB2FF",
-  rose: "#D7A6A1",
-  gold: "#C9A040",
-  warmShadow: "#D6C3B9"
-};
+// ── Nav surface constants (rgba forms of darkColors tokens, safe in StyleSheet) ──
+// surface    #2E2330 = rgb(46,35,48)
+// surfaceRaised #4A394D = rgb(74,57,77)
+// background #110812 = rgb(17,8,18)
+const NAV_SURFACE_DARK        = "rgba(46,35,48,0.97)";    // colors.surface
+const NAV_ACTIVE_BUBBLE_ALPHA = "20";                      // 13% — appended to accent hex
+const NAV_SCRIM_DARK          = "rgba(22,17,28,0.72)";     // deeper scrim on dark bg
+const NAV_SCRIM_LIGHT         = "rgba(34,24,34,0.28)";
 
-// Tab config: each route gets a distinct accent + icon so the bar is colorful
-// even before a tab is selected.
+// ── Per-tab accent color map ─────────────────────────────────────────────────
+// Dark accents must be either primaryCTA (#E8A6B6) or warning (#D8B07C) per Phase 2 directive.
+// Light accents keep the original expressive per-tab colors.
+const BLOOM_PINK   = "#E8A6B6"; // darkColors.primaryCTA
+const GOLDEN_SAND  = "#D8B07C"; // darkColors.warning
+
 const TAB_CONFIG: Record<string, {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
   accentLight: string;
-  accentDark: string;
+  accentDark:  string;
 }> = {
-  dashboard: {
-    icon: "home-variant",
-    label: "Today",
-    accentLight: "#E07A5F",
-    accentDark: "#F08A70",
-  },
-  cycle: {
-    icon: "water",
-    label: "Cycle",
-    accentLight: "#D04870",
-    accentDark: "#E86090",
-  },
-  insights: {
-    icon: "chart-bell-curve-cumulative",
-    label: "Insights",
-    accentLight: "#7B4DB8",
-    accentDark: "#A880E0",
-  },
-  wellness: {
-    icon: "spa",
-    label: "Wellness",
-    accentLight: "#2E8B50",
-    accentDark: "#4EB870",
-  },
-  nourish: {
-    icon: "food-apple",
-    label: "Nourish",
-    accentLight: "#C97010",
-    accentDark: "#F09030",
-  },
-  sleep: {
-    icon: "moon-waning-crescent",
-    label: "Sleep",
-    accentLight: "#3654B8",
-    accentDark: "#6878E0",
-  },
-  profile: {
-    icon: "account-circle",
-    label: "Profile",
-    accentLight: "#9277C8",
-    accentDark: "#B09AE0",
-  },
-  more: {
-    icon: "dots-grid",
-    label: "More",
-    accentLight: "#81B29A",
-    accentDark: "#8EC4A8",
-  },
+  dashboard: { icon: "home-variant",                   label: "Today",    accentLight: "#E07A5F", accentDark: BLOOM_PINK   },
+  cycle:     { icon: "water",                          label: "Cycle",    accentLight: "#D04870", accentDark: BLOOM_PINK   },
+  insights:  { icon: "chart-bell-curve-cumulative",    label: "Insights", accentLight: "#7B4DB8", accentDark: BLOOM_PINK   },
+  wellness:  { icon: "spa",                            label: "Wellness", accentLight: "#2E8B50", accentDark: BLOOM_PINK   },
+  nourish:   { icon: "food-apple",                     label: "Nourish",  accentLight: "#C97010", accentDark: GOLDEN_SAND  },
+  sleep:     { icon: "moon-waning-crescent",           label: "Sleep",    accentLight: "#3654B8", accentDark: GOLDEN_SAND  },
+  profile:   { icon: "account-circle",                 label: "Profile",  accentLight: "#9277C8", accentDark: BLOOM_PINK   },
+  more:      { icon: "dots-grid",                      label: "More",     accentLight: "#81B29A", accentDark: BLOOM_PINK   },
 };
 
-// Derived maps for icon name and label lookups
 const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = Object.fromEntries(
   Object.entries(TAB_CONFIG).map(([k, v]) => [k, v.icon])
 );
-
 const labelMap: Record<string, string> = Object.fromEntries(
   Object.entries(TAB_CONFIG).map(([k, v]) => [k, v.label])
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
 export function FloatingTabBar({ navigation, state }: { navigation: any; state: any }) {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const router   = useRouter();
+  const insets   = useSafeAreaInsets();
   const { colors, isDark } = useColorMode();
-  const profile = useUserProfile();
+  const profile  = useUserProfile();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  // Only render tabs the user's journey calls for, in the order defined by the profile
   const visibleRoutes = profile.visibleTabs
-    .map((tabName) => state.routes.find((route: { name: string }) => route.name === tabName))
+    .map((tabName) => state.routes.find((r: { name: string }) => r.name === tabName))
     .filter(Boolean) as { key: string; name: string }[];
 
   const { primaryRoutes, overflowRoutes } = useMemo(() => {
     if (visibleRoutes.length <= 4) {
       return { primaryRoutes: visibleRoutes, overflowRoutes: [] as { key: string; name: string }[] };
     }
-
-    const byName = new Map(visibleRoutes.map((route) => [route.name, route]));
-    const mainName = ["cycle", "wellness", "nourish", "sleep", "insights"]
-      .find((name) => byName.has(name));
-    const primaryNames = ["dashboard", mainName, "more", "profile"].filter(Boolean) as string[];
-    const primary = primaryNames.map((name) => {
-      if (name === "more") return { key: "more", name: "more" };
-      return byName.get(name);
-    }).filter(Boolean) as { key: string; name: string }[];
-    const overflow = visibleRoutes.filter((route) => !primaryNames.includes(route.name));
-
+    const byName    = new Map(visibleRoutes.map((r) => [r.name, r]));
+    const mainName  = ["cycle","wellness","nourish","sleep","insights"].find((n) => byName.has(n));
+    const primNames = ["dashboard", mainName, "more", "profile"].filter(Boolean) as string[];
+    const primary   = primNames.map((n) => n === "more" ? { key: "more", name: "more" } : byName.get(n)).filter(Boolean) as { key: string; name: string }[];
+    const overflow  = visibleRoutes.filter((r) => !primNames.includes(r.name));
     return { primaryRoutes: primary, overflowRoutes: overflow };
   }, [visibleRoutes]);
 
-  const midpoint = Math.ceil(primaryRoutes.length / 2);
-  const firstHalf = primaryRoutes.slice(0, midpoint);
+  const midpoint   = Math.ceil(primaryRoutes.length / 2);
+  const firstHalf  = primaryRoutes.slice(0, midpoint);
   const secondHalf = primaryRoutes.slice(midpoint);
 
   const renderTab = (route: { key: string; name: string }) => {
-    const focused = state.routes[state.index]?.name === route.name;
-    const isMore = route.name === "more";
-    const moreActive = overflowRoutes.some((item) => state.routes[state.index]?.name === item.name);
-    const selected = focused || (isMore && moreActive);
-    const cfg = TAB_CONFIG[route.name];
-    const accent = isDark ? (cfg?.accentDark ?? palette.terracotta) : (cfg?.accentLight ?? palette.terracotta);
-    // Inactive icons are muted so the selected tab's color really stands out
+    const focused    = state.routes[state.index]?.name === route.name;
+    const isMore     = route.name === "more";
+    const moreActive = overflowRoutes.some((r) => state.routes[state.index]?.name === r.name);
+    const selected   = focused || (isMore && moreActive);
+    const cfg        = TAB_CONFIG[route.name];
+
+    // Active accent: from design-system-only values; inactive: textMuted
+    const accent    = isDark ? (cfg?.accentDark ?? BLOOM_PINK) : (cfg?.accentLight ?? "#E07A5F");
     const iconColor = selected
       ? accent
       : isDark
-      ? "rgba(196,186,214,0.55)"
-      : "rgba(107,112,141,0.50)";
+        ? colors.textMuted               // Lavender Dust — satisfies ≥ 4.5:1 on nav surface
+        : "rgba(107,112,141,0.58)";
+
     return (
       <Pressable
         accessibilityRole="button"
         accessibilityState={selected ? { selected: true } : {}}
         key={route.key}
-        onPress={() => {
-          if (isMore) {
-            setMoreOpen(true);
-            return;
-          }
-          navigation.navigate(route.name);
-        }}
+        onPress={() => { isMore ? setMoreOpen(true) : navigation.navigate(route.name); }}
         style={({ pressed }) => [
           styles.navButton,
-          selected && styles.navButtonActive,
-          selected && isDark && styles.navButtonActiveDark,
-          pressed && styles.pressed
+          selected && {
+            // Active state: subtle bubble lift over nav surface
+            backgroundColor: isDark ? `${accent}${NAV_ACTIVE_BUBBLE_ALPHA}` : "rgba(255,255,255,0.82)",
+            borderWidth: 1,
+            borderColor:     isDark ? `${accent}48`                         : `${accent}30`,
+            shadowColor:     accent,
+            shadowOffset:    { width: 0, height: 6 },
+            shadowOpacity:   isDark ? 0.24 : 0.12,
+            shadowRadius:    12,
+            elevation:       isDark ? 4 : 2,
+          },
+          pressed && styles.pressed,
         ]}
       >
-        <View
-          style={[
-            styles.iconBubble,
-            selected && { backgroundColor: `${accent}22`, borderRadius: 14 },
-          ]}
-        >
+        {/* Icon bubble — tinted fill only when selected */}
+        <View style={[
+          styles.iconBubble,
+          selected && { backgroundColor: `${accent}${NAV_ACTIVE_BUBBLE_ALPHA}` },
+        ]}>
           <MaterialCommunityIcons
             name={iconMap[route.name] ?? "circle-outline"}
             size={22}
             color={iconColor}
           />
         </View>
+
+        {/* Label */}
         <Text
           numberOfLines={1}
           style={[
             styles.navLabel,
-            isDark && styles.navLabelDark,
-            selected && { color: accent, fontFamily: "Inter_800ExtraBold" },
+            { color: selected ? accent : isDark ? colors.textMuted : "rgba(107,112,141,0.58)" },
+            selected && { fontFamily: F.uiBlack },
           ]}
         >
           {labelMap[route.name] ?? route.name}
         </Text>
-        {selected ? <View style={[styles.navActiveDot, { backgroundColor: accent }]} /> : null}
+
+        {/* Active indicator dot */}
+        {selected && <View style={[styles.navActiveDot, { backgroundColor: accent }]} />}
       </Pressable>
     );
   };
 
   return (
-    <View
-      style={[
-        styles.navWrap,
+    <View style={[styles.navWrap, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom, 10) }]}>
+      {/* Nav pill — distinctly lifts off the background */}
+      <View style={[
+        styles.navBar,
         {
-          // Transparent so the pill truly floats — no white/cream band
-          // visible above or below the bar on any screen.
-          backgroundColor: colors.background,
-          paddingBottom: Math.max(insets.bottom, 10),
+          backgroundColor: isDark ? NAV_SURFACE_DARK : "rgba(255,253,252,0.96)",
+          borderColor:     isDark ? colors.border    : "rgba(255,255,255,0.88)",
+          shadowColor:     isDark ? colors.background : "#D6C3B9",
         },
-      ]}
-    >
-      <View style={[styles.navBar, isDark && styles.navBarDark]}>
+      ]}>
         <View style={styles.tabsRow}>
           <View style={styles.tabSide}>{firstHalf.map(renderTab)}</View>
           <View style={styles.bloopCenter}>
-            <BloopButton isDark={isDark} onPress={() => router.push("/bloop-chat" as any)} />
+            <BloopButton isDark={isDark} colors={colors} onPress={() => router.push("/bloop-chat" as any)} />
           </View>
           <View style={styles.tabSide}>{secondHalf.map(renderTab)}</View>
         </View>
       </View>
+
+      {/* Overflow "More" sheet */}
       <Modal transparent visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)}>
-        <Pressable style={styles.moreScrim} onPress={() => setMoreOpen(false)}>
-          <View style={[styles.moreSheet, isDark && styles.moreSheetDark]}>
-            <Text style={[styles.moreTitle, isDark && styles.moreTitleDark]}>More from MyStree</Text>
+        <Pressable style={[styles.moreScrim, { backgroundColor: isDark ? NAV_SCRIM_DARK : NAV_SCRIM_LIGHT }]} onPress={() => setMoreOpen(false)}>
+          <View style={[
+            styles.moreSheet,
+            {
+              backgroundColor: isDark ? colors.surface       : "rgba(255,253,252,0.98)",
+              borderColor:     isDark ? colors.border        : "rgba(255,255,255,0.88)",
+              shadowColor:     isDark ? colors.background    : "#9B7B70",
+            },
+          ]}>
+            <Text style={[styles.moreTitle, { color: colors.textPrimary }]}>More from MyStree</Text>
             <View style={styles.moreGrid}>
               {overflowRoutes.map((route) => {
-                const cfg = TAB_CONFIG[route.name];
-                const accent = isDark ? (cfg?.accentDark ?? palette.terracotta) : (cfg?.accentLight ?? palette.terracotta);
+                const cfg    = TAB_CONFIG[route.name];
+                const accent = isDark ? (cfg?.accentDark ?? BLOOM_PINK) : (cfg?.accentLight ?? "#E07A5F");
                 return (
                   <Pressable
                     key={route.key}
-                    style={({ pressed }) => [styles.moreItem, isDark && styles.moreItemDark, pressed && styles.pressed]}
-                    onPress={() => {
-                      setMoreOpen(false);
-                      navigation.navigate(route.name);
-                    }}
+                    style={({ pressed }) => [
+                      styles.moreItem,
+                      {
+                        backgroundColor: isDark ? colors.surfaceRaised + "60" : "rgba(255,250,247,0.92)",
+                        borderColor:     isDark ? colors.border               : `${accent}18`,
+                      },
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => { setMoreOpen(false); navigation.navigate(route.name); }}
                   >
                     <View style={[styles.moreIcon, { backgroundColor: `${accent}22` }]}>
                       <MaterialCommunityIcons name={iconMap[route.name] ?? "circle-outline"} size={22} color={accent} />
                     </View>
-                    <Text style={[styles.moreLabel, isDark && styles.moreLabelDark]}>{labelMap[route.name] ?? route.name}</Text>
+                    <Text style={[styles.moreLabel, { color: colors.textPrimary }]}>
+                      {labelMap[route.name] ?? route.name}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -236,82 +227,101 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
   );
 }
 
-function BloopButton({ isDark, onPress }: { isDark: boolean; onPress: () => void }) {
+// ── BloopButton — mascot image is NEVER tinted ───────────────────────────────
+function BloopButton({ isDark, colors, onPress }: {
+  isDark:  boolean;
+  colors:  ReturnType<typeof useColorMode>["colors"];
+  onPress: () => void;
+}) {
   return (
     <Pressable
       accessibilityLabel="Chat with Bloop"
       onPress={onPress}
-      style={({ pressed }) => [styles.aiButtonShell, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.aiButtonShell, { shadowColor: isDark ? colors.background : "#D6C3B9" }, pressed && styles.pressed]}
     >
       <LinearGradient
-        colors={
-          isDark
-            ? ["rgba(55,43,62,0.98)", "rgba(93,57,52,0.96)", "rgba(40,62,52,0.98)"]
-            : ["rgba(255,248,245,0.98)", "rgba(255,231,214,0.96)", "rgba(232,241,231,0.98)"]
+        colors={isDark
+          // Dark: plum-toned frame using surface / surfaceRaised / background tokens
+          ? ["rgba(46,35,48,0.98)", "rgba(74,57,77,0.96)", "rgba(17,8,18,0.98)"]
+          // Light: warm cream frame — keeps Bloop in her natural habitat
+          : ["rgba(255,248,245,0.98)", "rgba(255,231,214,0.96)", "rgba(232,241,231,0.98)"]
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.aiButton}
       >
         <View style={styles.aiImageWrap}>
+          {/* ⚠️  Image only — no tintColor, no overlays, no filters */}
           <CachedImage priority="high" source={bloop} style={styles.aiButtonImage} />
-          <View style={styles.chatOnlineDot} />
+          {/* Online indicator — uses fertileColor semantic token */}
+          <View style={[
+            styles.chatOnlineDot,
+            {
+              backgroundColor: colors.fertileColor,
+              borderColor:     isDark ? colors.surface : "#FFFFFF",
+            },
+          ]} />
         </View>
-        <View style={styles.aiChatMark}>
-          <MaterialCommunityIcons name="message-text-outline" size={12} color={palette.terracotta} />
+
+        {/* Chat badge — sits in corner of the button, not on the mascot */}
+        <View style={[
+          styles.aiChatMark,
+          { backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.88)" },
+        ]}>
+          <MaterialCommunityIcons name="message-text-outline" size={12} color={colors.primaryCTA} />
         </View>
       </LinearGradient>
     </Pressable>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  // ── Nav wrapper (transparent strip below the pill) ──────────────────────────
   navWrap: {
     paddingHorizontal: 18,
     paddingTop: 6,
     zIndex: 40,
   },
+
+  // ── Nav pill ─────────────────────────────────────────────────────────────────
+  // Color-sensitive props (bg, border, shadow) are applied inline using tokens.
   navBar: {
     alignItems: "center",
-    backgroundColor: "rgba(255,253,252,0.96)",
-    borderColor: "rgba(255,255,255,0.88)",
     borderRadius: 30,
     borderWidth: 1,
-    elevation: 6,
+    elevation: 8,
     flexDirection: "row",
     height: 72,
     justifyContent: "center",
-    marginBottom: 0,
     paddingHorizontal: 10,
-    shadowColor: palette.warmShadow,
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 22
+    shadowOpacity: 0.26,
+    shadowRadius: 24,
   },
-  navBarDark: {
-    backgroundColor: "rgba(27,24,34,0.96)",
-    borderColor: "rgba(255,255,255,0.12)",
-    shadowColor: "#000000",
-  },
+
+  // ── Tab layout ───────────────────────────────────────────────────────────────
   tabsRow: {
     alignItems: "center",
     flex: 1,
     flexDirection: "row",
     justifyContent: "center",
-    gap: 6
+    gap: 6,
   },
   tabSide: {
     alignItems: "center",
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-evenly",
-    minWidth: 0
+    minWidth: 0,
   },
   bloopCenter: {
     alignItems: "center",
     justifyContent: "center",
-    width: 64
+    width: 64,
   },
+
+  // ── Tab button ───────────────────────────────────────────────────────────────
   navButton: {
     alignItems: "center",
     borderRadius: 20,
@@ -319,27 +329,14 @@ const styles = StyleSheet.create({
     gap: 2,
     height: 56,
     justifyContent: "center",
-    minWidth: 0
-  },
-  navButtonActive: {
-    backgroundColor: "rgba(255,255,255,0.82)",
-    borderColor: "rgba(224,122,95,0.20)",
-    borderWidth: 1,
-    shadowColor: palette.terracotta,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12
-  },
-  navButtonActiveDark: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(224,122,95,0.32)",
+    minWidth: 0,
   },
   navActiveDot: {
     borderRadius: 2,
     bottom: 3,
     height: 4,
     position: "absolute",
-    width: 14
+    width: 14,
   },
   iconBubble: {
     alignItems: "center",
@@ -350,26 +347,23 @@ const styles = StyleSheet.create({
     width: 34,
   },
   navLabel: {
-    color: palette.muted,
     fontFamily: F.uiBold,
     fontSize: 9,
-    lineHeight: 11
+    lineHeight: 11,
   },
-  navLabelDark: {
-    color: "#D8D1E5"
-  },
+
+  // ── Bloop center button ───────────────────────────────────────────────────────
   aiButtonShell: {
     alignItems: "center",
     borderRadius: 34,
-    elevation: 12,
+    elevation: 14,
     height: 58,
     justifyContent: "center",
-    shadowColor: palette.warmShadow,
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.32,
     shadowRadius: 22,
     width: 58,
-    zIndex: 5
+    zIndex: 5,
   },
   aiButton: {
     alignItems: "center",
@@ -379,7 +373,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     overflow: "hidden",
-    width: "100%"
+    width: "100%",
   },
   aiImageWrap: {
     alignItems: "center",
@@ -387,102 +381,81 @@ const styles = StyleSheet.create({
     height: 42,
     justifyContent: "center",
     overflow: "hidden",
-    width: 42
+    width: 42,
   },
   aiButtonImage: {
     height: 40,
-    width: 40
+    width: 40,
   },
   chatOnlineDot: {
+    borderRadius: 4,
+    borderWidth: 1.5,
+    bottom: 0,
+    height: 8,
     position: "absolute",
     right: 2,
-    top: 3,
     width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#81B29A",
-    borderWidth: 1,
-    borderColor: "#FFFFFF"
   },
   aiChatMark: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.88)",
     borderRadius: 9,
     bottom: 6,
     height: 18,
     justifyContent: "center",
     position: "absolute",
     right: 8,
-    width: 18
+    width: 18,
   },
-  pressed: {
-    transform: [{ scale: 0.96 }]
-  },
+
+  // ── More sheet ────────────────────────────────────────────────────────────────
   moreScrim: {
-    backgroundColor: "rgba(22,18,28,0.32)",
     flex: 1,
     justifyContent: "flex-end",
-    padding: 18
+    padding: 18,
   },
   moreSheet: {
-    backgroundColor: "rgba(255,253,252,0.98)",
-    borderColor: "rgba(255,255,255,0.88)",
     borderRadius: 28,
     borderWidth: 1,
     padding: 18,
-    shadowColor: "#9B7B70",
     shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 26
-  },
-  moreSheetDark: {
-    backgroundColor: "rgba(27,24,34,0.98)",
-    borderColor: "rgba(255,255,255,0.12)"
+    shadowOpacity: 0.20,
+    shadowRadius: 28,
   },
   moreTitle: {
-    color: palette.deepCharcoal,
     fontFamily: F.uiBlack,
     fontSize: 15,
-    marginBottom: 14
-  },
-  moreTitleDark: {
-    color: "#F8FAFC"
+    marginBottom: 14,
   },
   moreGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10
+    gap: 10,
   },
   moreItem: {
     alignItems: "center",
-    backgroundColor: "rgba(255,250,247,0.92)",
-    borderColor: "rgba(224,122,95,0.10)",
     borderRadius: 18,
     borderWidth: 1,
     flexBasis: "30%",
     flexGrow: 1,
     gap: 8,
     minHeight: 88,
-    padding: 12
-  },
-  moreItemDark: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(255,255,255,0.10)"
+    padding: 12,
   },
   moreIcon: {
     alignItems: "center",
     borderRadius: 18,
     height: 38,
     justifyContent: "center",
-    width: 38
+    width: 38,
   },
   moreLabel: {
-    color: palette.deepCharcoal,
     fontFamily: F.uiBold,
     fontSize: 11,
-    textAlign: "center"
+    textAlign: "center",
   },
-  moreLabelDark: {
-    color: "#F8FAFC"
-  }
+
+  // ── Shared ────────────────────────────────────────────────────────────────────
+  pressed: {
+    transform: [{ scale: 0.96 }],
+  },
 });

@@ -226,9 +226,9 @@ export default function JournalScreen() {
               style={s.heroGrad}
             >
               {/* Sparkle decorations */}
-              <Text style={s.sparkle1}>✦</Text>
+              <Text style={s.sparkle1}>♥</Text>
               <Text style={s.sparkle2}>·</Text>
-              <Text style={s.sparkle3}>✦</Text>
+              <Text style={s.sparkle3}>♥</Text>
 
               {/* Left text */}
               <View style={s.heroLeft}>

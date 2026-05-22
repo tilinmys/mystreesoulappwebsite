@@ -3,7 +3,7 @@
  *
  * "How have you been feeling lately?" — mood grid, energy/stress sliders,
  * sleep rhythm selector. Emotionally safe, premium, non-clinical.
- * Same ambient gradient canvas as screens 1–3.
+ * Aligned with "Midnight Plum" dark-mode semantic design system.
  */
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,6 +26,8 @@ import { CachedImage } from "../../components/CachedImage";
 import { F } from "../../constants/fonts";
 import { getEmotionalDefaults, getOnboardingPrompt } from "../../constants/onboardingAdaptation";
 import { useOnboardingStore } from "../../store/onboardingStore";
+import { useColorMode } from "../../hooks/useColorMode";
+import { type AppColors } from "../../constants/colors";
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get("window");
@@ -97,7 +99,7 @@ const MOODS: MoodCard[] = [
   {
     id: "motivated",
     label: "Motivated",
-    icon: "star-shooting",
+    icon: "rocket-launch-outline",
     grad: ["#FAE57A", "#FEF4C0"],
     iconColor: "#B08800",
     textColor: "#7A5E00",
@@ -150,19 +152,30 @@ const SLEEP_OPTIONS: SleepOption[] = [
   },
 ];
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
-const C = {
-  terra:     "#E07A5F",
-  terraGlow: "rgba(224,122,95,0.22)",
-  onSurface: "#221B1C",
-  onVariant: "#6B4C55",
-  surface:   "rgba(255,255,255,0.66)",
-  border:    "rgba(255,255,255,0.82)",
-};
+// ─── Dynamic Styles Cache (Maximum Performance Engine) ──────────────────────────
+let darkStyles: ReturnType<typeof getStyles> | null = null;
+let lightStyles: ReturnType<typeof getStyles> | null = null;
+
+function useStyles() {
+  const { colors, isDark } = useColorMode();
+  if (isDark) {
+    if (!darkStyles) {
+      darkStyles = getStyles(colors, true);
+    }
+    return { colors, isDark, s: darkStyles! };
+  } else {
+    if (!lightStyles) {
+      lightStyles = getStyles(colors, false);
+    }
+    return { colors, isDark, s: lightStyles! };
+  }
+}
 
 // ─── Root component ───────────────────────────────────────────────────────────
 export default function EmotionalWellnessScreen() {
   const router = useRouter();
+  const { colors, isDark, s } = useStyles();
+
   const setEmotionalState = useOnboardingStore((s) => s.setEmotionalState);
   const setStressLevel    = useOnboardingStore((s) => s.setStressLevel);
   const setSleepScore     = useOnboardingStore((s) => s.setSleepScore);
@@ -174,18 +187,6 @@ export default function EmotionalWellnessScreen() {
   const [energy,        setEnergy       ] = useState(52);   // 0–100
   const [stress,        setStress       ] = useState(68);   // 0–100
   const [selectedSleep, setSelectedSleep] = useState(defaults.sleep);
-
-  const [supportSheetVisible, setSupportSheetVisible] = useState(false);
-  const supportSheetAnim = useRef(new Animated.Value(0)).current;
-
-  const showSupportSheet = () => {
-    setSupportSheetVisible(true);
-    Animated.timing(supportSheetAnim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-  };
-
-  const hideSupportSheet = () => {
-    Animated.timing(supportSheetAnim, { toValue: 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => setSupportSheetVisible(false));
-  };
 
   // ── Screen entrance ────────────────────────────────────────────────────────
   const entranceOp = useRef(new Animated.Value(0)).current;
@@ -271,7 +272,7 @@ export default function EmotionalWellnessScreen() {
             style={({ pressed }) => [s.headerBtn, pressed && s.pressed]}
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={20} color={C.onVariant} />
+            <Ionicons name="chevron-back" size={20} color={colors.textMuted} />
           </Pressable>
           <View style={s.headerCenter}>
             <Text style={s.brandName}>MyStree Soul</Text>
@@ -280,7 +281,7 @@ export default function EmotionalWellnessScreen() {
           {/* Step 4/4 badge */}
           <View style={s.progressRingOuter}>
             <LinearGradient
-              colors={["#E07A5F", "#F4A27D"]}
+              colors={isDark ? [colors.primaryCTA, colors.accentDark] : ["#E07A5F", "#F4A27D"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.progressRing}
@@ -347,7 +348,7 @@ export default function EmotionalWellnessScreen() {
           {/* ── Heading ──────────────────────────────────────────────── */}
           <Animated.View style={{ opacity: entranceOp, transform: [{ translateY: entranceY }] }}>
             <View style={s.focusPill}>
-              <MaterialCommunityIcons name="star-four-points" size={12} color={C.terra} />
+              <MaterialCommunityIcons name="heart-outline" size={12} color={colors.primaryCTA} />
               <Text style={s.focusPillText}>{prompt.focusLabel}</Text>
             </View>
             <Text style={s.heading}>{prompt.heading}</Text>
@@ -356,17 +357,16 @@ export default function EmotionalWellnessScreen() {
 
           {/* ── 3×2 Mood grid ───────────────────────────────────────── */}
           <Animated.View style={{ opacity: cardsOp, transform: [{ translateY: cardsY }], width: "100%" }}>
-          <View style={s.moodGrid}>
-            {MOODS.map((mood) => (
-              <MoodCard
-                key={mood.id}
-                mood={mood}
-                isSelected={selectedMood === mood.id}
-                onPress={() => setSelectedMood(mood.id)}
-              />
-            ))}
-          </View>
-
+            <View style={s.moodGrid}>
+              {MOODS.map((mood) => (
+                <MoodCard
+                  key={mood.id}
+                  mood={mood}
+                  isSelected={selectedMood === mood.id}
+                  onPress={() => setSelectedMood(mood.id)}
+                />
+              ))}
+            </View>
           </Animated.View>
 
           {/* ── Energy & Stress sliders ──────────────────────────────── */}
@@ -375,8 +375,8 @@ export default function EmotionalWellnessScreen() {
 
             <SliderRow
               icon="leaf"
-              iconBg="rgba(56,160,90,0.14)"
-              iconColor="#38A05A"
+              iconBg={isDark ? "rgba(126, 200, 160, 0.16)" : "rgba(56,160,90,0.14)"}
+              iconColor={isDark ? colors.fertileColor : "#38A05A"}
               label="Energy"
               value={energy}
               onChange={setEnergy}
@@ -390,8 +390,8 @@ export default function EmotionalWellnessScreen() {
 
             <SliderRow
               icon="lightning-bolt"
-              iconBg="rgba(107,66,187,0.12)"
-              iconColor="#6B42BB"
+              iconBg={isDark ? "rgba(181, 138, 200, 0.16)" : "rgba(107,66,187,0.12)"}
+              iconColor={isDark ? colors.textMuted : "#6B42BB"}
               label="Stress"
               value={stress}
               onChange={setStress}
@@ -418,36 +418,19 @@ export default function EmotionalWellnessScreen() {
           </View>
 
           {/* ── Support banner ───────────────────────────────────────── */}
-          <Pressable
-            style={({ pressed }) => [s.supportBanner, pressed && s.pressed]}
-            onPress={showSupportSheet}
-            accessibilityLabel="Open support options"
-          >
-            <View style={s.supportIconWrap}>
-              <LinearGradient
-                colors={["#FDDDE8", "#FBF0F4"]}
-                style={s.supportIconGrad}
-              >
-                <Ionicons name="heart" size={16} color="#C25C7E" />
-              </LinearGradient>
-            </View>
-            <Text style={s.supportText}>Connect with Bloop.</Text>
-            <Ionicons name="chevron-forward" size={16} color={C.onVariant} />
-          </Pressable>
-
           {/* ── Continue CTA ─────────────────────────────────────────── */}
           <Pressable
             onPress={handleContinue}
             style={({ pressed }) => [s.ctaShell, pressed && s.pressed]}
           >
             <LinearGradient
-              colors={["#E07A5F", "#F4A27D"]}
+              colors={isDark ? [colors.primaryCTA, colors.accentDark] : ["#E07A5F", "#F4A27D"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.ctaBtn}
             >
               <Text style={s.ctaText}>Continue</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFF" />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? colors.background : "#FFF"} />
             </LinearGradient>
           </Pressable>
 
@@ -462,12 +445,6 @@ export default function EmotionalWellnessScreen() {
         </ScrollView>
 
         {/* ── Bloop connect modal ──────────────────────────────────── */}
-        {supportSheetVisible && (
-          <BloopConnectModal
-            sheetAnim={supportSheetAnim}
-            onClose={hideSupportSheet}
-          />
-        )}
       </SafeAreaView>
     </View>
   );
@@ -483,6 +460,7 @@ function MoodCard({
   isSelected: boolean;
   onPress: () => void;
 }) {
+  const { colors, s, isDark } = useStyles();
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -494,6 +472,23 @@ function MoodCard({
     }
   }, [isSelected, pulse]);
 
+  // Determine dynamic gradient and text/icon colors
+  const cardGradColors: [string, string, ...string[]] = isSelected 
+    ? mood.grad 
+    : [colors.surface, colors.surface];
+
+  const cardBorderColor = isSelected 
+    ? mood.selBorder 
+    : colors.border;
+
+  const displayIconColor = isSelected 
+    ? mood.iconColor 
+    : colors.textMuted;
+
+  const displayTextColor = isSelected 
+    ? mood.textColor 
+    : colors.textMuted;
+
   return (
     <Pressable
       onPress={onPress}
@@ -501,16 +496,16 @@ function MoodCard({
     >
       <Animated.View style={{ transform: [{ scale: pulse }] }}>
         <LinearGradient
-          colors={mood.grad}
+          colors={cardGradColors}
           start={{ x: 0.1, y: 0 }}
           end={{ x: 0.9, y: 1 }}
           style={[
             s.moodCard,
+            { borderColor: cardBorderColor },
             isSelected && {
               borderWidth: 2,
-              borderColor: mood.selBorder,
               shadowColor: mood.selBorder,
-              shadowOpacity: 0.30,
+              shadowOpacity: isDark ? 0.40 : 0.30,
               shadowRadius: 16,
               elevation: 6,
             },
@@ -518,24 +513,24 @@ function MoodCard({
         >
           {/* Icon illustration area */}
           <View style={s.moodIconArea}>
-            <View style={[s.moodIconCircle, { backgroundColor: "rgba(255,255,255,0.38)" }]}>
+            <View style={[s.moodIconCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.38)" }]}>
               <MaterialCommunityIcons
                 name={mood.icon}
                 size={34}
-                color={mood.iconColor}
+                color={displayIconColor}
               />
             </View>
           </View>
 
           {/* Label */}
           <View style={s.moodLabelArea}>
-            <Text style={[s.moodLabel, { color: mood.textColor }]}>{mood.label}</Text>
+            <Text style={[s.moodLabel, { color: displayTextColor }]}>{mood.label}</Text>
           </View>
 
           {/* Selection badge */}
           {isSelected && (
-            <View style={[s.moodBadge, { backgroundColor: C.terra }]}>
-              <Ionicons name="checkmark" size={11} color="#FFF" />
+            <View style={[s.moodBadge, { backgroundColor: isDark ? colors.primaryCTA : "#E07A5F" }]}>
+              <Ionicons name="checkmark" size={11} color={isDark ? colors.background : "#FFF"} />
             </View>
           )}
         </LinearGradient>
@@ -568,6 +563,7 @@ function SliderRow({
   midLabel: string;
   rightLabel: string;
 }) {
+  const { s } = useStyles();
   // Use pageX (absolute screen coords) to eliminate locationX jitter
   const trackRef     = useRef<View>(null);
   const trackAbsLeft = useRef(0);
@@ -653,41 +649,60 @@ function SleepCard({
   isSelected: boolean;
   onPress: () => void;
 }) {
+  const { colors, s, isDark } = useStyles();
+
+  // Dynamic colors for unselected/selected states
+  const cardGradColors: [string, string, ...string[]] = isSelected 
+    ? option.grad 
+    : [colors.surface, colors.surface];
+
+  const cardBorderColor = isSelected 
+    ? (isDark ? colors.primaryCTA : "#E07A5F") 
+    : colors.border;
+
+  const displayIconColor = isSelected 
+    ? option.iconColor 
+    : colors.textMuted;
+
+  const displayTextColor = isSelected 
+    ? option.textColor 
+    : colors.textMuted;
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [s.sleepCardShell, pressed && s.pressed]}
     >
       <LinearGradient
-        colors={option.grad}
+        colors={cardGradColors}
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={[
           s.sleepCard,
+          { borderColor: cardBorderColor },
           isSelected && {
             borderWidth: 2,
-            borderColor: C.terra,
-            shadowColor: C.terra,
-            shadowOpacity: 0.28,
+            shadowColor: isDark ? colors.primaryCTA : "#E07A5F",
+            shadowOpacity: isDark ? 0.35 : 0.28,
             shadowRadius: 12,
             elevation: 5,
           },
         ]}
       >
         {/* Moon icon */}
-        <Ionicons name="moon" size={22} color={option.iconColor} />
+        <Ionicons name="moon" size={22} color={displayIconColor} />
 
-        {/* Star accents */}
+        {/* Soft dot accents */}
         <View style={s.sleepStarsRow}>
-          <MaterialCommunityIcons name="star-four-points" size={7} color={option.iconColor} style={{ opacity: 0.70 }} />
-          <MaterialCommunityIcons name="star-four-points" size={5} color={option.iconColor} style={{ opacity: 0.48, marginTop: 3 }} />
+          <MaterialCommunityIcons name="circle-small" size={9} color={displayIconColor} style={{ opacity: 0.70 }} />
+          <MaterialCommunityIcons name="circle-small" size={7} color={displayIconColor} style={{ opacity: 0.48, marginTop: 3 }} />
         </View>
 
-        <Text style={[s.sleepLabel, { color: option.textColor }]}>{option.label}</Text>
+        <Text style={[s.sleepLabel, { color: displayTextColor }]}>{option.label}</Text>
 
         {isSelected && (
-          <View style={s.sleepBadge}>
-            <Ionicons name="checkmark" size={9} color="#FFF" />
+          <View style={[s.sleepBadge, { backgroundColor: isDark ? colors.primaryCTA : "#E07A5F" }]}>
+            <Ionicons name="checkmark" size={9} color={isDark ? colors.background : "#FFF"} />
           </View>
         )}
       </LinearGradient>
@@ -696,8 +711,6 @@ function SleepCard({
 }
 
 // ─── BloopConnectModal ───────────────────────────────────────────────────────
-// Shown when user taps "Connect with Bloop". No phone numbers — just the mascot
-// and a message to complete onboarding first.
 function BloopConnectModal({
   sheetAnim,
   onClose,
@@ -705,6 +718,7 @@ function BloopConnectModal({
   sheetAnim: Animated.Value;
   onClose: () => void;
 }) {
+  const { colors, s, isDark } = useStyles();
   const translateY = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [440, 0] });
   const overlayOp  = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.50] });
 
@@ -741,13 +755,13 @@ function BloopConnectModal({
             style={({ pressed }) => [s.sheetPrimaryBtn, pressed && s.pressed]}
           >
             <LinearGradient
-              colors={["#E07A5F", "#F4A27D"]}
+              colors={isDark ? [colors.primaryCTA, colors.accentDark] : ["#E07A5F", "#F4A27D"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={s.sheetPrimaryGrad}
             >
-              <MaterialCommunityIcons name="robot-happy-outline" size={20} color="#FFF" />
-              <Text style={s.sheetPrimaryLabel}>Got it, let's continue!</Text>
+              <MaterialCommunityIcons name="robot-happy-outline" size={20} color={isDark ? colors.background : "#FFF"} />
+              <Text style={[s.sheetPrimaryLabel, { color: isDark ? colors.background : "#FFF" }]}>Got it, let's continue!</Text>
             </LinearGradient>
           </Pressable>
 
@@ -775,6 +789,7 @@ const PARTICLE_SEEDS = [
 ] as const;
 
 function FloatingParticles() {
+  const { isDark } = useStyles();
   const anims = useRef(PARTICLE_SEEDS.map(() => new Animated.Value(0.06))).current;
 
   useEffect(() => {
@@ -806,7 +821,7 @@ function FloatingParticles() {
               width: seed.size,
               height: seed.size,
               borderRadius: seed.size / 2,
-              backgroundColor: "rgba(224,122,95,0.30)",
+              backgroundColor: isDark ? "rgba(181, 138, 200, 0.30)" : "rgba(224,122,95,0.30)",
               opacity: anims[i],
             },
           ]}
@@ -816,654 +831,655 @@ function FloatingParticles() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  safe: {
-    flex: 1,
-  },
+// ─── Styles Generator ──────────────────────────────────────────────────────────
+function getStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    safe: {
+      flex: 1,
+    },
 
-  // Blobs — atmosphere only, 8-10% opacity
-  blob1: {
-    position: "absolute",
-    top: -140,
-    left: -110,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: "rgba(255,183,183,0.10)",
-  },
-  blob2: {
-    position: "absolute",
-    top: 320,
-    right: -160,
-    width: 380,
-    height: 380,
-    borderRadius: 190,
-    backgroundColor: "rgba(189,172,255,0.08)",
-  },
-  blob3: {
-    position: "absolute",
-    bottom: -80,
-    left: -90,
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    backgroundColor: "rgba(162,202,178,0.08)",
-  },
+    // Blobs — atmosphere only, 5% opacity dark, 8-10% light
+    blob1: {
+      position: "absolute",
+      top: -140,
+      left: -110,
+      width: 400,
+      height: 400,
+      borderRadius: 200,
+      backgroundColor: isDark ? "rgba(232, 166, 182, 0.05)" : "rgba(255,183,183,0.10)",
+    },
+    blob2: {
+      position: "absolute",
+      top: 320,
+      right: -160,
+      width: 380,
+      height: 380,
+      borderRadius: 190,
+      backgroundColor: isDark ? "rgba(181, 138, 200, 0.05)" : "rgba(189,172,255,0.08)",
+    },
+    blob3: {
+      position: "absolute",
+      bottom: -80,
+      left: -90,
+      width: 340,
+      height: 340,
+      borderRadius: 170,
+      backgroundColor: isDark ? "rgba(126, 200, 160, 0.05)" : "rgba(162,202,178,0.08)",
+    },
 
-  // Header
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SIDE_PAD,
-    paddingTop: 8,
-    paddingBottom: 6,
-    gap: 10,
-  },
-  headerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(248,244,248,0.96)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
-    shadowColor: C.onVariant,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 2,
-    flexShrink: 0,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  brandName: {
-    fontFamily: F.luxuryBold,
-    fontSize: 20,
-    color: C.onSurface,
-    letterSpacing: 0.3,
-  },
-  brandSub: {
-    fontFamily: F.bodyRegular,
-    fontSize: 13,
-    color: C.onVariant,
-    marginTop: 1,
-  },
-  progressRingOuter: {
-    shadowColor: C.terra,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 6,
-    borderRadius: 28,
-  },
-  progressRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 1,
-  },
-  progressNum: {
-    fontFamily: F.uiExtraBold,
-    fontSize: 18,
-    color: "#FFF",
-    lineHeight: 22,
-  },
-  progressSlash: {
-    fontFamily: F.uiLight,
-    fontSize: 14,
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 22,
-  },
-  progressDenom: {
-    fontFamily: F.uiMedium,
-    fontSize: 13,
-    color: "rgba(255,255,255,0.80)",
-    lineHeight: 22,
-  },
+    // Header
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: SIDE_PAD,
+      paddingTop: 8,
+      paddingBottom: 6,
+      gap: 10,
+    },
+    headerBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.20 : 0.08,
+      shadowRadius: 10,
+      elevation: 2,
+      flexShrink: 0,
+    },
+    headerCenter: {
+      flex: 1,
+      alignItems: "center",
+    },
+    brandName: {
+      fontFamily: F.luxuryBold,
+      fontSize: 20,
+      color: colors.textPrimary,
+      letterSpacing: 0.3,
+    },
+    brandSub: {
+      fontFamily: F.bodyRegular,
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    progressRingOuter: {
+      shadowColor: isDark ? "#000" : colors.primaryCTA,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.28,
+      shadowRadius: 14,
+      elevation: 6,
+      borderRadius: 28,
+    },
+    progressRing: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 1,
+    },
+    progressNum: {
+      fontFamily: F.uiExtraBold,
+      fontSize: 18,
+      color: isDark ? colors.background : "#FFF",
+      lineHeight: 22,
+    },
+    progressSlash: {
+      fontFamily: F.uiLight,
+      fontSize: 14,
+      color: isDark ? "rgba(34,24,34,0.70)" : "rgba(255,255,255,0.70)",
+      lineHeight: 22,
+    },
+    progressDenom: {
+      fontFamily: F.uiMedium,
+      fontSize: 13,
+      color: isDark ? "rgba(34,24,34,0.80)" : "rgba(255,255,255,0.80)",
+      lineHeight: 22,
+    },
 
-  // ScrollView
-  scroll: {
-    paddingHorizontal: SIDE_PAD,
-    paddingBottom: 16,
-  },
+    // ScrollView
+    scroll: {
+      paddingHorizontal: SIDE_PAD,
+      paddingBottom: 16,
+    },
 
-  // Hero
-  heroWrap: {
-    height: 220,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-    marginBottom: 2,
-  },
-  aura3: {
-    position: "absolute",
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    borderWidth: 1.5,
-    borderColor: "rgba(224,122,95,0.16)",
-  },
-  aura2: {
-    position: "absolute",
-    width: 168,
-    height: 168,
-    borderRadius: 84,
-    borderWidth: 2,
-    borderColor: "rgba(224,122,95,0.24)",
-  },
-  aura1: {
-    position: "absolute",
-    width: 124,
-    height: 124,
-    borderRadius: 62,
-    backgroundColor: "rgba(240,190,200,0.20)",
-    borderWidth: 1.5,
-    borderColor: "rgba(224,122,95,0.28)",
-  },
-  petal: {
-    position: "absolute",
-  },
-  petalLeft: {
-    left: W * 0.08,
-    top: 44,
-  },
-  petalRight: {
-    right: W * 0.10,
-    bottom: 40,
-  },
-  sparkle: {
-    position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(224,122,95,0.42)",
-  },
-  sparkleSm: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  bloopWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bloopGlow: {
-    position: "absolute",
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: "rgba(240,190,200,0.42)",
-  },
-  bloopImg: {
-    width: 112,
-    height: 104,
-  },
+    // Hero
+    heroWrap: {
+      height: 220,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 4,
+      marginBottom: 2,
+    },
+    aura3: {
+      position: "absolute",
+      width: 210,
+      height: 210,
+      borderRadius: 105,
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(232, 166, 182, 0.16)" : "rgba(224,122,95,0.16)",
+    },
+    aura2: {
+      position: "absolute",
+      width: 168,
+      height: 168,
+      borderRadius: 84,
+      borderWidth: 2,
+      borderColor: isDark ? "rgba(232, 166, 182, 0.24)" : "rgba(224,122,95,0.24)",
+    },
+    aura1: {
+      position: "absolute",
+      width: 124,
+      height: 124,
+      borderRadius: 62,
+      backgroundColor: isDark ? "rgba(232, 166, 182, 0.08)" : "rgba(240,190,200,0.20)",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(232, 166, 182, 0.28)" : "rgba(224,122,95,0.28)",
+    },
+    petal: {
+      position: "absolute",
+    },
+    petalLeft: {
+      left: W * 0.08,
+      top: 44,
+    },
+    petalRight: {
+      right: W * 0.10,
+      bottom: 40,
+    },
+    sparkle: {
+      position: "absolute",
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? "rgba(232, 166, 182, 0.42)" : "rgba(224,122,95,0.42)",
+    },
+    sparkleSm: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+    },
+    bloopWrap: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    bloopGlow: {
+      position: "absolute",
+      width: 104,
+      height: 104,
+      borderRadius: 52,
+      backgroundColor: isDark ? "rgba(232, 166, 182, 0.14)" : "rgba(240,190,200,0.42)",
+    },
+    bloopImg: {
+      width: 112,
+      height: 104,
+    },
 
-  // Heading
-  focusPill: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "rgba(248,244,248,0.98)",
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
-    marginBottom: 10,
-  },
-  focusPillText: {
-    fontFamily: F.uiBlack,
-    fontSize: 10,
-    color: C.terra,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  heading: {
-    fontFamily: F.luxuryBold,
-    fontSize: 34,
-    lineHeight: 40,
-    color: C.onSurface,
-    textAlign: "center",
-    letterSpacing: 0.2,
-    marginTop: 4,
-  },
-  headingSub: {
-    fontFamily: F.uiMedium,
-    fontSize: 14,
-    color: C.onVariant,
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 22,
-  },
+    // Heading
+    focusPill: {
+      alignSelf: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 10,
+    },
+    focusPillText: {
+      fontFamily: F.uiBlack,
+      fontSize: 10,
+      color: colors.primaryCTA,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    heading: {
+      fontFamily: F.luxuryBold,
+      fontSize: 34,
+      lineHeight: 40,
+      color: colors.textPrimary,
+      textAlign: "center",
+      letterSpacing: 0.2,
+      marginTop: 4,
+    },
+    headingSub: {
+      fontFamily: F.uiMedium,
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: "center",
+      marginTop: 8,
+      marginBottom: 22,
+    },
 
-  // Mood grid
-  moodGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: MOOD_GAP,
-    marginBottom: 18,
-  },
-  moodShell: {
-    width: MOOD_W,
-    borderRadius: 26,
-    shadowColor: "#7A4A5C",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 4,
-  },
-  moodCard: {
-    width: MOOD_W,
-    height: MOOD_H,
-    borderRadius: 26,
-    overflow: "hidden",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.70)",
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 12,
-  },
-  moodIconArea: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  moodIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.55)",
-  },
-  moodLabelArea: {
-    paddingHorizontal: 6,
-    paddingBottom: 2,
-  },
-  moodLabel: {
-    fontFamily: F.uiBold,
-    fontSize: 12,
-    lineHeight: 16,
-    textAlign: "center",
-    letterSpacing: 0.2,
-  },
-  moodBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: C.terra,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.38,
-    shadowRadius: 8,
-    elevation: 4,
-  },
+    // Mood grid
+    moodGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: MOOD_GAP,
+      marginBottom: 18,
+    },
+    moodShell: {
+      width: MOOD_W,
+      borderRadius: 26,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.25 : 0.12,
+      shadowRadius: 18,
+      elevation: 4,
+    },
+    moodCard: {
+      width: MOOD_W,
+      height: MOOD_H,
+      borderRadius: 26,
+      overflow: "hidden",
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: "center",
+      paddingTop: 12,
+      paddingBottom: 12,
+    },
+    moodIconArea: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    moodIconCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.25)",
+    },
+    moodLabelArea: {
+      paddingHorizontal: 6,
+      paddingBottom: 2,
+    },
+    moodLabel: {
+      fontFamily: F.uiBold,
+      fontSize: 12,
+      lineHeight: 16,
+      textAlign: "center",
+      letterSpacing: 0.2,
+    },
+    moodBadge: {
+      position: "absolute",
+      top: 8,
+      right: 8,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.20,
+      shadowRadius: 8,
+      elevation: 4,
+    },
 
-  // Glass card
-  glassCard: {
-    borderRadius: 28,
-    padding: 20,
-    backgroundColor: "rgba(250,247,249,0.98)",
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
-    shadowColor: "#8B5E6D",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 20,
-    elevation: 3,
-    marginBottom: 14,
-  },
-  cardTitle: {
-    fontFamily: F.uiBold,
-    fontSize: 15,
-    color: C.onSurface,
-    marginBottom: 18,
-    letterSpacing: 0.2,
-  },
+    // Glass card (Standard surface container)
+    glassCard: {
+      borderRadius: 28,
+      padding: 20,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.20 : 0.07,
+      shadowRadius: 20,
+      elevation: 3,
+      marginBottom: 14,
+    },
+    cardTitle: {
+      fontFamily: F.uiBold,
+      fontSize: 15,
+      color: colors.textPrimary,
+      marginBottom: 18,
+      letterSpacing: 0.2,
+    },
 
-  // Slider
-  sliderSpacer: {
-    height: 18,
-  },
-  sliderRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  sliderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    width: 100,
-    paddingTop: 6,
-  },
-  sliderIconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sliderLabel: {
-    fontFamily: F.uiSemiBold,
-    fontSize: 13,
-    color: C.onVariant,
-  },
-  sliderRight: {
-    flex: 1,
-  },
-  sliderTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(200,180,190,0.28)",
-    overflow: "visible",
-    marginTop: 11,
-  },
-  sliderFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  sliderThumb: {
-    position: "absolute",
-    top: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: "rgba(224,192,177,0.70)",
-    shadowColor: C.terra,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 3,
-    marginLeft: -12,
-  },
-  sliderAxisRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  axisLabel: {
-    fontFamily: F.uiRegular,
-    fontSize: 10,
-    color: "rgba(107,76,85,0.60)",
-  },
+    // Slider
+    sliderSpacer: {
+      height: 18,
+    },
+    sliderRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+    },
+    sliderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      width: 100,
+      paddingTop: 6,
+    },
+    sliderIconBadge: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sliderLabel: {
+      fontFamily: F.uiSemiBold,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    sliderRight: {
+      flex: 1,
+    },
+    sliderTrack: {
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(200,180,190,0.28)",
+      overflow: "visible",
+      marginTop: 11,
+    },
+    sliderFill: {
+      height: "100%",
+      borderRadius: 4,
+    },
+    sliderThumb: {
+      position: "absolute",
+      top: -8,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: "#FFFFFF",
+      borderWidth: 1.5,
+      borderColor: colors.borderStrong,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.22,
+      shadowRadius: 8,
+      elevation: 3,
+      marginLeft: -12,
+    },
+    sliderAxisRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 8,
+    },
+    axisLabel: {
+      fontFamily: F.uiRegular,
+      fontSize: 10,
+      color: colors.textMuted,
+      opacity: 0.60,
+    },
 
-  // Sleep row
-  sleepRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  sleepCardShell: {
-    flex: 1,
-    borderRadius: 20,
-    shadowColor: "#7A4A5C",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  sleepCard: {
-    height: 90,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.65)",
-    gap: 4,
-  },
-  sleepStarsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  sleepLabel: {
-    fontFamily: F.uiBold,
-    fontSize: 10,
-    lineHeight: 14,
-    textAlign: "center",
-    letterSpacing: 0.1,
-  },
-  sleepBadge: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: C.terra,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: C.terra,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
-  },
+    // Sleep row
+    sleepRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    sleepCardShell: {
+      flex: 1,
+      borderRadius: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.22 : 0.10,
+      shadowRadius: 14,
+      elevation: 3,
+    },
+    sleepCard: {
+      height: 90,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      gap: 4,
+    },
+    sleepStarsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+    },
+    sleepLabel: {
+      fontFamily: F.uiBold,
+      fontSize: 10,
+      lineHeight: 14,
+      textAlign: "center",
+      letterSpacing: 0.1,
+    },
+    sleepBadge: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.20,
+      shadowRadius: 6,
+      elevation: 3,
+    },
 
-  // Support banner
-  supportBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "rgba(250,247,249,0.98)",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.70)",
-    padding: 14,
-    marginBottom: 14,
-    shadowColor: "#8B5E6D",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    elevation: 2,
-  },
-  supportIconWrap: {
-    shadowColor: "#C25C7E",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 2,
-    borderRadius: 16,
-  },
-  supportIconGrad: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  supportText: {
-    flex: 1,
-    fontFamily: F.uiMedium,
-    fontSize: 13,
-    color: C.onVariant,
-  },
+    // Support banner
+    supportBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      marginBottom: 14,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: isDark ? 0.18 : 0.06,
+      shadowRadius: 14,
+      elevation: 2,
+    },
+    supportIconWrap: {
+      shadowColor: colors.primaryCTA,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.18,
+      shadowRadius: 8,
+      elevation: 2,
+      borderRadius: 16,
+    },
+    supportIconGrad: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    supportText: {
+      flex: 1,
+      fontFamily: F.uiMedium,
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
 
-  // CTA
-  ctaShell: {
-    borderRadius: 999,
-    shadowColor: C.terra,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.26,
-    shadowRadius: 22,
-    elevation: 6,
-    marginBottom: 16,
-  },
-  ctaBtn: {
-    height: 60,
-    borderRadius: 999,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  ctaText: {
-    fontFamily: F.uiBlack,
-    fontSize: 17,
-    color: "#FFF",
-    letterSpacing: 0.3,
-  },
+    // CTA
+    ctaShell: {
+      borderRadius: 999,
+      shadowColor: colors.primaryCTA,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.26,
+      shadowRadius: 22,
+      elevation: 6,
+      marginBottom: 16,
+    },
+    ctaBtn: {
+      height: 60,
+      borderRadius: 999,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+    },
+    ctaText: {
+      fontFamily: F.uiBlack,
+      fontSize: 17,
+      color: isDark ? colors.background : "#FFF",
+      letterSpacing: 0.3,
+    },
 
-  // Dots
-  dotsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-  },
-  dotActive: {
-    width: 26,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.terra,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(224,122,95,0.28)",
-  },
+    // Dots
+    dotsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+    },
+    dotActive: {
+      width: 26,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primaryCTA,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? "rgba(181, 138, 200, 0.28)" : "rgba(224,122,95,0.28)",
+    },
 
-  // Support sheet
-  supportSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 52,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.10,
-    shadowRadius: 24,
-    elevation: 20,
-    zIndex: 100,
-  },
-  sheetHandle: {
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "rgba(0,0,0,0.12)",
-    marginBottom: 22,
-  },
-  sheetIconBubble: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: "rgba(194,92,126,0.10)",
-    borderWidth: 1,
-    borderColor: "rgba(194,92,126,0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  sheetTitle: {
-    fontFamily: F.luxuryBold,
-    fontSize: 22,
-    color: C.onSurface,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  sheetBody: {
-    fontFamily: F.uiRegular,
-    fontSize: 14,
-    color: C.onVariant,
-    textAlign: "center",
-    lineHeight: 21,
-    marginBottom: 26,
-    paddingHorizontal: 8,
-  },
-  sheetActions: {
-    width: "100%",
-    gap: 11,
-  },
-  sheetPrimaryBtn: {
-    width: "100%",
-    borderRadius: 999,
-    shadowColor: C.terra,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  sheetPrimaryGrad: {
-    height: 54,
-    borderRadius: 999,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 9,
-  },
-  sheetPrimaryLabel: {
-    fontFamily: F.uiBlack,
-    fontSize: 15,
-    color: "#FFFFFF",
-    letterSpacing: 0.4,
-  },
-  // Bloop mascot in modal
-  bloopModalArea: {
-    width: 120,
-    height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  bloopModalHalo: {
-    position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(240,190,200,0.30)",
-  },
-  bloopModalImg: {
-    width: 104,
-    height: 96,
-  },
+    // Support sheet (Bottom modal dialog)
+    supportSheet: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 52,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -8 },
+      shadowOpacity: 0.20,
+      shadowRadius: 24,
+      elevation: 20,
+      zIndex: 100,
+    },
+    sheetHandle: {
+      width: 42,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)",
+      marginBottom: 22,
+    },
+    sheetIconBubble: {
+      width: 64,
+      height: 64,
+      borderRadius: 20,
+      backgroundColor: "rgba(194,92,126,0.10)",
+      borderWidth: 1,
+      borderColor: "rgba(194,92,126,0.22)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 14,
+    },
+    sheetTitle: {
+      fontFamily: F.luxuryBold,
+      fontSize: 22,
+      color: colors.textPrimary,
+      marginBottom: 8,
+      textAlign: "center",
+    },
+    sheetBody: {
+      fontFamily: F.uiRegular,
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: "center",
+      lineHeight: 21,
+      marginBottom: 26,
+      paddingHorizontal: 8,
+    },
+    sheetActions: {
+      width: "100%",
+      gap: 11,
+    },
+    sheetPrimaryBtn: {
+      width: "100%",
+      borderRadius: 999,
+      shadowColor: colors.primaryCTA,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.22,
+      shadowRadius: 16,
+      elevation: 6,
+    },
+    sheetPrimaryGrad: {
+      height: 54,
+      borderRadius: 999,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 9,
+    },
+    sheetPrimaryLabel: {
+      fontFamily: F.uiBlack,
+      fontSize: 15,
+      color: isDark ? colors.background : "#FFFFFF",
+      letterSpacing: 0.4,
+    },
+    bloopModalArea: {
+      width: 120,
+      height: 120,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    bloopModalHalo: {
+      position: "absolute",
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: isDark ? "rgba(232, 166, 182, 0.14)" : "rgba(240,190,200,0.30)",
+    },
+    bloopModalImg: {
+      width: 104,
+      height: 96,
+    },
 
-  sheetGhostBtn: {
-    height: 46,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(232,225,230,0.80)",
-    backgroundColor: "rgba(250,247,249,0.98)",
-  },
-  sheetGhostLabel: {
-    fontFamily: F.uiBold,
-    fontSize: 14,
-    color: C.onVariant,
-  },
+    sheetGhostBtn: {
+      height: 46,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceRaised,
+    },
+    sheetGhostLabel: {
+      fontFamily: F.uiBold,
+      fontSize: 14,
+      color: colors.textMuted,
+    },
 
-  // Misc
-  pressed: {
-    transform: [{ scale: 0.97 }],
-  },
-});
+    // Misc
+    pressed: {
+      transform: [{ scale: 0.97 }],
+    },
+  });
+}

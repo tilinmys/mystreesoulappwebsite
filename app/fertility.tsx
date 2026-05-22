@@ -8,7 +8,7 @@ export default function FertilityScreen() {
       title="Fertility"
       description="Track ovulation, understand your fertile window, and receive personalised guidance on your journey. Built thoughtfully for every path to parenthood."
       icon="flower-outline"
-      iconColor="#81B29A"
+      iconColor="#E8A6B6"
       bloopImage={bloopImage}
       showBackButton
     />

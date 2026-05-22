@@ -24,6 +24,7 @@ import {
   Svg,
 } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
+import { darkColors } from "../../constants/colors";
 import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
 import { openBloopWithContext } from "../../lib/openBloopWithContext";
@@ -33,22 +34,23 @@ const imgBloop = require("../../public/images/bloop-welcome.webp");
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
-  bg1:      "#FDF8F7",
-  bg2:      "#FFF2F0",
-  bg3:      "#F8EAF5",
-  text:     "#161C2D",
-  muted:    "#8A7A9A",
-  faint:    "#C4B8D4",
-  terra:    "#E07A5F",
-  lavender: "#9277C8",
-  pink:     "#D45C82",
-  orange:   "#F4A261",
-  sage:     "#5E9B6B",
-  navy:     "#3D4B7C",
-  white:    "#FFFFFF",
-  cardBg:   "rgba(255,255,255,0.78)",
-  cardBdr:  "rgba(255,255,255,0.90)",
-  sheetBg:  "#FFFCFB",
+  bg1:      darkColors.background,
+  bg2:      darkColors.background,
+  bg3:      darkColors.background,
+  text:     darkColors.textPrimary,
+  muted:    darkColors.textMuted,
+  faint:    darkColors.textHint,
+  terra:    darkColors.primaryCTA,
+  lavender: darkColors.textMuted,
+  pink:     darkColors.periodColor,
+  orange:   darkColors.warning,
+  sage:     darkColors.fertileColor,
+  navy:     darkColors.surfaceRaised,
+  white:    darkColors.textPrimary,
+  cardBg:   darkColors.surface,
+  cardBdr:  darkColors.border,
+  sheetBg:  darkColors.surface,
+  surfaceRaised: darkColors.surfaceRaised,
 } as const;
 
 // ── Screen / graph geometry ───────────────────────────────────────────────────
@@ -68,11 +70,11 @@ const WAVE_DATA = [
   88, 81, 70, 56, 40, 30, 35, 44, 56, 66, 70, 66, 62,
 ];
 const GRAPH_MARKERS = [
-  { idx: 3,  emoji: "🌙", bg: "rgba(146,119,200,0.15)", border: C.lavender },
-  { idx: 9,  emoji: "😊", bg: "rgba(212,92,130,0.12)",  border: C.pink     },
-  { idx: 14, emoji: "⚡", bg: "rgba(244,162,97,0.15)",  border: C.orange   },
-  { idx: 19, emoji: "🩸", bg: "rgba(212,92,130,0.15)",  border: C.pink     },
-  { idx: 24, emoji: "🌸", bg: "rgba(212,92,130,0.12)",  border: C.pink     },
+  { idx: 3,  emoji: "🌙", bg: `${C.surfaceRaised}CC`, border: C.lavender },
+  { idx: 9,  emoji: "😊", bg: `${C.surfaceRaised}CC`, border: C.pink     },
+  { idx: 14, emoji: "⚡", bg: `${C.surfaceRaised}CC`, border: C.orange   },
+  { idx: 19, emoji: "🩸", bg: `${C.surfaceRaised}CC`, border: C.pink     },
+  { idx: 24, emoji: "🌸", bg: `${C.surfaceRaised}CC`, border: C.pink     },
 ] as const;
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────
@@ -121,10 +123,10 @@ const PATTERN_DETAIL = {
 
 // ── All insights teaser rows ──────────────────────────────────────────────────
 const INSIGHT_TEASERS = [
-  { icon: "moon-waning-crescent", color: C.lavender, bg: "rgba(146,119,200,0.12)", title: "Sleep quality improved by 18%", sub: "Last 7 days vs. prior week", locked: false },
-  { icon: "emoticon-happy-outline", color: C.pink, bg: "rgba(212,92,130,0.10)", title: "Mood was highest at ovulation",  sub: "Day 13–15 · Typical pattern",  locked: false },
-  { icon: "lightning-bolt", color: C.orange, bg: "rgba(244,162,97,0.12)", title: "Energy dips 2 days post-ovulation", sub: "Consistent across 3 cycles", locked: true  },
-  { icon: "water-outline", color: "#4A9EBF", bg: "rgba(74,158,191,0.12)", title: "Hydration lowest during PMS week",  sub: "Below target on 4/7 days",     locked: true  },
+  { icon: "moon-waning-crescent", color: C.lavender, bg: C.surfaceRaised, title: "Sleep quality improved by 18%", sub: "Last 7 days vs. prior week", locked: false },
+  { icon: "emoticon-happy-outline", color: C.pink, bg: C.surfaceRaised, title: "Mood was highest at ovulation",  sub: "Day 13–15 · Typical pattern",  locked: false },
+  { icon: "lightning-bolt", color: C.orange, bg: C.surfaceRaised, title: "Energy dips 2 days post-ovulation", sub: "Consistent across 3 cycles", locked: true  },
+  { icon: "water-outline", color: C.sage, bg: C.surfaceRaised, title: "Hydration lowest during PMS week",  sub: "Below target on 4/7 days",     locked: true  },
 ];
 
 // ── Filter options ────────────────────────────────────────────────────────────
@@ -155,13 +157,13 @@ function GlowSphere() {
       </Defs>
       <Circle cx={cx} cy={cy} r={r+30} fill="url(#gl2)" />
       <Circle cx={cx} cy={cy} r={r+16} fill="url(#gl1)" />
-      <Path d={sw2} stroke="rgba(255,255,255,0.30)" strokeWidth={1.2} fill="none" />
-      <Path d={sw1} stroke="rgba(255,255,255,0.42)" strokeWidth={1.6} fill="none" />
+      <Path d={sw2} stroke={C.text} opacity="0.30" strokeWidth={1.2} fill="none" />
+      <Path d={sw1} stroke={C.text} opacity="0.42" strokeWidth={1.6} fill="none" />
       <Circle cx={cx} cy={cy} r={r} fill="url(#sph)" />
-      <Circle cx={cx-r*0.28} cy={cy-r*0.30} r={r*0.20} fill="rgba(255,255,255,0.38)" />
-      <Circle cx={cx-r*0.18} cy={cy-r*0.20} r={r*0.09} fill="rgba(255,255,255,0.62)" />
-      <Circle cx={cx+r*0.55} cy={cy-r*0.60} r={3}   fill="rgba(255,255,255,0.90)" />
-      <Circle cx={cx+r*0.72} cy={cy-r*0.20} r={1.8} fill="rgba(255,255,255,0.70)" />
+      <Circle cx={cx-r*0.28} cy={cy-r*0.30} r={r*0.20} fill={C.text} opacity="0.38" />
+      <Circle cx={cx-r*0.18} cy={cy-r*0.20} r={r*0.09} fill={C.text} opacity="0.62" />
+      <Circle cx={cx+r*0.55} cy={cy-r*0.60} r={3}   fill={C.text} opacity="0.90" />
+      <Circle cx={cx+r*0.72} cy={cy-r*0.20} r={1.8} fill={C.text} opacity="0.70" />
     </Svg>
   );
 }
@@ -169,7 +171,7 @@ function GlowSphere() {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function InsightsScreen() {
   const router   = useRouter();
-  const { isDark } = useColorMode();
+  const { colors } = useColorMode();
   const wavePath = buildWavePath(WAVE_DATA);
 
   // Filter sheet state
@@ -237,18 +239,18 @@ export default function InsightsScreen() {
   }
 
   return (
-    <SafeAreaView edges={["top"]} style={[styles.safe, isDark && styles.safeDark]}>
+    <SafeAreaView edges={["top"]} style={[styles.safe, { backgroundColor: colors.background }]}>
       {/* Background */}
       <LinearGradient
-        colors={isDark ? ["#111827", "#1C1730", "#241822"] : [C.bg1, C.bg2, C.bg3]}
+        colors={[colors.background, colors.background, colors.background]}
         locations={[0, 0.48, 1]}
         start={{ x: 0.3, y: 0 }}
         end={{ x: 0.7, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <View style={[styles.blob, { top: -50,   left: -50,  backgroundColor: "rgba(146,119,200,0.09)", width: 180, height: 180 }]} />
-      <View style={[styles.blob, { top: 280,   right: -70, backgroundColor: "rgba(212,92,130,0.07)",  width: 220, height: 220 }]} />
-      <View style={[styles.blob, { bottom: 100, left: -40, backgroundColor: "rgba(244,162,97,0.07)",  width: 200, height: 200 }]} />
+      <View style={[styles.blob, { top: -50,   left: -50,  backgroundColor: `${colors.surfaceRaised}26`, width: 180, height: 180 }]} />
+      <View style={[styles.blob, { top: 280,   right: -70, backgroundColor: `${colors.periodColor}18`,  width: 220, height: 220 }]} />
+      <View style={[styles.blob, { bottom: 100, left: -40, backgroundColor: `${colors.warning}18`,  width: 200, height: 200 }]} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never" style={styles.scrollView}>
 
@@ -278,7 +280,7 @@ export default function InsightsScreen() {
               onPress={() => askBloop("Explain my wellness insights.")}
             >
               <LinearGradient
-                colors={["#C4A0E8", "#9277C8"]}
+                colors={[C.terra, C.lavender]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.sparkleBtn}
@@ -295,14 +297,14 @@ export default function InsightsScreen() {
           style={({ pressed }) => [pressed && { opacity: 0.88 }]}
         >
           <LinearGradient
-            colors={["#EAD9FA", "#F4E3F6", "#FCE6EE"]}
+            colors={[C.cardBg, C.surfaceRaised, C.cardBg]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
           >
             <View style={styles.heroLeft}>
               <View style={styles.heroTagRow}>
-                <Text style={styles.heroTagStar}>✦</Text>
+                <Text style={styles.heroTagStar}>♥</Text>
                 <Text style={styles.heroTag}>AI Insight</Text>
               </View>
               <Text style={styles.heroTitle}>
@@ -397,7 +399,7 @@ export default function InsightsScreen() {
           style={({ pressed }) => [pressed && { opacity: 0.88 }]}
         >
           <LinearGradient
-            colors={["rgba(197,173,232,0.28)", "rgba(180,155,224,0.22)"]}
+            colors={[C.cardBg, C.surfaceRaised]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={styles.predCard}
           >
@@ -407,7 +409,7 @@ export default function InsightsScreen() {
               </View>
               <View style={styles.predText}>
                 <View style={styles.predTagRow}>
-                  <Text style={styles.predTagStar}>✦</Text>
+                  <Text style={styles.predTagStar}>♥</Text>
                   <Text style={styles.predTag}>AI Prediction</Text>
                 </View>
                 <Text style={styles.predTitle}>Your next energy peak{"\n"}may happen in 3 days.</Text>
@@ -415,8 +417,8 @@ export default function InsightsScreen() {
             </View>
             <View style={styles.predMountains}>
               <Svg width={MTN_W} height={MTN_H}>
-                <Path d={mtn1} fill="rgba(146,119,200,0.14)" />
-                <Path d={mtn2} fill="rgba(146,119,200,0.22)" />
+                <Path d={mtn1} fill={C.surfaceRaised} />
+                <Path d={mtn2} fill={C.navy} />
               </Svg>
             </View>
           </LinearGradient>
@@ -437,7 +439,7 @@ export default function InsightsScreen() {
             style={[styles.insightMiniCard, { flex: 1.12 }]}
             onPress={() => askBloop("What did you notice about my sleep this week?")}
           >
-            <View style={[styles.insightMiniIcon, { backgroundColor: "rgba(146,119,200,0.14)" }]}>
+            <View style={[styles.insightMiniIcon, { backgroundColor: C.surfaceRaised }]}>
               <MaterialCommunityIcons name="moon-waning-crescent" size={18} color={C.lavender} />
             </View>
             <View>
@@ -452,7 +454,7 @@ export default function InsightsScreen() {
             style={styles.insightMiniCard}
             onPress={() => askBloop("My mood has been calm today. Is this typical for my current cycle phase?")}
           >
-            <View style={[styles.insightMiniIcon, { backgroundColor: "rgba(212,92,130,0.12)" }]}>
+            <View style={[styles.insightMiniIcon, { backgroundColor: C.surfaceRaised }]}>
               <MaterialCommunityIcons name="emoticon-happy-outline" size={18} color={C.pink} />
             </View>
             <View>
@@ -469,7 +471,7 @@ export default function InsightsScreen() {
             style={styles.insightMiniCard}
             onPress={() => askBloop("My energy is high today. How can I make the most of this energy window in my cycle?")}
           >
-            <View style={[styles.insightMiniIcon, { backgroundColor: "rgba(244,162,97,0.14)" }]}>
+            <View style={[styles.insightMiniIcon, { backgroundColor: C.surfaceRaised }]}>
               <MaterialCommunityIcons name="lightning-bolt" size={18} color={C.orange} />
             </View>
             <View>
@@ -484,7 +486,7 @@ export default function InsightsScreen() {
 
         {/* ── For your current phase ───────────────────────────────────── */}
         <View style={[styles.card, styles.phaseCard]}>
-          <View style={[styles.phaseIconWrap, { backgroundColor: "rgba(94,155,107,0.14)" }]}>
+          <View style={[styles.phaseIconWrap, { backgroundColor: C.surfaceRaised }]}>
             <MaterialCommunityIcons name="sprout-outline" size={22} color={C.sage} />
           </View>
           <View style={styles.phaseText}>
@@ -572,7 +574,7 @@ export default function InsightsScreen() {
             {/* Apply */}
             <Pressable style={styles.filterApplyBtn} onPress={closeFilter}>
               <LinearGradient
-                colors={["#C4A0E8", "#9277C8"]}
+                colors={[C.terra, C.lavender]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
@@ -651,7 +653,7 @@ export default function InsightsScreen() {
                 onPress={() => closePattern(PATTERN_DETAIL.bloopMsg)}
               >
                 <LinearGradient
-                  colors={["rgba(197,173,232,0.25)", "rgba(242,228,255,0.90)"]}
+                  colors={[C.cardBg, C.surfaceRaised]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={StyleSheet.absoluteFill}
                 />
@@ -726,7 +728,7 @@ export default function InsightsScreen() {
               onPress={() => closeViewAll("Give me a summary of my wellness insights from this week and what they mean for my cycle.")}
             >
               <LinearGradient
-                colors={["rgba(197,173,232,0.25)", "rgba(242,228,255,0.90)"]}
+                colors={[C.cardBg, C.surfaceRaised]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
@@ -748,7 +750,7 @@ export default function InsightsScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { backgroundColor: C.bg1, flex: 1 },
-  safeDark: { backgroundColor: "#111827" },
+  safeDark: { backgroundColor: C.bg1 },
   scrollView: { flex: 1, backgroundColor: "transparent" },
   scroll: { paddingHorizontal: CARD_MX, paddingTop: 8, paddingBottom: 28, flexGrow: 1 },
   blob: { borderRadius: 999, position: "absolute" },
@@ -763,7 +765,7 @@ const styles = StyleSheet.create({
   headerIconBtn: {
     alignItems: "center", backgroundColor: C.cardBg, borderColor: C.cardBdr,
     borderRadius: 20, borderWidth: 1, height: 40, justifyContent: "center",
-    shadowColor: "#D6C3B9", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8, width: 40,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8, width: 40,
   },
   sparkleBtn: {
     alignItems: "center", borderRadius: 20, height: 40, justifyContent: "center",
@@ -772,27 +774,27 @@ const styles = StyleSheet.create({
 
   // Hero card
   heroCard: {
-    borderColor: "rgba(255,255,255,0.70)", borderRadius: 24, borderWidth: 1,
+    borderColor: C.cardBdr, borderRadius: 24, borderWidth: 1,
     flexDirection: "row", marginBottom: 14, overflow: "hidden", padding: 20,
-    shadowColor: "rgba(180,140,220,0.3)", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 1, shadowRadius: 20,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 1, shadowRadius: 20,
   },
   heroLeft: { flex: 1, justifyContent: "center", paddingRight: 8 },
   heroTagRow: { alignItems: "center", flexDirection: "row", gap: 5, marginBottom: 10 },
   heroTagStar: { color: C.lavender, fontSize: 11 },
   heroTag:  { color: C.lavender, fontFamily: F.uiSemiBold, fontSize: 12, letterSpacing: 0.3 },
   heroTitle: { color: C.text, fontFamily: F.luxuryBold, fontSize: 18, lineHeight: 26, marginBottom: 10 },
-  heroSub:  { color: "#5A4A6A", fontFamily: F.bodyRegular, fontSize: 13, lineHeight: 18 },
+  heroSub:  { color: C.muted, fontFamily: F.bodyRegular, fontSize: 13, lineHeight: 18 },
   heroRight: { alignItems: "center", justifyContent: "center", marginRight: -10, marginTop: -10 },
 
   // Generic card
   card: {
     backgroundColor: C.cardBg, borderColor: C.cardBdr, borderRadius: 24, borderWidth: 1,
     marginBottom: 14, padding: CARD_PX,
-    shadowColor: "#D6C3B9", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 18,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 18,
   },
   cardHeaderRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
   cardTitle: { color: C.text, fontFamily: F.uiBold, fontSize: 15 },
-  todayBadge: { backgroundColor: "rgba(146,119,200,0.10)", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  todayBadge: { backgroundColor: C.surfaceRaised, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   todayBadgeText: { color: C.lavender, fontFamily: F.uiSemiBold, fontSize: 12 },
 
   // Wave graph
@@ -808,21 +810,21 @@ const styles = StyleSheet.create({
 
   // Key pattern sub-card
   keyPatternCard: {
-    alignItems: "center", backgroundColor: "rgba(255,255,255,0.65)", borderColor: "rgba(255,255,255,0.88)",
+    alignItems: "center", backgroundColor: C.surfaceRaised, borderColor: C.cardBdr,
     borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 12, marginTop: 14, padding: 14,
   },
-  keyPatternIconWrap: { alignItems: "center", backgroundColor: "rgba(146,119,200,0.12)", borderRadius: 12, height: 38, justifyContent: "center", width: 38 },
+  keyPatternIconWrap: { alignItems: "center", backgroundColor: C.cardBg, borderRadius: 12, height: 38, justifyContent: "center", width: 38 },
   keyPatternText: { flex: 1 },
   keyPatternTitle: { color: C.text, fontFamily: F.uiBold, fontSize: 13, marginBottom: 2 },
   keyPatternBody: { color: C.muted, fontFamily: F.bodyRegular, fontSize: 13, lineHeight: 18 },
 
   // AI Prediction card
   predCard: {
-    alignItems: "center", borderColor: "rgba(180,155,224,0.30)", borderRadius: 22, borderWidth: 1,
+    alignItems: "center", borderColor: C.cardBdr, borderRadius: 22, borderWidth: 1,
     flexDirection: "row", marginBottom: 18, overflow: "hidden", padding: 16,
   },
   predLeft: { alignItems: "center", flex: 1, flexDirection: "row", gap: 12 },
-  predIconWrap: { alignItems: "center", backgroundColor: "rgba(146,119,200,0.14)", borderRadius: 14, height: 48, justifyContent: "center", width: 48 },
+  predIconWrap: { alignItems: "center", backgroundColor: C.surfaceRaised, borderRadius: 14, height: 48, justifyContent: "center", width: 48 },
   predText: { flex: 1 },
   predTagRow: { alignItems: "center", flexDirection: "row", gap: 4, marginBottom: 4 },
   predTagStar: { color: C.lavender, fontSize: 10 },
@@ -840,7 +842,7 @@ const styles = StyleSheet.create({
   insightMiniCard: {
     alignItems: "center", backgroundColor: C.cardBg, borderColor: C.cardBdr, borderRadius: 20, borderWidth: 1,
     flex: 1, flexDirection: "row", gap: 10, padding: 12,
-    shadowColor: "#D6C3B9", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.10, shadowRadius: 12,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.10, shadowRadius: 12,
   },
   insightMiniIcon: { alignItems: "center", borderRadius: 14, height: 36, justifyContent: "center", width: 36 },
   insightMiniTitle: { color: C.muted, fontFamily: F.uiMedium, fontSize: 11, marginBottom: 1 },
@@ -856,7 +858,7 @@ const styles = StyleSheet.create({
   phaseTitle: { color: C.text, fontFamily: F.uiBold, fontSize: 13, marginBottom: 3 },
   phaseBody: { color: C.muted, fontFamily: F.bodyRegular, fontSize: 13, lineHeight: 18 },
   exploreBtn: {
-    alignItems: "center", backgroundColor: "rgba(94,155,107,0.12)", borderColor: "rgba(94,155,107,0.25)",
+    alignItems: "center", backgroundColor: C.surfaceRaised, borderColor: C.cardBdr,
     borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 2, paddingHorizontal: 12, paddingVertical: 7,
   },
   exploreBtnText: { color: C.sage, fontFamily: F.uiSemiBold, fontSize: 12 },
@@ -870,12 +872,12 @@ const styles = StyleSheet.create({
   bloopBody: { color: C.text, fontFamily: F.uiBold, fontSize: 13, lineHeight: 18 },
 
   // ── Shared sheet primitives ────────────────────────────────────────────────
-  sheetScrim: { backgroundColor: "rgba(0,0,0,0.38)", zIndex: 40 },
-  sheetHandle: { width: 38, height: 4, borderRadius: 2, backgroundColor: "rgba(0,0,0,0.12)", alignSelf: "center", marginBottom: 18 },
+  sheetScrim: { backgroundColor: `${C.bg1}CC`, zIndex: 40 },
+  sheetHandle: { width: 38, height: 4, borderRadius: 2, backgroundColor: C.surfaceRaised, alignSelf: "center", marginBottom: 18 },
   sheetTitle: { fontFamily: F.luxuryBold, fontSize: 22, color: C.text, letterSpacing: -0.2, marginBottom: 4 },
   sheetSub:   { fontFamily: F.uiRegular, fontSize: 13, color: C.muted, marginBottom: 22, lineHeight: 18 },
   sheetCloseBtn: { alignSelf: "center", paddingVertical: 10, paddingHorizontal: 24, marginTop: 6 },
-  sheetCloseText: { fontFamily: F.uiMedium, fontSize: 13.5, color: "rgba(22,28,45,0.35)" },
+  sheetCloseText: { fontFamily: F.uiMedium, fontSize: 13.5, color: C.muted },
 
   // ── Filter sheet ───────────────────────────────────────────────────────────
   filterSheet: {
@@ -883,18 +885,18 @@ const styles = StyleSheet.create({
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.cardBdr,
     paddingHorizontal: 24, paddingBottom: 40, paddingTop: 14,
     zIndex: 50,
-    shadowColor: "#000", shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 14,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 14,
   },
   filterGroupLabel: { fontFamily: F.uiSemiBold, fontSize: 12, color: C.muted, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10 },
   filterChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 22 },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.04)", borderWidth: 1, borderColor: "rgba(0,0,0,0.06)",
+    backgroundColor: C.surfaceRaised, borderWidth: 1, borderColor: C.cardBdr,
   },
-  filterChipActive: { backgroundColor: "rgba(146,119,200,0.15)", borderColor: C.lavender + "55" },
+  filterChipActive: { backgroundColor: C.navy, borderColor: C.lavender + "55" },
   filterChipText: { fontFamily: F.uiMedium, fontSize: 13, color: C.muted },
   filterChipTextActive: { color: C.lavender, fontFamily: F.uiSemiBold },
   filterApplyBtn: {
@@ -909,20 +911,20 @@ const styles = StyleSheet.create({
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.cardBdr,
     paddingHorizontal: 24, paddingTop: 14,
     zIndex: 50,
-    shadowColor: "#000", shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 14,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 14,
   },
   patternTagRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   patternTag: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    backgroundColor: "rgba(146,119,200,0.12)", borderRadius: 12,
+    backgroundColor: C.surfaceRaised, borderRadius: 12,
     paddingHorizontal: 10, paddingVertical: 5,
   },
   patternTagText: { fontFamily: F.uiSemiBold, fontSize: 11.5, color: C.lavender },
   patternCycleTag: {
-    backgroundColor: "rgba(244,162,97,0.12)", borderRadius: 12,
+    backgroundColor: C.surfaceRaised, borderRadius: 12,
     paddingHorizontal: 10, paddingVertical: 5,
   },
   patternCycleTagText: { fontFamily: F.uiSemiBold, fontSize: 11.5, color: C.orange },
@@ -936,7 +938,7 @@ const styles = StyleSheet.create({
   patternHelpText: { fontFamily: F.uiRegular, fontSize: 14.5, color: C.text, lineHeight: 22, flex: 1 },
   patternBloopBtn: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    borderRadius: 20, borderWidth: 1, borderColor: "rgba(146,119,200,0.25)",
+    borderRadius: 20, borderWidth: 1, borderColor: C.cardBdr,
     paddingHorizontal: 18, paddingVertical: 15,
     overflow: "hidden", marginTop: 4, marginBottom: 4,
   },
@@ -948,18 +950,18 @@ const styles = StyleSheet.create({
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: C.cardBdr,
     paddingHorizontal: 24, paddingBottom: 36, paddingTop: 14,
     zIndex: 50,
-    shadowColor: "#000", shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 14,
+    shadowColor: C.bg1, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 14,
   },
   viewAllHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
-  viewAllBadge: { backgroundColor: "rgba(146,119,200,0.12)", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  viewAllBadge: { backgroundColor: C.surfaceRaised, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   viewAllBadgeText: { fontFamily: F.uiSemiBold, fontSize: 12, color: C.lavender },
   viewAllRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingVertical: 13,
-    borderBottomWidth: 1, borderBottomColor: "rgba(0,0,0,0.045)",
+    borderBottomWidth: 1, borderBottomColor: C.cardBdr,
   },
   viewAllRowLocked: { opacity: 0.52 },
   viewAllRowIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", flexShrink: 0 },
@@ -968,14 +970,14 @@ const styles = StyleSheet.create({
   viewAllRowSub:   { fontFamily: F.uiRegular,  fontSize: 12, color: C.muted },
   viewAllMoreBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "rgba(146,119,200,0.08)", borderRadius: 14,
+    backgroundColor: C.surfaceRaised, borderRadius: 14,
     paddingHorizontal: 14, paddingVertical: 10,
     marginTop: 12, marginBottom: 16,
   },
   viewAllMoreText: { fontFamily: F.uiMedium, fontSize: 12.5, color: C.lavender, flex: 1 },
   viewAllBloopBtn: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    borderRadius: 20, borderWidth: 1, borderColor: "rgba(146,119,200,0.25)",
+    borderRadius: 20, borderWidth: 1, borderColor: C.cardBdr,
     paddingHorizontal: 18, paddingVertical: 15,
     overflow: "hidden", marginBottom: 4,
   },

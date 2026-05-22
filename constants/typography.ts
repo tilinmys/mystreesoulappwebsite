@@ -1,32 +1,19 @@
+/**
+ * MyStree Soul — typography.ts  v3
+ *
+ * Thin re-export shim — the canonical type scale now lives in constants/fonts.ts
+ * as the `TS` object.  This file keeps the handful of `typography.xxx` references
+ * alive while Phase 3 migrates them to `TS.xxx`.
+ *
+ * @deprecated  Import `TS` from `./fonts` in new code.
+ */
+import { TS } from "./fonts";
+
 export const typography = {
-  headingFamily: "serif",
-  bodyFamily: "System",
-  screenTitle: {
-    fontFamily: "serif",
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: "800" as const
-  },
-  heroTitle: {
-    fontFamily: "serif",
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "800" as const
-  },
-  sectionTitle: {
-    fontFamily: "serif",
-    fontSize: 23,
-    lineHeight: 29,
-    fontWeight: "800" as const
-  },
-  body: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "700" as const
-  },
-  caption: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "800" as const
-  }
+  heroTitle:    TS.heroTitle,
+  sectionTitle: TS.sectionTitle,
+  body:         TS.body,
+  caption:      TS.caption,
+  // Kept for any legacy spread usage — identical to TS.sectionTitle
+  screenTitle:  TS.sectionTitle,
 };

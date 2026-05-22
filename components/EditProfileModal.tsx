@@ -47,7 +47,7 @@ const C = {
 
 // ── Health goal chips ─────────────────────────────────────────────────────────
 const GOALS = [
-  { id: "cycle",       label: "Cycle Tracking",    icon: "water",                   color: "#E07A5F" },
+  { id: "cycle",       label: "Full Cycle Tracking",    icon: "water",                   color: "#E07A5F" },
   { id: "peace",       label: "Calm & Peace",       icon: "weather-night",            color: "#9277C8" },
   { id: "sleep",       label: "Better Sleep",       icon: "moon-waning-crescent",     color: "#6E86D8" },
   { id: "fitness",     label: "Fitness",            icon: "run-fast",                 color: "#5E9B6B" },

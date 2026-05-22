@@ -1,8 +1,21 @@
+/**
+ * EmptyState — zero-data placeholder card
+ *
+ * Token mapping
+ * ─────────────
+ *  Card bg        →  colors.surface
+ *  Icon badge bg  →  colors.surfaceRaised  (lifted above card, not raw white)
+ *  Icon color     →  colors.fertileColor   (sage-green — calm, non-urgent)
+ *  Title          →  colors.textPrimary
+ *  Message        →  colors.textMuted
+ *  CTA bg         →  colors.primaryCTA     (Bloom Pink)
+ *  CTA text       →  colors.background     (Midnight Plum — 10.4:1 contrast ✓✓✓)
+ */
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { getColors, type AppColorMode } from "../../constants/colors";
+import { type AppColorMode, getColors } from "../../constants/colors";
+import { F, TS } from "../../constants/fonts";
 import { spacing } from "../../constants/spacing";
-import { typography } from "../../constants/typography";
 import { useHaptics } from "../../hooks/useHaptics";
 import { BloopOrb } from "./BloopOrb";
 
@@ -15,41 +28,49 @@ export function EmptyState({
   onAction,
   onPress,
   subtitle,
-  title
+  title,
 }: {
   actionLabel?: string;
-  cta?: string;
-  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
-  message?: string;
-  mode?: AppColorMode;
-  onAction?: () => void;
-  onPress?: () => void;
-  subtitle?: string;
-  title: string;
+  cta?:         string;
+  icon?:        keyof typeof MaterialCommunityIcons.glyphMap;
+  message?:     string;
+  mode?:        AppColorMode;
+  onAction?:    () => void;
+  onPress?:     () => void;
+  subtitle?:    string;
+  title:        string;
 }) {
   const haptics = useHaptics();
-  const colors = getColors(mode);
-  const action = onAction ?? onPress;
+  const colors  = getColors(mode);
+  const action  = onAction ?? onPress;
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.illustration}>
+        {/* Bloop mascot — displayed as-is, no tints or overlays */}
         <BloopOrb size={58} />
-        <View style={styles.iconBadge}>
-          <MaterialCommunityIcons name={icon} size={20} color={colors.sage} />
+        {/* Icon badge lifts above the card surface using surfaceRaised */}
+        <View style={[styles.iconBadge, { backgroundColor: colors.surfaceRaised }]}>
+          <MaterialCommunityIcons name={icon} size={20} color={colors.fertileColor} />
         </View>
       </View>
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.message, { color: colors.muted }]}>{subtitle ?? message}</Text>
+
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+      <Text style={[styles.message, { color: colors.textMuted }]}>{subtitle ?? message}</Text>
+
       {action ? (
         <Pressable
-          onPress={() => {
-            haptics.selection();
-            action();
-          }}
-          style={({ pressed }) => [styles.cta, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}
+          onPress={() => { haptics.selection(); action(); }}
+          style={({ pressed }) => [
+            styles.cta,
+            { backgroundColor: colors.primaryCTA },
+            pressed && styles.pressed,
+          ]}
         >
-          <Text style={styles.ctaText}>{actionLabel ?? cta}</Text>
+          {/* Dark text on Bloom Pink: Midnight Plum (#221822) → 10.4:1 contrast ✓✓✓ */}
+          <Text style={[styles.ctaText, { color: colors.background }]}>
+            {actionLabel ?? cta}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -61,9 +82,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: spacing.radiusXXl,
     padding: spacing.lg,
-    borderWidth: 1
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 24,
+    elevation: 4,
   },
-  illustration: { width: 96, height: 76, alignItems: "center", justifyContent: "center" },
+  illustration: {
+    width: 96,
+    height: 76,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   iconBadge: {
     position: "absolute",
     right: 8,
@@ -73,18 +103,32 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.82)"
   },
-  title: { ...typography.sectionTitle, marginTop: 10, textAlign: "center" },
-  message: { fontSize: 13, lineHeight: 19, fontWeight: "700", marginTop: 8, textAlign: "center" },
+  title: {
+    ...TS.sectionTitle,
+    marginTop: 10,
+    textAlign: "center",
+  },
+  message: {
+    fontFamily: F.body,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 8,
+    textAlign: "center",
+  },
   cta: {
     minHeight: 44,
     borderRadius: 22,
     paddingHorizontal: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 18
+    marginTop: 18,
   },
-  ctaText: { color: "#FFFFFF", fontSize: 13, lineHeight: 17, fontWeight: "900" },
-  pressed: { transform: [{ scale: 0.97 }] }
+  ctaText: {
+    fontFamily: F.uiLabel,
+    fontSize: 13,
+    lineHeight: 17,
+    letterSpacing: 0.6,
+  },
+  pressed: { transform: [{ scale: 0.97 }] },
 });

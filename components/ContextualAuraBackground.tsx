@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet, View } from "react-native";
+import { useColorMode } from "../hooks/useColorMode";
+import { getColors } from "../constants/colors";
 
 type MaterialIconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -95,7 +97,7 @@ const palettes: Record<
       { icon: "account-heart-outline", color: "#E07A5F", size: 18, side: "left", top: 104, delay: 120, duration: 960 },
       { icon: "head-heart-outline", color: "#81B29A", size: 18, side: "right", top: 286, delay: 320, duration: 940 },
       { icon: "watch-variant", color: "#BDB2FF", size: 18, side: "left", top: 486, delay: 540, duration: 980 },
-      { icon: "star-four-points-outline", color: "#F4A261", size: 18, side: "right", top: 626, delay: 740, duration: 940 }
+      { icon: "flower-outline", color: "#F4A261", size: 18, side: "right", top: 626, delay: 740, duration: 940 }
     ]
   },
   bloop: {
@@ -129,7 +131,7 @@ const palettes: Record<
     glowC: "rgba(244,162,97,0.08)",
     particles: [
       { icon: "cloud-outline", color: "#A8DADC", size: 18, side: "left", top: 110, delay: 120, duration: 960 },
-      { icon: "star-four-points-outline", color: "#BDB2FF", size: 18, side: "right", top: 270, delay: 320, duration: 940 },
+      { icon: "flower-outline", color: "#BDB2FF", size: 18, side: "right", top: 270, delay: 320, duration: 940 },
       { icon: "face-woman-shimmer-outline", color: "#F4A261", size: 18, side: "left", top: 476, delay: 540, duration: 980 },
       { icon: "heart-outline", color: "#81B29A", size: 17, side: "right", top: 640, delay: 740, duration: 960 }
     ]
@@ -172,10 +174,13 @@ const palettes: Record<
   }
 };
 
-export function ContextualAuraBackground({ variant }: { variant: Variant }) {
-  const width = Dimensions.get("window").width;
-  const config = palettes[variant];
-  const blob = useRef(new Animated.Value(0)).current;
+export function ContextualAuraBackground({ variant, forceDark }: { variant: Variant; forceDark?: boolean }) {
+  const width   = Dimensions.get("window").width;
+  const config  = palettes[variant];
+  const { isDark: systemIsDark, colors: systemColors } = useColorMode();
+  const isDark = forceDark ? true : systemIsDark;
+  const colors = forceDark ? getColors("dark") : systemColors;
+  const blob   = useRef(new Animated.Value(0)).current;
   const values = useRef(config.particles.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
@@ -228,7 +233,10 @@ export function ContextualAuraBackground({ variant }: { variant: Variant }) {
   const scale = blob.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] });
 
   return (
-    <View pointerEvents="none" style={[styles.layer, { backgroundColor: config.base }]}>
+    // In dark mode: transparent — the screen's dark background (#221822) shows through.
+    // Light mode: use the variant's warm-cream base so particles read correctly.
+    // Phase 3 will update individual particle/glow colors for dark-mode legibility.
+    <View pointerEvents="none" style={[styles.layer, { backgroundColor: isDark ? colors.background : config.base }]}>
       <Animated.View style={[styles.washA, { backgroundColor: config.glowA, transform: [{ translateY: drift }, { rotate: "-12deg" }] }]} />
       <Animated.View style={[styles.washB, { backgroundColor: config.glowB, transform: [{ translateY: reverseDrift }, { rotate: "18deg" }] }]} />
       <Animated.View style={[styles.washC, { backgroundColor: config.glowC, transform: [{ translateX: drift }, { scale }, { rotate: "-8deg" }] }]} />

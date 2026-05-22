@@ -42,6 +42,22 @@ import {
   Inter_900Black,
 } from "@expo-google-fonts/inter";
 
+// ── Cormorant Garamond — elegant serif display (Phase 4 display swap) ─────────
+import {
+  CormorantGaramond_500Medium,
+  CormorantGaramond_500Medium_Italic,
+  CormorantGaramond_600SemiBold,
+  CormorantGaramond_600SemiBold_Italic,
+} from "@expo-google-fonts/cormorant-garamond";
+
+// ── Manrope — modern structural sans (Phase 4 body/UI swap) ───────────────────
+import {
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from "@expo-google-fonts/manrope";
+
 import { preloadAppImages } from "../components/imagePreload";
 import { useColorMode } from "../hooks/useColorMode";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
@@ -84,6 +100,16 @@ export default function RootLayout() {
       Inter_700Bold,
       Inter_800ExtraBold,
       Inter_900Black,
+      // ── Cormorant Garamond (elegant serif display) ─────────────────────────
+      CormorantGaramond_500Medium,
+      CormorantGaramond_500Medium_Italic,
+      CormorantGaramond_600SemiBold,
+      CormorantGaramond_600SemiBold_Italic,
+      // ── Manrope (modern sans body/UI) ──────────────────────────────────────
+      Manrope_400Regular,
+      Manrope_500Medium,
+      Manrope_600SemiBold,
+      Manrope_700Bold,
     }).then(() => setFontsReady(true));
   }, []);
 

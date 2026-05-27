@@ -3,7 +3,7 @@ import type { ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -12,7 +12,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
+  type DimensionValue,
 } from "react-native";
 // Note: react-native-reanimated 4.x requires a dev-client build and cannot run
 // in Expo Go. All entrance animations are handled with React Native's built-in
@@ -21,11 +22,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Polyline } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
 import { DailyLogSheet } from "../../components/cycle/DailyLogSheet";
+import { FittedText } from "../../components/system/FittedText";
 import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
 import { useOnboardingStore, type LifeStage } from "../../store/onboardingStore";
 import { useDailyLogStore } from "../../store/dailyLogStore";
 import { darkColors, lightColors, type AppColors } from "../../constants/colors";
+import {
+  resolveDashboardPersonalization,
+  resolveDashboardGridOrder,
+  isGridVisible as sharedIsGridVisible,
+  getDashboardGridState,
+} from "../../lib/gridVisibilityEngine";
+import type {
+  DashboardGridId,
+  DashboardPersonalizationConfig,
+} from "../../types/personalization";
 
 const bloopWelcome       = require("../../public/images/bloop-welcome.webp");
 const bloopCalm          = require("../../public/images/bloop-calm.webp");
@@ -37,24 +49,30 @@ const companionYogi      = require("../../public/images/companion-yogi-cutout.we
 const { width: W } = Dimensions.get("window");
 const DASHBOARD_HERO_DISMISSED_KEY = "mystree.dashboard.hero.dismissed";
 
+// ── Phase 2 mascot constraint (design, not personalization) ───────────────────
+// Maximum one Bloop mascot per dashboard view. Assets kept; decorative
+// duplicates suppressed with named flags so the intent is clear in code.
+const MASCOT_CYCLE_CARD_VISIBLE = false;
+const MASCOT_MH_HUB_VISIBLE     = false;
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// â”€â”€ Static data structures (Dynamic Color Mapping) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Static data structures (Dynamic Color Mapping) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function getHealthWay(colors: AppColors) {
   return [
     { label: "Period\ntracker",    icon: "water",               iconColor: colors.periodColor, bg: `${colors.periodColor}22` },
-    { label: "Symptoms\ntracker",  icon: "heart",               iconColor: colors.primaryCTA,  bg: `${colors.primaryCTA}22` },
+    { label: "Symptoms\ntracker",  icon: "clipboard-pulse-outline", iconColor: colors.primaryCTA,  bg: `${colors.primaryCTA}22` },
     { label: "Wellness",           icon: "flower-outline",      iconColor: colors.warning,     bg: `${colors.warning}22` },
     { label: "Health\ninsights",   icon: "chart-bubble",        iconColor: colors.fertileColor,bg: `${colors.fertileColor}22` },
   ] as const;
 }
 
-// â”€â”€ Animated circle helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Animated circle helper â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const AnimCircle = Animated.createAnimatedComponent(Circle);
 
-// â”€â”€ Dynamic Styles Cache (Maximum Performance Engine) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Dynamic Styles Cache (Maximum Performance Engine) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 let darkStyles: ReturnType<typeof getStyles> | null = null;
 let lightStyles: ReturnType<typeof getStyles> | null = null;
 let darkPremiumStyles: ReturnType<typeof getPremiumStyles> | null = null;
@@ -77,29 +95,91 @@ function useStyles() {
   }
 }
 
-// â”€â”€ Root screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Phase 4: Personalization — see lib/gridVisibilityEngine.ts ───────────────
+// Types: types/personalization.ts
+// Engine: resolveDashboardPersonalization, isGridVisible, getDashboardGridState
+// Priority scoring: lib/onboardingPriorityEngine.ts → resolveDashboardFlags
+// Copy: lib/copyPersonalizationEngine.ts → resolveDashboardCopyMap
+// Icons: lib/iconPersonalizationEngine.ts → resolveDashboardIconMap
+//
+// Known goal IDs stored by onboarding:
+//   "cycle"         → isCycleFocused  → CycleHero
+//   "self_love"     → emotionalState + stress flags → MentalHealthHub (secondary)
+//   "nutrition"     → isNutritionFocused → NourishPreview
+//   "inner_harmony" → WellnessReset condition
+//   "goal_setting"  → not mapped to a specific grid (Phase 5)
+//
+// ✓ Phase 4 fix applied: fertilityIntent normalization now strips underscores
+//   (normalizeFertilityIntent in onboardingPriorityEngine.ts line 15-17).
+//   Comparison safely uses "maybe later" (space). No workaround needed in JSX.
+
+// ── Root screen ───────────────────────────────────────────────────────────────
 export default function DashboardScreen() {
   const router   = useRouter();
   const { colors, isDark, s, ps } = useStyles();
 
-  // â”€â”€ Personalisation data from onboarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Personalisation data from onboarding ──────────────────────────────────
+  const name           = useOnboardingStore((s) => s.name);
   const selectedGoals  = useOnboardingStore((s) => s.selectedGoals);
   const lifeStage      = useOnboardingStore((s) => s.lifeStage);
   const stressLevel    = useOnboardingStore((s) => s.stressLevel);
   const sleepScore     = useOnboardingStore((s) => s.sleepScore);
   const emotionalState = useOnboardingStore((s) => s.emotionalState);
+  const cycleBasics    = useOnboardingStore((s) => s.cycleBasics);
 
-  // Goal IDs from adaptive onboarding and personalization.
-  const hasMentalHealthGoal = selectedGoals.some((g) =>
-    ["self_love", "stress_rec", "mindful", "better_sleep"].includes(g)
+  // ── Phase 4: Shared personalization engine ─────────────────────────────────
+  // TODO: Architectural Migration Step
+  // In the next cleanup phase, transition this screen logic to the pure dashboardEngine:
+  //
+  // import { resolveDashboardState } from "../../lib/dashboardEngine";
+  // import { getCycleWheelData } from "../../lib/cycleEngine";
+  //
+  // const cycleState = getCycleWheelData(cycleBasics);
+  // const todayLog = useDailyLogStore.getState().getLogForDate(todayKey());
+  // const dashboardState = resolveDashboardState({
+  //   onboardingProfile: { name, selectedGoals, lifeStage, stressLevel, sleepScore, emotionalState, cycleBasics },
+  //   cycleState,
+  //   todayLog,
+  // });
+  //
+  // Source: lib/gridVisibilityEngine.ts → resolveDashboardPersonalization
+  // Input shape: types/personalization.ts → DashboardPersonalizationInput
+  const dashboardConfig: DashboardPersonalizationConfig = useMemo(
+    () =>
+      resolveDashboardPersonalization({
+        name,
+        selectedGoals,
+        lifeStage,
+        stressLevel,
+        sleepScore,
+        emotionalState,
+        cycleBasics: {
+          fertilityIntent: cycleBasics.fertilityIntent,
+          supportNeeds:    cycleBasics.supportNeeds,
+        },
+      }),
+    [name, selectedGoals, lifeStage, stressLevel, sleepScore, emotionalState, cycleBasics]
   );
+
+  /**
+   * Returns true when the named grid should render.
+   * Includes both "visible" (primary) and "secondary" grids — the engine
+   * places HealthInsights and MentalHealthHub in secondaryGrids, not
+   * visibleGrids, but both states mean "render it."
+   */
+  function isGridVisible(gridId: DashboardGridId): boolean {
+    return (
+      sharedIsGridVisible(dashboardConfig, gridId) ||
+      getDashboardGridState(dashboardConfig, gridId) === "secondary"
+    );
+  }
 
   const [logOpen, setLogOpen]           = useState(false);
   const [nudgeState, setNudgeState] = useState<"loading" | "logged" | "nudge" | "dismissed">("loading");
 
   const hasLoggedToday = useDailyLogStore((s) => s.hasLoggedToday);
 
-  // â”€â”€ Premium gate sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Premium gate sheet â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   const [premiumSheetVisible, setPremiumSheetVisible] = useState(false);
   const [premiumFeature, setPremiumFeature] = useState<{ title: string; desc: string }>({
     title: "", desc: "",
@@ -110,7 +190,7 @@ export default function DashboardScreen() {
     setPremiumFeature({ title, desc });
     setPremiumSheetVisible(true);
     Animated.timing(premiumSheetAnim, {
-      toValue: 1, duration: 340,
+      toValue: 1, duration: 240,
       easing: Easing.out(Easing.cubic), useNativeDriver: true,
     }).start();
   }
@@ -128,9 +208,27 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     Animated.timing(ringProgress, {
-      toValue: 1, duration: 1400, useNativeDriver: false,
+      toValue: 1, duration: 260, useNativeDriver: false,
     }).start();
   }, []);
+
+  // ── Phase 6: adaptive section fade-in ────────────────────────────────────
+  const adaptiveCardsOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(adaptiveCardsOpacity, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Ordered list of adaptive grid IDs, sorted by weight from the shared engine
+  const adaptiveCards = useMemo(
+    () => resolveDashboardGridOrder(dashboardConfig),
+    [dashboardConfig]
+  );
 
   useEffect(() => {
     // Check if already logged today first (fast Zustand read), then check dismissed flag.
@@ -194,12 +292,12 @@ export default function DashboardScreen() {
             <LogSuccessStrip />
           </AnimatedFadeIn>
         ) : nudgeState === "dismissed" ? (
-          <AnimatedFadeIn duration={320}>
+          <AnimatedFadeIn duration={240}>
             <LogPillNudge onLog={() => setLogOpen(true)} />
           </AnimatedFadeIn>
         ) : null}
 
-        {/* 3 â”€â”€ Today at a glance */}
+        {/* 3 ── Today at a glance */}
         <Text style={s.sectionLabel}>Today at a glance</Text>
         <TodayGrid
           ringOffset={ringOffset}
@@ -209,62 +307,122 @@ export default function DashboardScreen() {
           onLog={() => setLogOpen(true)}
         />
 
-        {/* 4 â”€â”€ Your health, your way */}
-        <Text style={s.sectionLabel}>Your health, your way</Text>
-        <HealthWayRow router={router} />
-
-        {/* 5 â”€â”€ Health insights */}
-        <InsightsSection onSeeMore={() => router.navigate("/(tabs)/insights")} />
-
-        {/* 6 â”€â”€ Health overview strip */}
-        <Text style={s.sectionLabel}>Your health overview</Text>
-        <HealthOverviewStrip
-          emotionalState={emotionalState}
-          sleepScore={sleepScore}
-          stressLevel={stressLevel}
-          onPremium={() =>
-            showPremiumSheet(
-              "AI Insights",
-              "Personalised hormone and mood pattern analysis, powered by Bloop. Unlocks with Soul Premium."
-            )
-          }
-        />
-
-        {/* 6.5 ── Today's Gentle Movement */}
-        <Text style={s.sectionLabel}>Today's gentle movement</Text>
-        <GentleMovementWidget router={router} />
-
-        {/* 7 â”€â”€ Life stage module â€” only when a stage is stored */}
-        {lifeStage != null && (
-          <LifeStageModuleCard lifeStage={lifeStage} router={router} />
+        {/* 4 ── Health way row — shown only when personalization config enables it */}
+        {isGridVisible("HealthWayRow") && (
+          <>
+            <Text style={s.sectionLabel}>Your health, your way</Text>
+            <HealthWayRow router={router} />
+          </>
         )}
 
-        {/* 8 â”€â”€ Mental Health Hub â€” support / safety, never gated */}
-        {hasMentalHealthGoal && (
-          <MentalHealthHubCard
-            onPress={() => router.push("/grounding")}
-            onBloop={() => router.push("/bloop-chat")}
-          />
+        {/* 5 ── Health insights */}
+        {isGridVisible("HealthInsights") && (
+          <InsightsSection onSeeMore={() => router.navigate("/(tabs)/insights")} />
         )}
 
-        {/* 9 â”€â”€ Programs for you */}
-        <Text style={s.sectionLabel}>Our Programs</Text>
-        <ProgramsSection
-          lifeStage={lifeStage}
-          router={router}
-          onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
-        />
+        {/* 6 ── Health overview strip — always visible per Phase 3 spec */}
+        {isGridVisible("HealthOverview") && (
+          <>
+            <Text style={s.sectionLabel}>Your health overview</Text>
+            <HealthOverviewStrip
+              emotionalState={emotionalState}
+              sleepScore={sleepScore}
+              stressLevel={stressLevel}
+              onPremium={() =>
+                showPremiumSheet(
+                  "Pattern insights",
+                  "Hormone and mood pattern analysis. Unlocks with Premium."
+                )
+              }
+            />
+          </>
+        )}
 
-        {/* 10 â”€â”€ Women like you also explored */}
-        <Text style={s.sectionLabel}>Women like you also explored</Text>
-        <ExploredSection />
+        {/* ── Phase 6 Dynamic Secondary Grid Slots ─────────────────────────────────────── */}
+        {(() => {
+          let renderedCount = 0;
+          return dashboardConfig.gridOrder.map((gridId) => {
+            if (!isGridVisible(gridId)) return null;
 
-        {/* 11 â”€â”€ Your companions */}
-        <Text style={s.sectionLabel}>Your companions</Text>
-        <CompanionsRow
-          onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
-          router={router}
-        />
+            let cardElement: React.ReactNode = null;
+            switch (gridId) {
+              case "NourishPreview":
+                cardElement = <NourishPreviewCard key="NourishPreview" onPress={() => router.push("/(tabs)/nourish")} />;
+                break;
+              case "WellnessReset":
+                cardElement = <WellnessResetCard key="WellnessReset" onPress={() => router.push("/(tabs)/wellness")} />;
+                break;
+              case "SleepSupport":
+                cardElement = <SleepSupportCard key="SleepSupport" onPress={() => router.push("/(tabs)/wellness")} />;
+                break;
+              case "FertilityDetail":
+                cardElement = <FertilityDetailCard key="FertilityDetail" onPress={() => router.push("/(tabs)/cycle")} />;
+                break;
+              case "LifeStageCard":
+                cardElement = lifeStage != null ? <LifeStageModuleCard key="LifeStageCard" lifeStage={lifeStage} router={router} /> : null;
+                break;
+              case "MentalHealthHub":
+                cardElement = (
+                  <MentalHealthHubCard
+                    key="MentalHealthHub"
+                    onPress={() => router.push("/grounding")}
+                    onBloop={() => router.push("/bloop-chat")}
+                  />
+                );
+                break;
+            }
+
+            if (cardElement) {
+              // High-Stress Density Reduction (limit to top 3 visible cards)
+              if (dashboardConfig.flags.isDenseReduced && renderedCount >= 3) {
+                return null;
+              }
+              renderedCount++;
+              return cardElement;
+            }
+            return null;
+          });
+        })()}
+        {/* ── End Dynamic Secondary Grid Slots ────────────────────────────────────────── */}
+
+        {/* 6.5 ── Gentle movement — shown only when personalization config enables it */}
+        {isGridVisible("GentleMovementWidget") && (
+          <>
+            <Text style={s.sectionLabel}>Today's gentle movement</Text>
+            <GentleMovementWidget router={router} />
+          </>
+        )}
+
+        {/* 9 ── Programs for you — hidden in Phase 3, wired via config */}
+        {isGridVisible("ProgramsSection") && (
+          <>
+            <Text style={s.sectionLabel}>Programs for you</Text>
+            <ProgramsSection
+              lifeStage={lifeStage}
+              router={router}
+              onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
+            />
+          </>
+        )}
+
+        {/* 10 ── More to explore — hidden in Phase 3, wired via config */}
+        {isGridVisible("ExploredSection") && (
+          <>
+            <Text style={s.sectionLabel}>More to explore</Text>
+            <ExploredSection />
+          </>
+        )}
+
+        {/* 11 ── Companions — hidden in Phase 3, wired via config */}
+        {isGridVisible("CompanionsRow") && (
+          <>
+            <Text style={s.sectionLabel}>Companions</Text>
+            <CompanionsRow
+              onPremiumPress={(title, desc) => showPremiumSheet(title, desc)}
+              router={router}
+            />
+          </>
+        )}
 
         <View style={{ height: 12 }} />
       </ScrollView>
@@ -288,7 +446,7 @@ export default function DashboardScreen() {
   );
 }
 
-// â”€â”€ 1. Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 1. Header â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function Header({ onNotifications }: { onNotifications: () => void }) {
   const { colors, s } = useStyles();
   const name = useOnboardingStore((state) => state.name);
@@ -297,16 +455,13 @@ function Header({ onNotifications }: { onNotifications: () => void }) {
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const display = name.trim() || "there";
   
-  // Time-aware dynamic sun/cloud/moon emoji based on hour
-  const emoji = hour < 12 ? "☀️" : hour < 17 ? "🌤️" : "🌙";
-
   return (
     <View style={s.header}>
       <View style={s.headerLeft}>
         <Text style={s.greetingName}>
-          {greeting} {display} <Text style={s.greetingEmoji}>{emoji}</Text>
+          {greeting} {display}
         </Text>
-        <Text style={s.greetingSub}>Take care of yourself today and every day.</Text>
+        <Text style={s.greetingSub}>Your daily health check-in.</Text>
       </View>
       <Pressable
         accessibilityRole="button"
@@ -321,14 +476,14 @@ function Header({ onNotifications }: { onNotifications: () => void }) {
   );
 }
 
-// â”€â”€ Animated entrance helpers (Expo Go-safe, no Reanimated worklets) â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Animated entrance helpers (Expo Go-safe, no Reanimated worklets) â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function AnimatedSlideUp({ children }: { children: React.ReactNode }) {
   const translateY = useRef(new Animated.Value(40)).current;
   const opacity    = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.parallel([
       Animated.spring(translateY, { toValue: 0, tension: 80, friction: 14, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 240, useNativeDriver: true }),
     ]).start();
   }, []);
   return (
@@ -338,7 +493,7 @@ function AnimatedSlideUp({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AnimatedFadeIn({ children, duration = 450 }: { children: React.ReactNode; duration?: number }) {
+function AnimatedFadeIn({ children, duration = 240 }: { children: React.ReactNode; duration?: number }) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(opacity, { toValue: 1, duration, useNativeDriver: true }).start();
@@ -346,7 +501,7 @@ function AnimatedFadeIn({ children, duration = 450 }: { children: React.ReactNod
   return <Animated.View style={{ opacity }}>{children}</Animated.View>;
 }
 
-// â”€â”€ 2a. Full log nudge card (not logged + not dismissed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 2a. Full log nudge card (not logged + not dismissed) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () => void }) {
   const { colors, isDark, s } = useStyles();
   return (
@@ -376,8 +531,8 @@ function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () =
         >
           <Ionicons name="close" size={16} color={colors.textMuted} />
         </Pressable>
-        <Text style={s.nudgeHeadline}>{"Log today,\nstay in tune ✨"}</Text>
-        <Text style={s.heroSub}>A tiny check-in helps your cycle insights feel more like you.</Text>
+        <Text style={s.nudgeHeadline}>{"Log today"}</Text>
+        <Text style={s.heroSub}>A quick check-in keeps patterns clear.</Text>
         <Pressable
           onPress={onLog}
           style={({ pressed }) => [s.nudgeCta, pressed && s.pressed]}
@@ -402,7 +557,7 @@ function LogNudgeCard({ onDismiss, onLog }: { onDismiss: () => void; onLog: () =
   );
 }
 
-// â”€â”€ 2b. Compact success strip (logged today) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 2b. Compact success strip (logged today) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function LogSuccessStrip() {
   const { colors, s } = useStyles();
   return (
@@ -420,14 +575,14 @@ function LogSuccessStrip() {
         <MaterialCommunityIcons name="check-circle-outline" size={22} color={colors.primaryCTA} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={s.successTitle}>You're all caught up today 🌿</Text>
-        <Text style={s.successSub}>Your log has been saved. See you tomorrow!</Text>
+        <Text style={s.successTitle}>All caught up today</Text>
+        <Text style={s.successSub}>Your daily log is saved.</Text>
       </View>
     </View>
   );
 }
 
-// â”€â”€ 2c. Minimal pill nudge (dismissed but not logged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 2c. Minimal pill nudge (dismissed but not logged) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function LogPillNudge({ onLog }: { onLog: () => void }) {
   const { colors, s } = useStyles();
   return (
@@ -444,7 +599,7 @@ function LogPillNudge({ onLog }: { onLog: () => void }) {
   );
 }
 
-// â”€â”€ 3. Today at a glance â€” premium full-width hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 3. Today at a glance â€" premium full-width hero â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function TodayGrid({
   ringOffset, AnimCircle, CIRC, onCalendar, onLog,
 }: {
@@ -468,18 +623,18 @@ function TodayGrid({
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {/* Decorative mascot art â€” absolute, fades into background */}
-      <CachedImage source={bloopCycle} style={s.cycleCardArt} contentFit="contain" />
+      {/* Decorative mascot — suppressed by MASCOT_CYCLE_CARD_VISIBLE (Phase 2 design constraint) */}
+      {MASCOT_CYCLE_CARD_VISIBLE && <CachedImage source={bloopCycle} style={s.cycleCardArt} contentFit="contain" />}
 
       {/* Header pill row */}
       <View style={s.cycleCardHeader}>
         <View style={s.cycleIconBubble}>
-          <MaterialCommunityIcons name="calendar-heart" size={16} color={colors.periodColor} />
+          <MaterialCommunityIcons name="calendar-month-outline" size={16} color={colors.periodColor} />
         </View>
         <Text style={s.cycleCardLabel}>Cycle day</Text>
       </View>
 
-      {/* â”€â”€ Hero number area â”€â”€ */}
+      {/* â"€â"€ Hero number area â"€â"€ */}
       <View style={s.cycleHeroArea}>
         {/* Soft glow aura behind the number */}
         <View style={s.cycleHeroAura} />
@@ -518,7 +673,7 @@ function TodayGrid({
         </View>
       </View>
 
-      {/* Action row â€” View calendar + Log today */}
+      {/* Action row â€" View calendar + Log today */}
       <View style={s.logActionRow}>
         <Pressable
           onPress={onCalendar}
@@ -543,7 +698,7 @@ function TodayGrid({
   );
 }
 
-// â”€â”€ 4. Health way row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 4. Health way row â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function HealthWayRow({ router }: { router: ReturnType<typeof useRouter> }) {
   const { colors, s } = useStyles();
   const healthWayData = getHealthWay(colors);
@@ -576,7 +731,7 @@ function HealthWayRow({ router }: { router: ReturnType<typeof useRouter> }) {
   );
 }
 
-// â”€â”€ 5. Health insights section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ 5. Health insights section â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
   const { colors, s } = useStyles();
   // simple sparkline points
@@ -602,11 +757,9 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
       <View style={s.insightsBody}>
         <View style={s.insightsTextCol}>
           <Text style={s.insightsText}>
-            Steady rhythm. Soft win.
+            Rhythm looks steady.
           </Text>
-          <Text style={s.insightsCheer}>
-            Bloop says: body wisdom.
-          </Text>
+          <Text style={s.insightsCheer}>Patterns are building.</Text>
         </View>
         {/* Sparkline chart */}
         <View style={s.chartWrap}>
@@ -642,10 +795,10 @@ function InsightsSection({ onSeeMore }: { onSeeMore: () => void }) {
 }
 
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€ Premium Gate Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€ Premium Gate Sheet â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 // Shows before routing to /premium so users know what they're unlocking.
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function PremiumSheet({
   sheetAnim,
@@ -690,7 +843,7 @@ function PremiumSheet({
         <View style={ps.benefitRow}>
           {[
             { icon: "check-circle-outline" as const, text: "Personalised to your cycle" },
-            { icon: "check-circle-outline" as const, text: "Powered by Bloop AI" },
+            { icon: "check-circle-outline" as const, text: "Pattern-aware insights" },
             { icon: "check-circle-outline" as const, text: "Private & encrypted" },
           ].map((b) => (
             <View key={b.text} style={ps.benefitItem}>
@@ -711,7 +864,7 @@ function PremiumSheet({
             style={ps.exploreBtn}
           >
             <MaterialCommunityIcons name="crown-outline" size={16} color={colors.background} />
-            <Text style={ps.exploreBtnText}>Explore Soul Premium</Text>
+            <Text style={ps.exploreBtnText}>Explore Premium</Text>
           </LinearGradient>
         </Pressable>
 
@@ -723,7 +876,7 @@ function PremiumSheet({
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function HealthOverviewStrip({
   emotionalState,
@@ -737,43 +890,67 @@ function HealthOverviewStrip({
   onPremium: () => void;
 }) {
   const { colors, s } = useStyles();
-  const cap = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+  const formatLabel = (str: string) =>
+    str
+      .replace(/[_-]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   const stressColor =
     stressLevel < 34 ? colors.primaryCTA : stressLevel < 67 ? colors.warning : colors.periodColor;
+  const stressTone = stressLevel < 34 ? "Easy today" : stressLevel < 67 ? "Needs care" : "Go gently";
+  const stressFill: DimensionValue = `${Math.max(6, Math.min(stressLevel, 100))}%`;
 
   return (
     <View style={s.overviewGrid}>
       {/* Stress Score */}
       <View style={s.overviewTile}>
-        <View style={[s.overviewIconBubble, { backgroundColor: `${stressColor}18` }]}>
-          <MaterialCommunityIcons name="lightning-bolt-outline" size={17} color={stressColor} />
+        <View style={s.overviewTileHeader}>
+          <View style={[s.overviewIconBubble, { backgroundColor: `${stressColor}18` }]}>
+            <MaterialCommunityIcons name="lightning-bolt-outline" size={17} color={stressColor} />
+          </View>
+          <Text style={s.overviewKicker}>Stress</Text>
         </View>
-        <Text style={s.overviewKicker}>Stress Score</Text>
         <View style={s.overviewValueRow}>
           <Text style={[s.overviewValue, { color: stressColor }]}>{stressLevel}</Text>
           <Text style={s.overviewUnit}>/100</Text>
         </View>
+        <View style={s.overviewMeterTrack}>
+          <View style={[s.overviewMeterFill, { width: stressFill, backgroundColor: stressColor }]} />
+        </View>
+        <Text style={s.overviewCaption}>{stressTone}</Text>
       </View>
 
       {/* Sleep Level */}
       <View style={s.overviewTile}>
-        <View style={[s.overviewIconBubble, { backgroundColor: `${colors.textMuted}18` }]}>
-          <MaterialCommunityIcons name="moon-waning-crescent" size={17} color={colors.textMuted} />
+        <View style={s.overviewTileHeader}>
+          <View style={[s.overviewIconBubble, { backgroundColor: `${colors.textMuted}18` }]}>
+            <MaterialCommunityIcons name="moon-waning-crescent" size={17} color={colors.textMuted} />
+          </View>
+          <Text style={s.overviewKicker}>Sleep</Text>
         </View>
-        <Text style={s.overviewKicker}>Sleep Level</Text>
-        <Text style={[s.overviewValue, { color: colors.textMuted }]}>{cap(sleepScore)}</Text>
+        <FittedText style={[s.overviewValue, { color: colors.textMuted }]} minScale={0.7}>
+          {formatLabel(sleepScore)}
+        </FittedText>
+        <Text style={s.overviewCaption}>Rest rhythm</Text>
       </View>
 
       {/* Emotional State */}
       <View style={s.overviewTile}>
-        <View style={[s.overviewIconBubble, { backgroundColor: `${colors.primaryCTA}18` }]}>
-          <MaterialCommunityIcons name="heart-outline" size={17} color={colors.primaryCTA} />
+        <View style={s.overviewTileHeader}>
+          <View style={[s.overviewIconBubble, { backgroundColor: `${colors.primaryCTA}18` }]}>
+            <MaterialCommunityIcons name="emoticon-outline" size={17} color={colors.primaryCTA} />
+          </View>
+          <Text style={s.overviewKicker}>Mood</Text>
         </View>
-        <Text style={s.overviewKicker}>Emotional State</Text>
-        <Text style={[s.overviewValue, { color: colors.primaryCTA }]}>{cap(emotionalState)}</Text>
+        <FittedText style={[s.overviewValue, { color: colors.primaryCTA }]} minScale={0.7}>
+          {formatLabel(emotionalState)}
+        </FittedText>
+        <Text style={s.overviewCaption}>Emotional state</Text>
       </View>
 
-      {/* AI Insights â€” locked premium tile */}
+      {/* Pattern insights locked premium tile */}
       <Pressable
         onPress={onPremium}
         style={({ pressed }) => [
@@ -782,10 +959,13 @@ function HealthOverviewStrip({
           pressed && s.pressed,
         ]}
       >
-        <View style={[s.overviewIconBubble, { backgroundColor: `${colors.premium}18` }]}>
-          <MaterialCommunityIcons name="crown-outline" size={17} color={colors.premium} />
+        <View style={s.overviewTileHeader}>
+          <View style={[s.overviewIconBubble, { backgroundColor: `${colors.premium}18` }]}>
+            <MaterialCommunityIcons name="crown-outline" size={17} color={colors.premium} />
+          </View>
+          <Text style={s.overviewKicker}>Patterns</Text>
         </View>
-        <Text style={s.overviewKicker}>AI Insights</Text>
+        <Text style={[s.overviewValue, { color: colors.premium }]}>Insights</Text>
         <View style={s.overviewLockRow}>
           <MaterialCommunityIcons name="lock-outline" size={12} color={colors.textMuted} />
           <Text style={s.overviewLockLabel}>Premium</Text>
@@ -795,9 +975,9 @@ function HealthOverviewStrip({
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€ 7. Life Stage Module Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€ 7. Life Stage Module Card â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── 6.5. Gentle Movement Widget ─────────────────────────────────────────────
@@ -839,7 +1019,7 @@ function GentleMovementWidget({ router }: { router: ReturnType<typeof useRouter>
         </View>
 
         <Text style={s.gmSubtitle}>
-          Your progesterone is peaking, which can make you feel more introverted or physically tense. Ground yourself with this cooling sequence designed to quiet the mind.
+          Cooling somatic sequence to release tension.
         </Text>
 
         <View style={s.gmDivider} />
@@ -927,9 +1107,9 @@ function LifeStageModuleCard({
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€ 8. Mental Health Hub â€” support / safety, never gated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€ 8. Mental Health Hub â€" support / safety, never gated â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function MentalHealthHubCard({
   onPress,
@@ -941,7 +1121,8 @@ function MentalHealthHubCard({
   const { colors, s } = useStyles();
   return (
     <View style={s.mhCard}>
-      <CachedImage source={bloopCalm} style={s.mhArt} contentFit="contain" />
+      {/* Decorative mascot — suppressed by MASCOT_MH_HUB_VISIBLE (Phase 2 design constraint) */}
+      {MASCOT_MH_HUB_VISIBLE && <CachedImage source={bloopCalm} style={s.mhArt} contentFit="contain" />}
 
       {/* Main content row */}
       <Pressable
@@ -954,7 +1135,7 @@ function MentalHealthHubCard({
         <View style={s.mhTextCol}>
           <Text style={s.mhTitle}>Mental Health Hub</Text>
           <Text style={s.mhSubtitle}>
-            Breathing, grounding, and Bloop support
+            Breathing and grounding support
           </Text>
           <View style={s.mhSupportRow}>
             <MaterialCommunityIcons name="meditation" size={11} color={colors.primaryCTA} />
@@ -968,18 +1149,102 @@ function MentalHealthHubCard({
       <Pressable
         onPress={onBloop}
         style={({ pressed }) => [s.mhBloopBtn, pressed && s.pressed]}
-        accessibilityLabel="Talk to Bloop"
+        accessibilityLabel="Open support chat"
       >
         <MaterialCommunityIcons name="chat-processing-outline" size={14} color={colors.textMuted} />
-        <Text style={s.mhBloopText}>Talk to Bloop</Text>
+        <Text style={s.mhBloopText}>Open support</Text>
       </Pressable>
     </View>
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€ 9. Programs For You â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€ 9. Programs For You â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 5 compact cards: NourishPreview / WellnessReset / SleepSupport / FertilityDetail
+// ─────────────────────────────────────────────────────────────────────────────
+
+function NourishPreviewCard({ onPress }: { onPress: () => void }) {
+  const { colors, s } = useStyles();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [s.phase5Card, pressed && s.phase5Pressed]}
+    >
+      <View style={[s.phase5IconBubble, { backgroundColor: `${colors.primaryCTA}22` }]}>
+        <MaterialCommunityIcons name="food-apple-outline" size={26} color={colors.primaryCTA} />
+      </View>
+      <View style={s.phase5TextCol}>
+        <Text style={s.phase5Kicker}>NOURISH</Text>
+        <Text style={s.phase5Title}>Nourish Her</Text>
+        <Text style={s.phase5Subtitle}>Support your phase</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textHint} />
+    </Pressable>
+  );
+}
+
+function WellnessResetCard({ onPress }: { onPress: () => void }) {
+  const { colors, s } = useStyles();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [s.phase5Card, pressed && s.phase5Pressed]}
+    >
+      <View style={[s.phase5IconBubble, { backgroundColor: `${colors.warning}22` }]}>
+        <MaterialCommunityIcons name="meditation" size={26} color={colors.warning} />
+      </View>
+      <View style={s.phase5TextCol}>
+        <Text style={s.phase5Kicker}>RESET</Text>
+        <Text style={s.phase5Title}>Wellness Reset</Text>
+        <Text style={s.phase5Subtitle}>Start a calm reset</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textHint} />
+    </Pressable>
+  );
+}
+
+function SleepSupportCard({ onPress }: { onPress: () => void }) {
+  const { colors, s } = useStyles();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [s.phase5Card, pressed && s.phase5Pressed]}
+    >
+      <View style={[s.phase5IconBubble, { backgroundColor: `${colors.textMuted}18` }]}>
+        <MaterialCommunityIcons name="moon-waning-crescent" size={26} color={colors.textMuted} />
+      </View>
+      <View style={s.phase5TextCol}>
+        <Text style={s.phase5Kicker}>SLEEP</Text>
+        <Text style={s.phase5Title}>Sleep Support</Text>
+        <Text style={s.phase5Subtitle}>Rest may help tonight</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textHint} />
+    </Pressable>
+  );
+}
+
+function FertilityDetailCard({ onPress }: { onPress: () => void }) {
+  const { colors, s } = useStyles();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [s.phase5Card, pressed && s.phase5Pressed]}
+    >
+      <View style={[s.phase5IconBubble, { backgroundColor: `${colors.periodColor}22` }]}>
+        <MaterialCommunityIcons name="calendar-month-outline" size={26} color={colors.periodColor} />
+      </View>
+      <View style={s.phase5TextCol}>
+        <Text style={s.phase5Kicker}>CYCLE</Text>
+        <Text style={s.phase5Title}>Fertile Window</Text>
+        <Text style={s.phase5Subtitle}>Track fertile days</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textHint} />
+    </Pressable>
+  );
+}
 
 type ProgramDatum = {
   id:       string;
@@ -1005,7 +1270,7 @@ function ProgramsSection({
       id:       "mojo",
       title:    "Mystree Mojo 1",
       subtitle: "Build your rhythm and own your cycle",
-      icon:     "heart-pulse",
+      icon:     "pulse",
       color:    colors.primaryCTA,
       bg:       `${colors.primaryCTA}22`,
     },
@@ -1038,7 +1303,7 @@ function ProgramsSection({
           onPress={() =>
             onPremiumPress(
               prog.title,
-              `${prog.subtitle}. This program is part of Soul Premium.`
+              `${prog.subtitle}. This program is part of Premium.`
             )
           }
           style={({ pressed }) => [s.programCard, pressed && s.pressed]}
@@ -1058,16 +1323,16 @@ function ProgramsSection({
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€ 10. Women Like You Also Explored â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€ 10. Women Like You Also Explored â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function ExploredSection() {
   const { colors, s } = useStyles();
   const EXPLORED_CARDS = [
     { id: "breathwork", title: "Calming activities",    subtitle: "4-7-8 reset for anxious moments", icon: "weather-windy" as const,          color: colors.fertileColor, bg: `${colors.fertileColor}22` },
     { id: "hormones",   title: "Future Her",            subtitle: "What your cycle is telling you",  icon: "chart-bell-curve" as const,       color: colors.textMuted,    bg: `${colors.textMuted}22` },
-    { id: "journaling", title: "Patient Story",         subtitle: "Real journeys, softly told",      icon: "book-heart-outline" as const,     color: colors.periodColor,  bg: `${colors.periodColor}22` },
+    { id: "journaling", title: "Patient Story",         subtitle: "Real journeys, softly told",      icon: "book-open-variant" as const,      color: colors.periodColor,  bg: `${colors.periodColor}22` },
     { id: "sleep",      title: "Affirmations",          subtitle: "Words for calm and clarity",      icon: "moon-waning-crescent" as const,   color: colors.warning,      bg: `${colors.warning}22` },
   ] as const;
 
@@ -1091,9 +1356,9 @@ function ExploredSection() {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€ 11. Your Companions Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€ 11. Your Companions Row â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 type CompanionDatum = {
   id:     string;
@@ -1115,7 +1380,7 @@ function CompanionsRow({
   const { colors, s } = useStyles();
   const companions: CompanionDatum[] = [
     { id: "bloop",  name: "Bloop",  role: "Wellness",   color: colors.primaryCTA, icon: "face-woman-shimmer-outline", locked: false, image: bloopCalm       },
-    { id: "jiggy",  name: "Jiggy",  role: "Emotional",  color: colors.textMuted,   icon: "heart-pulse",                locked: true,  image: companionJiggy  },
+    { id: "jiggy",  name: "Jiggy",  role: "Emotional",  color: colors.textMuted,   icon: "emoticon-outline",           locked: true,  image: companionJiggy  },
     { id: "manchi", name: "Manchi", role: "Psychology", color: colors.premium,    icon: "head-snowflake-outline",     locked: true,  image: companionManchi },
     { id: "yogi",   name: "Yogi",   role: "Movement",   color: colors.fertileColor,       icon: "yoga",                       locked: true,  image: companionYogi   },
   ];
@@ -1134,7 +1399,7 @@ function CompanionsRow({
             c.locked
               ? onPremiumPress(
                   c.name,
-                  `Chat with ${c.name}, your ${c.role.toLowerCase()} companion. Available with Soul Premium.`
+                  `Chat with ${c.name}, your ${c.role.toLowerCase()} companion. Available with Premium.`
                 )
               : router.push("/bloop")
           }
@@ -1165,16 +1430,16 @@ function CompanionsRow({
   );
 }
 
-// â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Styles â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const CARD_RADIUS  = 24;
 const SIDE_PAD     = 20;
 
 const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   scrollView: { flex: 1, backgroundColor: "transparent" },
-  scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, paddingBottom: 28, gap: 20, flexGrow: 1 },
+  scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, paddingBottom: 28, gap: 20 },
 
-  // â”€â”€ Header â”€â”€
+  // â"€â"€ Header â"€â"€
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1183,15 +1448,15 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   },
   headerLeft: { flex: 1, paddingRight: 12 },
   greetingName: {
-    fontFamily: F.luxuryBold,           // Fraunces SemiBold â€” warm serif H1 greeting
-    fontSize: 30,
-    lineHeight: 38,
+    fontFamily: F.luxuryBold,           // Fraunces SemiBold â€" warm serif H1 greeting
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "700",
     color: colors.textPrimary,
     letterSpacing: -0.3,
   },
-  greetingEmoji: { fontSize: 22 },
   greetingSub: {
-    fontFamily: F.uiRegular,            // Inter Regular â€” clean readable subtitle
+    fontFamily: F.uiRegular,            // Inter Regular â€" clean readable subtitle
     fontSize: 13,
     lineHeight: 20,
     color: colors.textMuted,
@@ -1204,9 +1469,11 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
-    shadowColor: "#000",
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.20 : 0.08,
+    shadowOpacity: isDark ? 0.12 : 0.06,
     shadowRadius: 12,
     elevation: 3,
   },
@@ -1222,21 +1489,22 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     borderColor: colors.surface,
   },
 
-  // â”€â”€ Log nudge cards â”€â”€
+  // â"€â"€ Log nudge cards â"€â"€
   nudgeCard: {
-    borderRadius: CARD_RADIUS + 4,
+    borderRadius: CARD_RADIUS,
     minHeight: 148,
     flexDirection: "row",
     alignItems: "center",
     overflow: "hidden",
     backgroundColor: colors.surface,
-    shadowColor: "#000",
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: isDark ? 0.35 : 0.08,
+    shadowOpacity: isDark ? 0.20 : 0.06,
     shadowRadius: 28,
     elevation: 5,
-    paddingLeft: 20,
-    paddingVertical: 18,
+    padding: 20,
   },
   nudgeGlowRing: {
     position: "absolute",
@@ -1262,15 +1530,16 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   },
   nudgeHeadline: {
     fontFamily: F.handwrittenBold,
-    fontSize: 21,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "700",
     color: colors.textPrimary,
     letterSpacing: 0.2,
     marginTop: 4,
   },
   heroSub: {
     fontFamily: F.uiMedium,
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     color: colors.textMuted,
     marginTop: 8,
@@ -1279,7 +1548,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     marginTop: 14,
     alignSelf: "flex-start",
     borderRadius: 999,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: isDark ? 0.30 : 0.15,
     shadowRadius: 10,
@@ -1297,7 +1566,8 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   nudgeCtaText: {
     fontFamily: F.uiExtraBold,
     color: colors.background,
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: "700",
     letterSpacing: 0.3,
   },
   heroRight: {
@@ -1310,7 +1580,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     width: 112,
     height: 130,
   },
-  // â”€â”€ Success strip (logged today) â”€â”€
+  // â"€â"€ Success strip (logged today) â"€â"€
   successStrip: {
     flexDirection: "row",
     alignItems: "center",
@@ -1318,9 +1588,10 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     borderRadius: CARD_RADIUS,
     overflow: "hidden",
     backgroundColor: colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    shadowColor: "#000",
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 12,
@@ -1347,17 +1618,19 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-  // â”€â”€ Pill nudge (dismissed) â”€â”€
+  // â"€â"€ Pill nudge (dismissed) â"€â"€
   pillNudge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     alignSelf: "flex-start",
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
     paddingHorizontal: 16,
     paddingVertical: 9,
     backgroundColor: colors.surface,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: isDark ? 0.20 : 0.05,
     shadowRadius: 8,
@@ -1365,33 +1638,35 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   },
   pillNudgeText: {
     fontFamily: F.uiBold,
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: "700",
     color: colors.textPrimary,
     flex: 1,
   },
 
-  // â”€â”€ Section label â”€â”€
+  // â"€â"€ Section label â"€â"€
   sectionLabel: {
-    fontFamily: F.bodySemiBold,               // Montserrat SemiBold
-    fontSize: 11,
+    fontFamily: F.ui,
+    fontSize: 12,
     lineHeight: 16,
     color: colors.textMuted,
-    letterSpacing: 1.4,
+    letterSpacing: 1.0,
     textTransform: "uppercase",
-    marginBottom: -8,                         // tighten gap to the card below
+    marginBottom: -8,
   },
 
 
-  // â”€â”€ Full-width premium hero cycle card â”€â”€
+  // â"€â"€ Full-width premium hero cycle card â"€â"€
   cycleCard: {
     width: W - SIDE_PAD * 2,
     minHeight: 396,
-    borderRadius: CARD_RADIUS + 6,
+    borderRadius: 28,
     backgroundColor: colors.surface,
-    padding: 24,
-    paddingBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: isDark ? 0.44 : 0.12,
     shadowRadius: 32,
@@ -1447,7 +1722,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     color: colors.textMuted,
   },
   cycleDayNum: {
-    fontFamily: F.display,                    // Cormorant Garamond â€” premium display serif
+    fontFamily: F.display,                    // Cormorant Garamond â€" premium display serif
     fontSize: 96,
     lineHeight: 102,
     color: colors.textPrimary,
@@ -1481,20 +1756,20 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     height: 150,
   },
   ringLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” ring inner label
+    fontFamily: F.uiBold,                     // Nunito Bold â€" ring inner label
     fontSize: 10,
     color: colors.textMuted,
     textAlign: "center",
   },
   ringDays: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” "X days" suffix
+    fontFamily: F.uiBold,                     // Nunito Bold â€" "X days" suffix
     fontSize: 13,
     color: colors.textPrimary,
     textAlign: "center",
     marginTop: 2,
   },
   ringDaysNum: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€” countdown number
+    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€" countdown number
     fontSize: 22,
     color: colors.periodColor,
   },
@@ -1545,7 +1820,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   },
 
 
-  // â”€â”€ Health way â”€â”€
+  // â"€â"€ Health way â"€â"€
   healthRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1564,21 +1839,23 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     overflow: "hidden",
   },
   healthLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” health way label
+    fontFamily: F.uiBold,                     // Nunito Bold â€" health way label
     fontSize: 10,
     color: colors.textMuted,
     textAlign: "center",
     lineHeight: 13,
   },
 
-  // â”€â”€ Insights card â”€â”€
+  // â"€â"€ Insights card â"€â"€
   insightsCard: {
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    padding: 18,
-    shadowColor: "#000",
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: isDark ? 0.25 : 0.08,
+    shadowOpacity: isDark ? 0.14 : 0.06,
     shadowRadius: 18,
     elevation: 3,
   },
@@ -1594,12 +1871,12 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     gap: 8,
   },
   insightsTitle: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” insights card title
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€" insights card title
     fontSize: 15,
     color: colors.textPrimary,
   },
   seeMore: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” link text
+    fontFamily: F.uiBold,                     // Nunito Bold â€" link text
     fontSize: 13,
     color: colors.primaryCTA,
   },
@@ -1610,13 +1887,13 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   },
   insightsTextCol: { flex: 1 },
   insightsText: {
-    fontFamily: F.bodyMedium,                 // Cormorant Garamond Medium â€” body insight copy
+    fontFamily: F.bodyMedium,                 // Cormorant Garamond Medium â€" body insight copy
     fontSize: 15,
     color: colors.textPrimary,
     lineHeight: 23,
   },
   insightsCheer: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” cheerful reinforcement
+    fontFamily: F.uiBold,                     // Nunito Bold â€" cheerful reinforcement
     fontSize: 12,
     color: colors.primaryCTA,
     marginTop: 4,
@@ -1629,82 +1906,122 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   },
 
 
-  // â”€â”€ Health Overview Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Health Overview Strip â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   overviewGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    columnGap: 10,
+    rowGap: 10,
   },
   overviewTile: {
     width: (W - SIDE_PAD * 2 - 10) / 2,
+    minHeight: 124,
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
     padding: 16,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.20 : 0.05,
-    shadowRadius: 12,
+    shadowOpacity: isDark ? 0.10 : 0.05,
+    shadowRadius: 10,
     elevation: 2,
-    gap: 8,
+    justifyContent: "space-between",
     overflow: "hidden",
   },
   overviewTileLocked: {
-    opacity: 0.82,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.surface,
+  },
+  overviewTileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    minHeight: 30,
   },
   overviewIconBubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   overviewKicker: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” uppercase kicker
-    fontSize: 11,
+    fontFamily: F.uiBold,                     // Nunito Bold â€" uppercase kicker
+    fontSize: 10,
     color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.7,
+    flex: 1,
   },
   overviewValueRow: {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 2,
+    marginTop: 8,
   },
   overviewValue: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€” metric value
-    fontSize: 22,
-    lineHeight: 28,
+    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€" metric value
+    fontSize: 20,
+    lineHeight: 25,
     color: colors.textPrimary,
+    width: "100%",
+    marginTop: 8,
   },
   overviewUnit: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” unit suffix
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€" unit suffix
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: 2,
   },
+  overviewCaption: {
+    fontFamily: F.uiMedium,
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  overviewMeterTrack: {
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: isDark ? "rgba(246,233,239,0.10)" : "rgba(46,35,48,0.08)",
+    overflow: "hidden",
+    marginTop: 7,
+  },
+  overviewMeterFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
   overviewLockRow: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginTop: 4,
+    marginTop: 8,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    backgroundColor: isDark ? "rgba(246,233,239,0.08)" : "rgba(46,35,48,0.06)",
   },
   overviewLockLabel: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” lock label
+    fontFamily: F.uiBold,                     // Nunito Bold â€" lock label
     fontSize: 11,
     color: colors.textMuted,
   },
 
-  // â”€â”€ Life Stage Module Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Life Stage Module Card â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   lifeStageCard: {
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    padding: 18,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: isDark ? 0.25 : 0.08,
+    shadowOpacity: isDark ? 0.14 : 0.06,
     shadowRadius: 18,
     elevation: 3,
     overflow: "hidden",
@@ -1721,28 +2038,30 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   lifeStageTitle: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” life stage card title
+    fontFamily: F.uiBold,                     // Nunito Bold â€" life stage card title
     fontSize: 16,
     lineHeight: 21,
     color: colors.textPrimary,
   },
   lifeStageSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” descriptive subtitle
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€" descriptive subtitle
     fontSize: 15,
     color: colors.textMuted,
     marginTop: 3,
     lineHeight: 20,
   },
 
-  // â”€â”€ Mental Health Hub Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Mental Health Hub Card â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   mhCard: {
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
     paddingTop: 4,
     paddingBottom: 14,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: isDark ? 0.25 : 0.08,
+    shadowOpacity: isDark ? 0.14 : 0.06,
     shadowRadius: 18,
     elevation: 3,
     overflow: "hidden",
@@ -1754,7 +2073,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     width: 96,
     height: 96,
   },
-  // pressable inner row â€” icon + text + chevron
+  // pressable inner row â€" icon + text + chevron
   mhMainRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1776,13 +2095,13 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     gap: 3,
   },
   mhTitle: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” MH hub card title
+    fontFamily: F.uiBold,                     // Nunito Bold â€" MH hub card title
     fontSize: 16,
     lineHeight: 21,
     color: colors.textPrimary,
   },
   mhSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” descriptive text
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€" descriptive text
     fontSize: 15,
     color: colors.textMuted,
     lineHeight: 20,
@@ -1818,7 +2137,65 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // â”€â”€ Shared horizontal scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Phase 5 compact cards ─────────────────────────────────────────────────
+  phase5Card: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: CARD_RADIUS,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 14,
+    shadowColor: colors.primaryCTA,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: isDark ? 0.14 : 0.06,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  phase5IconBubble: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    flexShrink: 0,
+  },
+  phase5TextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  phase5Kicker: {
+    fontFamily: F.uiSemiBold,
+    fontSize: 10,
+    letterSpacing: 1.0,
+    color: colors.textMuted,
+    textTransform: "uppercase" as const,
+  },
+  phase5Title: {
+    fontFamily: F.uiBold,
+    fontSize: 16,
+    lineHeight: 21,
+    color: colors.textPrimary,
+  },
+  phase5Subtitle: {
+    fontFamily: F.bodyRegular,
+    fontSize: 14,
+    color: colors.textMuted,
+    lineHeight: 19,
+  },
+  // Phase 6 press feedback: gentler than global s.pressed (0.96 → 0.98)
+  phase5Pressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.92,
+  },
+  // Phase 6 adaptive section wrapper — cards are spaced by the parent scroll gap;
+  // internal gap keeps cards evenly spaced within the animated container
+  adaptiveSection: {
+    gap: 20,
+  },
+
+  // ── Shared horizontal scroll â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   hScroll: {
     marginHorizontal: -SIDE_PAD,
   },
@@ -1828,16 +2205,18 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     paddingRight: SIDE_PAD + 4,
   },
 
-  // â”€â”€ Programs For You â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Programs For You â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   programCard: {
     width: 168,
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    padding: 18,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
     gap: 8,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.20 : 0.05,
+    shadowOpacity: isDark ? 0.12 : 0.05,
     shadowRadius: 12,
     elevation: 2,
     overflow: "hidden",
@@ -1850,13 +2229,13 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     justifyContent: "center",
   },
   programTitle: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” program card title
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€" program card title
     fontSize: 14,
     lineHeight: 19,
     color: colors.textPrimary,
   },
   programSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” program description
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€" program description
     fontSize: 14,
     color: colors.textMuted,
     lineHeight: 19,
@@ -1872,21 +2251,23 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     marginTop: 2,
   },
   programTagText: {
-    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€” tag label
+    fontFamily: F.uiExtraBold,                // Nunito ExtraBold â€" tag label
     fontSize: 10,
     letterSpacing: 0.4,
   },
 
-  // â”€â”€ Women Like You Also Explored â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Women Like You Also Explored â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   exploredCard: {
     width: 152,
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
     gap: 8,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.20 : 0.05,
+    shadowOpacity: isDark ? 0.12 : 0.05,
     shadowRadius: 12,
     elevation: 2,
     overflow: "hidden",
@@ -1899,29 +2280,31 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     justifyContent: "center",
   },
   exploredTitle: {
-    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€” explored card title
+    fontFamily: F.uiSemiBold,                 // Nunito SemiBold â€" explored card title
     fontSize: 13,
     lineHeight: 18,
     color: colors.textPrimary,
   },
   exploredSubtitle: {
-    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€” card description
+    fontFamily: F.bodyRegular,                // Cormorant Garamond Regular â€" card description
     fontSize: 14,
     color: colors.textMuted,
     lineHeight: 19,
   },
 
-  // â”€â”€ Your Companions Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â"€â"€ Your Companions Row â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   companionCard: {
     width: 112,
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
+    padding: 20,
     alignItems: "center",
     gap: 6,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.20 : 0.05,
+    shadowOpacity: isDark ? 0.12 : 0.05,
     shadowRadius: 12,
     elevation: 2,
   },
@@ -1949,14 +2332,14 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     justifyContent: "center",
   },
   companionName: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” companion name
+    fontFamily: F.uiBold,                     // Nunito Bold â€" companion name
     fontSize: 13,
     lineHeight: 17,
     color: colors.textPrimary,
     textAlign: "center",
   },
   companionRole: {
-    fontFamily: F.uiBold,                     // Nunito Bold â€” role tag
+    fontFamily: F.uiBold,                     // Nunito Bold â€" role tag
     fontSize: 10,
     color: colors.textMuted,
     textAlign: "center",
@@ -1970,7 +2353,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     marginTop: 2,
   },
   companionPremiumText: {
-    fontFamily: F.uiBlack,                    // Nunito Black â€” premium badge
+    fontFamily: F.uiBlack,                    // Nunito Black â€" premium badge
     fontSize: 9,
     letterSpacing: 0.6,
     textTransform: "uppercase",
@@ -1981,8 +2364,10 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     marginTop: 12,
     marginBottom: 16,
     borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 18,
@@ -2025,7 +2410,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -2078,7 +2463,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   pressed: { transform: [{ scale: 0.96 }] },
 });
 
-// â”€â”€ Premium Sheet styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Premium Sheet styles â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const getPremiumStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -2094,7 +2479,7 @@ const getPremiumStyles = (colors: AppColors, isDark: boolean) => StyleSheet.crea
     borderTopRightRadius: 36,
     paddingHorizontal: 24,
     paddingBottom: 36,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: -12 },
     shadowOpacity: isDark ? 0.35 : 0.08,
     shadowRadius: 28,
@@ -2148,7 +2533,7 @@ const getPremiumStyles = (colors: AppColors, isDark: boolean) => StyleSheet.crea
   },
   exploreShell: {
     borderRadius: 999,
-    shadowColor: "#000",
+    shadowColor: colors.primaryCTA,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: isDark ? 0.30 : 0.15,
     shadowRadius: 14,

@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
+import { FittedText } from "../components/system/FittedText";
 import { F } from "../constants/fonts";
 import { useSafeBack } from "../hooks/useSafeBack";
 
@@ -280,9 +281,9 @@ export default function JournalScreen() {
                     accessibilityState={{ selected: active }}
                   >
                     <Text style={s.moodEmoji}>{m.emoji}</Text>
-                    <Text style={[s.moodLabel, active && { color: m.selText }]}>
+                    <FittedText style={[s.moodLabel, active && { color: m.selText }]}>
                       {m.label}
-                    </Text>
+                    </FittedText>
                   </Pressable>
                 );
               })}
@@ -784,6 +785,8 @@ const s = StyleSheet.create({
     fontSize:   11,
     lineHeight: 15,
     color:      C.muted,
+    minWidth:   78,
+    textAlign:  "center",
   },
 
   // ── Journal input ─────────────────────────────────────────────────────────────

@@ -519,8 +519,6 @@ export default function InsightsScreen() {
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={C.faint} />
         </Pressable>
-
-        <View style={{ height: 104 }} />
       </ScrollView>
 
       {/* ── Filter sheet ─────────────────────────────────────────────────────── */}
@@ -752,7 +750,7 @@ const styles = StyleSheet.create({
   safe: { backgroundColor: C.bg1, flex: 1 },
   safeDark: { backgroundColor: C.bg1 },
   scrollView: { flex: 1, backgroundColor: "transparent" },
-  scroll: { paddingHorizontal: CARD_MX, paddingTop: 8, paddingBottom: 28, flexGrow: 1 },
+  scroll: { paddingHorizontal: CARD_MX, paddingTop: 8, paddingBottom: 100, flexGrow: 1 },
   blob: { borderRadius: 999, position: "absolute" },
 
   // Header

@@ -64,7 +64,7 @@ const QUICK_ACTIONS = [
   { id: "qa1", label: "Calm\nThoughts",    icon: "cloud-outline",      color: "#7B6FA8" },
   { id: "qa2", label: "Breathing\nReset",  icon: "refresh",            color: "#7B6FA8" },
   { id: "qa3", label: "Gentle\nAudio",     icon: "headphones",         color: "#7B6FA8" },
-  { id: "qa4", label: "Talk to\nCompanion",icon: "message-heart-outline", color: "#7B6FA8" },
+  { id: "qa4", label: "Talk to\nCompanion",icon: "message-text-outline",  color: "#7B6FA8" },
 ];
 
 const REACH_ITEMS = [

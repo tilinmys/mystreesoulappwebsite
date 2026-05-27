@@ -22,6 +22,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { CachedImage } from "../../components/CachedImage";
+import { FittedText } from "../../components/system/FittedText";
 import { F } from "../../constants/fonts";
 import { getPersonalizationDefaults } from "../../constants/onboardingAdaptation";
 import { darkColors } from "../../constants/colors";
@@ -642,9 +643,13 @@ function WellnessCardItem({
 
           {/* Label — always textPrimary on dark surface */}
           <View style={s.wellnessLabelArea}>
-            <Text style={[s.wellnessLabel, { color: isSelected ? colors.primaryCTA : colors.textPrimary }]} numberOfLines={2}>
+            <FittedText
+              style={[s.wellnessLabel, { color: isSelected ? colors.primaryCTA : colors.textPrimary }]}
+              numberOfLines={2}
+              minScale={0.82}
+            >
               {card.label}
-            </Text>
+            </FittedText>
           </View>
 
           {/* Selection badge */}
@@ -915,6 +920,7 @@ const s = StyleSheet.create({
     lineHeight: 18,
     textAlign: "center",
     letterSpacing: 0.1,
+    width: "100%",
   },
   wellnessBadge: {
     position: "absolute",

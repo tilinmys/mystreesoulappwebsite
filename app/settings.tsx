@@ -19,7 +19,26 @@ import { useAuthStore } from "../store/authStore";
 import { useSafeBack } from "../hooks/useSafeBack";
 import { useThemeStore, type ColorMode } from "../store/themeStore";
 import { useColorMode } from "../hooks/useColorMode";
-import { darkColors, type AppColors } from "../constants/colors";
+import { darkColors, lightColors, type AppColors } from "../constants/colors";
+
+// ── Dynamic Styles Cache (Maximum Performance Engine) ──────────────────────────
+let darkStyles: ReturnType<typeof getStyles> | null = null;
+let lightStyles: ReturnType<typeof getStyles> | null = null;
+
+function useStyles() {
+  const { colors, isDark } = useColorMode();
+  if (isDark) {
+    if (!darkStyles) {
+      darkStyles = getStyles(darkColors, true);
+    }
+    return { colors, isDark, s: darkStyles! };
+  } else {
+    if (!lightStyles) {
+      lightStyles = getStyles(lightColors, false);
+    }
+    return { colors, isDark, s: lightStyles! };
+  }
+}
 
 const bloop = require("../public/images/bloop-nav.webp");
 
@@ -49,9 +68,7 @@ export default function SettingsScreen() {
   const [selectedLock, setSelectedLock] = useState<"Immediate" | "1 min" | "5 min">("Immediate");
   const [selectedCard, setSelectedCard] = useState("Data Privacy");
 
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, isDark, s } = useStyles();
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -68,7 +85,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
-      <ContextualAuraBackground variant="vault" forceDark />
+      <ContextualAuraBackground variant="vault" />
       <ScrollView bounces={false} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <Header onBack={safeBack} />
         <VaultHero orbScale={orbScale} />
@@ -174,9 +191,7 @@ export default function SettingsScreen() {
 }
 
 function Header({ onBack }: { onBack: () => void }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, s } = useStyles();
   return (
     <View style={s.header}>
       <Pressable
@@ -197,9 +212,7 @@ function Header({ onBack }: { onBack: () => void }) {
 }
 
 function VaultHero({ orbScale }: { orbScale: Animated.AnimatedInterpolation<string | number> }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, isDark, s } = useStyles();
   return (
     <LinearGradient
       colors={isDark ? ["#1D121F", "#2F1C33", "#110812"] : ["#EAD8F4", "#F0E8F8", "#FAF5FC"]}
@@ -222,9 +235,7 @@ function VaultHero({ orbScale }: { orbScale: Animated.AnimatedInterpolation<stri
 }
 
 function SettingsIsland({ children, title }: { children: ReactNode; title: string }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { s } = useStyles();
   return (
     <View style={s.islandBlock}>
       <Text style={s.islandTitle}>{title}</Text>
@@ -246,9 +257,7 @@ function ToggleRow({
   subtitle: string;
   title: string;
 }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, isDark, s } = useStyles();
   return (
     <View style={s.settingRow}>
       <View style={[s.rowIcon, { backgroundColor: active ? (isDark ? "rgba(232, 166, 182, 0.12)" : "rgba(196,104,128,0.12)") : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)") }]}>
@@ -276,9 +285,7 @@ function SegmentRow({
   onSelect: (value: "Immediate" | "1 min" | "5 min") => void;
   selectedLock: "Immediate" | "1 min" | "5 min";
 }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, isDark, s } = useStyles();
   const options = ["Immediate", "1 min", "5 min"] as const;
   return (
     <View style={s.segmentBlock}>
@@ -308,16 +315,12 @@ function SegmentRow({
 }
 
 function Divider() {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { s } = useStyles();
   return <View style={s.divider} />;
 }
 
 function BloopTrustCard({ orbScale }: { orbScale: Animated.AnimatedInterpolation<string | number> }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, isDark, s } = useStyles();
   return (
     <View style={s.bloopTrustCard}>
       <View style={s.bloopTrustGlow} />
@@ -339,9 +342,7 @@ function AppearanceRow({
   colorMode: ColorMode;
   onSelect: (mode: ColorMode) => void;
 }) {
-  const colors = darkColors;
-  const isDark = true;
-  const s = getStyles(colors, isDark);
+  const { colors, isDark, s } = useStyles();
   const options: { label: string; value: ColorMode; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { label: "Light", value: "light", icon: "white-balance-sunny" },
     { label: "System", value: "system", icon: "theme-light-dark" },

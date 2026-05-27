@@ -53,7 +53,7 @@ const C = {
   peachPale: darkColors.surfaceRaised,
   surfaceRaised: darkColors.surfaceRaised,
   cardBg:    darkColors.surface,
-  border:    darkColors.border,
+  border:    "rgba(246,233,239,0.10)",
   sheetBg:   darkColors.surface,
 };
 
@@ -78,7 +78,7 @@ const PHASES = [
   { id: "menstrual",  label: "Menstrual",  icon: "water-outline",        color: C.rose,     activeColor: "#FFD0D0", textColor: "#D45C6A" },
   { id: "ovulation",  label: "Ovulation",  icon: "white-balance-sunny",  color: C.gold,     activeColor: C.goldPale, textColor: C.gold },
   { id: "pms",        label: "PMS",        icon: "flower-outline",       color: C.lavender, activeColor: C.lavPale,  textColor: C.lavender },
-  { id: "emotional",  label: "Emotional",  icon: "heart-outline",        color: "#D4637A",  activeColor: "#FFE8ED",  textColor: "#D4637A" },
+  { id: "emotional",  label: "Emotional",  icon: "emoticon-outline",     color: "#D4637A",  activeColor: "#FFE8ED",  textColor: "#D4637A" },
   { id: "sleep",      label: "Sleep",      icon: "moon-waning-crescent", color: "#7B8FCE",  activeColor: "#EEF0FF",  textColor: "#7B8FCE" },
 ];
 
@@ -128,7 +128,7 @@ const NOURISH_CONTENT: Record<NourishPhaseId, NourishContent> = {
   // ── MENSTRUAL ──────────────────────────────────────────────────────────────
   menstrual: {
     heroTitle: "Gentle iron support",
-    heroSub:   "for today 🍃",
+    heroSub:   "for today",
     focusItems: [
       { id: "iron",      label: "Iron",      icon: "leaf",          color: C.sage,  bg: C.sagePale  },
       { id: "hydration", label: "Hydration", icon: "water-outline", color: C.teal,  bg: C.tealPale  },
@@ -201,7 +201,7 @@ const NOURISH_CONTENT: Record<NourishPhaseId, NourishContent> = {
   // ── OVULATION ──────────────────────────────────────────────────────────────
   ovulation: {
     heroTitle: "Peak energy nourishment",
-    heroSub:   "fuel your glow ✨",
+    heroSub:   "steady energy",
     focusItems: [
       { id: "protein",  label: "Protein",      icon: "food-steak",     color: C.gold,    bg: C.goldPale },
       { id: "antioxid", label: "Antioxidants", icon: "fruit-cherries", color: "#D45C6A", bg: "#FFE8ED"  },
@@ -272,7 +272,7 @@ const NOURISH_CONTENT: Record<NourishPhaseId, NourishContent> = {
   // ── PMS ────────────────────────────────────────────────────────────────────
   pms: {
     heroTitle: "Soothing PMS support",
-    heroSub:   "ease the tension 🌸",
+    heroSub:   "ease tension",
     focusItems: [
       { id: "magnesium", label: "Magnesium",   icon: "leaf",               color: C.lavender, bg: C.lavPale  },
       { id: "b6",        label: "Vitamin B6",  icon: "medical-bag",        color: "#D4637A",  bg: "#FFE8ED"  },
@@ -344,7 +344,7 @@ const NOURISH_CONTENT: Record<NourishPhaseId, NourishContent> = {
   // ── EMOTIONAL ─────────────────────────────────────────────────────────────
   emotional: {
     heroTitle: "Mood-lifting nutrition",
-    heroSub:   "nourish your heart 💛",
+    heroSub:   "support your mood",
     focusItems: [
       { id: "omega3",    label: "Omega-3",     icon: "fish",                   color: C.teal,    bg: C.tealPale },
       { id: "serotonin", label: "Serotonin",   icon: "emoticon-happy-outline", color: "#D4637A", bg: "#FFE8ED"  },
@@ -416,7 +416,7 @@ const NOURISH_CONTENT: Record<NourishPhaseId, NourishContent> = {
   // ── SLEEP ──────────────────────────────────────────────────────────────────
   sleep: {
     heroTitle: "Sleep-supporting meals",
-    heroSub:   "rest starts at dinner 🌙",
+    heroSub:   "support sleep",
     focusItems: [
       { id: "melatonin",  label: "Melatonin",   icon: "moon-waning-crescent", color: "#7B8FCE",  bg: "#EEF0FF"  },
       { id: "calcium",    label: "Calcium",     icon: "cup-outline",          color: C.lavender, bg: C.lavPale  },
@@ -642,16 +642,16 @@ export default function NourishScreen() {
             {/* Hydration guidance for current phase */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Ask Bloop about hydration"
+              accessibilityLabel="Open hydration guidance"
               style={styles.headerBtn}
               onPress={() => askBloop(`How much water should I drink during my ${activePhase} phase, and what foods are most hydrating right now?`)}
             >
               <MaterialCommunityIcons name="water-outline" size={18} color={C.teal} />
             </Pressable>
-            {/* AI meal plan for current phase */}
+            {/* Meal plan for current phase */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Ask Bloop for a meal plan"
+              accessibilityLabel="Open meal plan"
               style={styles.headerBtn}
               onPress={() => askBloop(`Give me a personalised 1-day meal plan for my ${activePhase} phase that supports my hormones and energy.`)}
             >
@@ -700,7 +700,7 @@ export default function NourishScreen() {
                   onPress={() => setActivePhase(phase.id as NourishPhaseId)}
                   style={[
                     styles.phaseCard,
-                    active && { borderColor: phase.color + "60", backgroundColor: phase.activeColor },
+                    active && { borderColor: "#E8A6B6", backgroundColor: phase.activeColor },
                   ]}
                 >
                   <View style={[styles.phaseIconWrap, active && { backgroundColor: phase.color + "20" }]}>
@@ -729,43 +729,49 @@ export default function NourishScreen() {
           </View>
 
           {/* ── Insight banner ───────────────────────────────────────────── */}
-          <Pressable style={styles.insightCard} onPress={() => askBloop(nc.insightBloopMsg)}>
-            <LinearGradient
-              colors={[colors.surface, colors.surfaceRaised, colors.surface]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <InsightSparkles />
-            <View style={[styles.insightIconWrap, { backgroundColor: colors.surfaceRaised }]}>
-              <MaterialCommunityIcons name="flower-tulip-outline" size={22} color={C.lavender} />
-            </View>
-            <View style={styles.insightText}>
-              <Text style={styles.insightTitle}>{nc.insightTitle}</Text>
-              <Text style={styles.insightBody}>{nc.insightBody}</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={C.lavender} style={{ marginLeft: "auto" }} />
-          </Pressable>
+          {false && (
+            <Pressable style={styles.insightCard} onPress={() => askBloop(nc.insightBloopMsg)}>
+              <LinearGradient
+                colors={[colors.surface, colors.surfaceRaised, colors.surface]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <InsightSparkles />
+              <View style={[styles.insightIconWrap, { backgroundColor: colors.surfaceRaised }]}>
+                <MaterialCommunityIcons name="flower-tulip-outline" size={22} color={C.lavender} />
+              </View>
+              <View style={styles.insightText}>
+                <Text style={styles.insightTitle}>{nc.insightTitle}</Text>
+                <Text style={styles.insightBody}>{nc.insightBody}</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={C.lavender} style={{ marginLeft: "auto" }} />
+            </Pressable>
+          )}
 
           {/* ── Quick nourish ideas ──────────────────────────────────────── */}
-          <Text style={[styles.sectionTitle, styles.centeredTitle]}>Quick nourish ideas</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.quickScroll}
-          >
-            {nc.quickIdeas.map(idea => (
-              <Pressable
-                key={idea.id}
-                style={styles.quickItem}
-                onPress={() => openIdea(idea)}
+          {false && (
+            <>
+              <Text style={[styles.sectionTitle, styles.centeredTitle]}>Quick nourish ideas</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickScroll}
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: idea.bg }]}>
-                  <MaterialCommunityIcons name={idea.icon as any} size={26} color={idea.color} />
-                </View>
-                <Text style={styles.quickLabel}>{idea.label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+                {nc.quickIdeas.map(idea => (
+                  <Pressable
+                    key={idea.id}
+                    style={styles.quickItem}
+                    onPress={() => openIdea(idea)}
+                  >
+                    <View style={[styles.quickIconCircle, { backgroundColor: idea.bg }]}>
+                      <MaterialCommunityIcons name={idea.icon as any} size={26} color={idea.color} />
+                    </View>
+                    <Text style={styles.quickLabel}>{idea.label}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </>
+          )}
 
           {/* ── Hydration tracker — tappable: opens Bloop hydration guidance */}
           <Pressable
@@ -825,8 +831,6 @@ export default function NourishScreen() {
               </Pressable>
             ))}
           </ScrollView>
-
-          <View style={{ height: 110 }} />
         </ScrollView>
       </SafeAreaView>
 
@@ -855,7 +859,7 @@ export default function NourishScreen() {
               onPress={() => closeIdea(activeIdea.bloopMsg)}
             >
               <MaterialCommunityIcons name="chat-processing-outline" size={15} color={activeIdea.color} />
-              <Text style={[styles.ideaBloopText, { color: activeIdea.color }]}>Ask Bloop more</Text>
+              <Text style={[styles.ideaBloopText, { color: activeIdea.color }]}>More guidance</Text>
               <MaterialCommunityIcons name="chevron-right" size={14} color={activeIdea.color} />
             </Pressable>
             <Pressable style={styles.sheetCloseBtn} onPress={() => closeIdea()}>
@@ -922,7 +926,7 @@ export default function NourishScreen() {
                 ))}
               </View>
 
-              {/* Ask Bloop CTA */}
+              {/* Recipe guidance CTA */}
               <Pressable
                 style={styles.mealBloopBtn}
                 onPress={() => closeMeal(activeMeal.bloopMsg)}
@@ -933,7 +937,7 @@ export default function NourishScreen() {
                   style={StyleSheet.absoluteFill}
                 />
                 <MaterialCommunityIcons name="chat-processing-outline" size={17} color={C.lavender} />
-                <Text style={styles.mealBloopText}>Ask Bloop for a full recipe</Text>
+                <Text style={styles.mealBloopText}>Get full recipe</Text>
                 <MaterialCommunityIcons name="chevron-right" size={16} color={C.lavender} />
               </Pressable>
 
@@ -966,8 +970,9 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: "row", alignItems: "center" },
   headerTitle: {
-    fontFamily: F.luxuryBold,
-    fontSize: 28,
+    fontFamily: F.uiBold,
+    fontSize: 26,
+    fontWeight: "700",
     color: C.deep,
     letterSpacing: -0.3,
   },
@@ -977,12 +982,12 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     backgroundColor: C.cardBg,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: "rgba(246,233,239,0.10)",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: C.bg1,
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -995,36 +1000,39 @@ const styles = StyleSheet.create({
   },
 
   scrollView: { flex: 1, backgroundColor: "transparent" },
-  scroll: { paddingTop: 0, paddingBottom: 28, flexGrow: 1 },
+  scroll: { paddingTop: 0, paddingBottom: 100, flexGrow: 1 },
 
   // Hero
   heroCard: {
     marginHorizontal: 20,
-    borderRadius: 24,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(246,233,239,0.10)",
     overflow: "hidden",
     alignItems: "center",
     paddingTop: 20,
     paddingBottom: 22,
     paddingHorizontal: 16,
     marginBottom: 20,
-    shadowColor: C.bg1,
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.14,
     shadowRadius: 20,
     elevation: 4,
   },
   heroBlob: { position: "absolute", borderRadius: 100 },
   heroIllustWrap: { width: 128, height: 128, marginBottom: 12 },
   heroTitle: {
-    fontFamily: F.luxuryBold,
+    fontFamily: F.uiBold,
     fontSize: 20,
+    fontWeight: "700",
     color: C.deep,
     letterSpacing: -0.2,
     textAlign: "center",
   },
   heroSubtitle: {
-    fontFamily: F.luxuryItalic,
-    fontSize: 17,
+    fontFamily: F.uiMedium,
+    fontSize: 14,
     color: C.sage,
     textAlign: "center",
     marginTop: 2,
@@ -1035,7 +1043,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     backgroundColor: C.sagePale,
-    borderRadius: 20,
+    borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderWidth: 1,
@@ -1049,14 +1057,14 @@ const styles = StyleSheet.create({
   phaseCard: {
     width: 74,
     paddingVertical: 12,
-    borderRadius: 20,
+    borderRadius: 24,
     alignItems: "center",
     backgroundColor: C.cardBg,
     borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: C.bg1,
+    borderColor: "rgba(246,233,239,0.10)",
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.10,
     shadowRadius: 6,
     elevation: 1,
     gap: 6,
@@ -1074,9 +1082,11 @@ const styles = StyleSheet.create({
 
   // Section titles
   sectionTitle: {
-    fontFamily: F.luxuryBold,
-    fontSize: 17,
-    color: C.deep,
+    fontFamily: F.uiBold,
+    fontSize: 12,
+    color: C.muted,
+    textTransform: "uppercase",
+    letterSpacing: 1.0,
     paddingHorizontal: 20,
     marginTop: 20,
     marginBottom: 12,
@@ -1087,14 +1097,14 @@ const styles = StyleSheet.create({
   focusCard: {
     marginHorizontal: 20,
     backgroundColor: C.cardBg,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: "rgba(246,233,239,0.10)",
     flexDirection: "row",
     paddingVertical: 18,
-    shadowColor: C.bg1,
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 14,
     elevation: 2,
   },
@@ -1107,17 +1117,17 @@ const styles = StyleSheet.create({
   insightCard: {
     marginHorizontal: 20,
     marginTop: 14,
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 20,
     gap: 12,
     borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: C.bg1,
+    borderColor: "rgba(246,233,239,0.10)",
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 2,
   },
@@ -1135,10 +1145,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: C.bg1,
+    borderColor: "rgba(246,233,239,0.10)",
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.10,
     shadowRadius: 8,
     elevation: 1,
   },
@@ -1149,23 +1159,23 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 14,
     backgroundColor: C.cardBg,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: "rgba(246,233,239,0.10)",
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 20,
     gap: 14,
-    shadowColor: C.bg1,
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 14,
     elevation: 2,
   },
   ringWrap: { width: 56, height: 56, position: "relative", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   ringCenter: { position: "absolute", alignItems: "center", justifyContent: "center" },
   hydrationInfo: { flex: 1 },
-  hydrationTitle: { fontFamily: F.uiSemiBold, fontSize: 14, color: C.deep, marginBottom: 4 },
+  hydrationTitle: { fontFamily: F.uiBold, fontSize: 16, fontWeight: "700", color: C.deep, marginBottom: 4 },
   hydrationRow: { gap: 6 },
   hydrationCount: { fontFamily: F.uiMedium, fontSize: 12, color: C.muted },
   dropIcons: { flexDirection: "row", gap: 3, marginTop: 2 },
@@ -1177,12 +1187,12 @@ const styles = StyleSheet.create({
   mealCard: {
     width: 148,
     height: 185,
-    borderRadius: 18,
+    borderRadius: 24,
     overflow: "hidden",
     justifyContent: "flex-end",
-    shadowColor: C.bg1,
+    shadowColor: C.pink,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.14,
     shadowRadius: 10,
     elevation: 3,
   },
@@ -1258,13 +1268,13 @@ const styles = StyleSheet.create({
   },
   ideaIconRow: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 },
   ideaIconCircle: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
-  ideaSheetLabel: { fontFamily: F.luxuryBold, fontSize: 22, color: C.deep, flex: 1 },
+  ideaSheetLabel: { fontFamily: F.uiBold, fontSize: 20, fontWeight: "700", color: C.deep, flex: 1 },
   ideaTipBody: { fontFamily: F.bodyRegular, fontSize: 15.5, color: C.muted, lineHeight: 23, marginBottom: 20 },
   ideaBloopBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 13,
@@ -1313,8 +1323,9 @@ const styles = StyleSheet.create({
   },
   mealSheetCondText: { fontFamily: F.uiSemiBold, fontSize: 11.5 },
   mealSheetTitle: {
-    fontFamily: F.luxuryBold,
-    fontSize: 24,
+    fontFamily: F.uiBold,
+    fontSize: 22,
+    fontWeight: "700",
     color: C.deep,
     letterSpacing: -0.3,
     marginBottom: 18,
@@ -1352,7 +1363,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: C.border,
     paddingHorizontal: 18,

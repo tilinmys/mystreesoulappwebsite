@@ -26,6 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, Path as SvgPath, LinearGradient as SvgLinearGradient, Stop as SvgStop } from "react-native-svg";
 import { CachedImage } from "../CachedImage";
+import { FittedText } from "../system/FittedText";
 import { darkColors, lightColors, type AppColors } from "../../constants/colors";
 import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
@@ -638,9 +639,9 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
                       ]}
                     >
                       <Text style={s.moodEmoji}>{m.emoji}</Text>
-                      <Text style={[s.moodLabel, active && { color: m.color, fontFamily: F.uiSemiBold }]}>
+                      <FittedText style={[s.moodLabel, active && { color: m.color, fontFamily: F.uiSemiBold }]}>
                         {m.label}
-                      </Text>
+                      </FittedText>
                     </Pressable>
                   );
                 })}
@@ -946,6 +947,8 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     color: colors.textMuted,
     fontFamily: F.uiMedium,
     fontSize: 11,
+    minWidth: 82,
+    textAlign: "center",
   },
 
   // Flow

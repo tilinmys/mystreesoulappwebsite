@@ -147,34 +147,34 @@ type CycleDayInfo = {
 };
 
 const cycleData: Record<number, CycleDayInfo> = {
-  1:  { phase: "Menstruation",  message: "Let's take care of you 💗",               phaseType: "period",     color: "#F9597A" },
-  2:  { phase: "Menstruation",  message: "Rest and stay hydrated. 💧",               phaseType: "period",     color: "#FF8A9F" },
-  3:  { phase: "Menstruation",  message: "Warmth and slow movement can help. ☕",    phaseType: "period",     color: "#FF97AB" },
-  4:  { phase: "Menstruation",  message: "Your body is asking for softness. 🌸",     phaseType: "period",     color: "#FFA4B6" },
-  5:  { phase: "Menstruation",  message: "Energy may begin returning. ⚡",           phaseType: "period",     color: "#FFB2C1" },
-  6:  { phase: "Pre-fertile",   message: "A gentle reset day. 🧘‍♀️",                   phaseType: "prefertile", color: "#F5F5F5" },
-  7:  { phase: "Pre-fertile",   message: "Notice what feels lighter today. 🌿",      phaseType: "prefertile", color: "#F5F5F5" },
-  8:  { phase: "Fertile Window",message: "Energy is rising ✨",                     phaseType: "fertile",    color: "#C8E6C9" },
-  9:  { phase: "Fertile Window",message: "A good day for fresh plans. 📅",           phaseType: "fertile",    color: "#C8E6C9" },
-  10: { phase: "Fertile Window",message: "Confidence may feel easier. ☀️",           phaseType: "fertile",    color: "#C8E6C9" },
-  11: { phase: "Fertile Window",message: "Your body is opening into energy. 🏃‍♀️",     phaseType: "fertile",    color: "#C8E6C9" },
-  12: { phase: "Fertile Window",message: "Support your rising rhythm. 🌊",           phaseType: "fertile",    color: "#C8E6C9" },
-  13: { phase: "Fertile Window",message: "You may feel more social today. 💬",       phaseType: "fertile",    color: "#C8E6C9" },
-  14: { phase: "Ovulation",     message: "Peak fertility today 🌸",                 phaseType: "ovulation",  color: "#388E3C" },
-  15: { phase: "Luteal Phase",  message: "Begin easing into steadiness. 🍃",         phaseType: "luteal",     color: "#EDE7F6" },
-  16: { phase: "Luteal Phase",  message: "Keep meals steady and nourishing. 🥑",     phaseType: "luteal",     color: "#EDE7F6" },
-  17: { phase: "Luteal Phase",  message: "A grounded routine can help. 🏡",          phaseType: "luteal",     color: "#EDE7F6" },
-  18: { phase: "Luteal Phase",  message: "Listen for early body signals. 🎙️",        phaseType: "luteal",     color: "#EDE7F6" },
-  19: { phase: "Luteal Phase",  message: "Choose calm over pressure. 🌬️",            phaseType: "luteal",     color: "#EDE7F6" },
-  20: { phase: "Luteal Phase",  message: "Protect your sleep tonight. 🌙",           phaseType: "luteal",     color: "#EDE7F6" },
-  21: { phase: "Luteal Phase",  message: "Cravings may need care, not control. 🍫",  phaseType: "luteal",     color: "#EDE7F6" },
-  22: { phase: "Luteal Phase",  message: "Focus on nourishment 🧘‍♀️",                 phaseType: "luteal",     color: "#EDE7F6" },
-  23: { phase: "Luteal Phase",  message: "Slow rituals can feel supportive. 🕯️",     phaseType: "luteal",     color: "#EDE7F6" },
-  24: { phase: "Luteal Phase",  message: "Hydration and magnesium may help. 🥛",     phaseType: "luteal",     color: "#EDE7F6" },
-  25: { phase: "Luteal Phase",  message: "Make room for gentleness. ☁️",             phaseType: "luteal",     color: "#EDE7F6" },
-  26: { phase: "Luteal Phase",  message: "Lower the noise where you can. 🤫",        phaseType: "luteal",     color: "#EDE7F6" },
-  27: { phase: "Luteal Phase",  message: "Rest is productive today. 🛌",             phaseType: "luteal",     color: "#EDE7F6" },
-  28: { phase: "Luteal Phase",  message: "Your next reset may be close. 🔄",         phaseType: "luteal",     color: "#EDE7F6" },
+  1:  { phase: "Menstruation",  message: "Rest and hydrate today.",                 phaseType: "period",     color: "#F9597A" },
+  2:  { phase: "Menstruation",  message: "Keep warmth close.",                      phaseType: "period",     color: "#FF8A9F" },
+  3:  { phase: "Menstruation",  message: "Slow movement may help.",                 phaseType: "period",     color: "#FF97AB" },
+  4:  { phase: "Menstruation",  message: "Choose lighter plans.",                   phaseType: "period",     color: "#FFA4B6" },
+  5:  { phase: "Menstruation",  message: "Energy may return.",                      phaseType: "period",     color: "#FFB2C1" },
+  6:  { phase: "Pre-fertile",   message: "A gentle reset day.",                     phaseType: "prefertile", color: "#F5F5F5" },
+  7:  { phase: "Pre-fertile",   message: "Notice what feels lighter.",              phaseType: "prefertile", color: "#F5F5F5" },
+  8:  { phase: "Fertile Window",message: "Energy is rising.",                       phaseType: "fertile",    color: "#C8E6C9" },
+  9:  { phase: "Fertile Window",message: "Fresh plans may fit.",                    phaseType: "fertile",    color: "#C8E6C9" },
+  10: { phase: "Fertile Window",message: "Confidence may feel easier.",             phaseType: "fertile",    color: "#C8E6C9" },
+  11: { phase: "Fertile Window",message: "Movement may feel natural.",              phaseType: "fertile",    color: "#C8E6C9" },
+  12: { phase: "Fertile Window",message: "Support your rising rhythm.",             phaseType: "fertile",    color: "#C8E6C9" },
+  13: { phase: "Fertile Window",message: "Social energy may rise.",                 phaseType: "fertile",    color: "#C8E6C9" },
+  14: { phase: "Ovulation",     message: "Peak fertility today.",                   phaseType: "ovulation",  color: "#388E3C" },
+  15: { phase: "Luteal Phase",  message: "Ease into steadiness.",                   phaseType: "luteal",     color: "#EDE7F6" },
+  16: { phase: "Luteal Phase",  message: "Keep meals steady.",                      phaseType: "luteal",     color: "#EDE7F6" },
+  17: { phase: "Luteal Phase",  message: "A grounded routine helps.",               phaseType: "luteal",     color: "#EDE7F6" },
+  18: { phase: "Luteal Phase",  message: "Listen for body signals.",                phaseType: "luteal",     color: "#EDE7F6" },
+  19: { phase: "Luteal Phase",  message: "Choose calm over pressure.",              phaseType: "luteal",     color: "#EDE7F6" },
+  20: { phase: "Luteal Phase",  message: "Protect your sleep tonight.",             phaseType: "luteal",     color: "#EDE7F6" },
+  21: { phase: "Luteal Phase",  message: "Cravings may need care.",                 phaseType: "luteal",     color: "#EDE7F6" },
+  22: { phase: "Luteal Phase",  message: "Focus on nourishment.",                   phaseType: "luteal",     color: "#EDE7F6" },
+  23: { phase: "Luteal Phase",  message: "Slow rituals may help.",                  phaseType: "luteal",     color: "#EDE7F6" },
+  24: { phase: "Luteal Phase",  message: "Hydration may help.",                     phaseType: "luteal",     color: "#EDE7F6" },
+  25: { phase: "Luteal Phase",  message: "Make room for rest.",                     phaseType: "luteal",     color: "#EDE7F6" },
+  26: { phase: "Luteal Phase",  message: "Lower extra noise.",                      phaseType: "luteal",     color: "#EDE7F6" },
+  27: { phase: "Luteal Phase",  message: "Rest supports recovery.",                 phaseType: "luteal",     color: "#EDE7F6" },
+  28: { phase: "Luteal Phase",  message: "Your next reset is close.",               phaseType: "luteal",     color: "#EDE7F6" },
 };
 
 // ── Circular tracker constants ────────────────────────────────────────────────
@@ -280,6 +280,7 @@ function MonthCalendar({
   compact = false,
   loggedDates = new Set<string>(),
   parentSelectedDay,
+  selectedDateKey,
   onDayPress,
 }: {
   month: typeof CALENDAR_MONTHS[number];
@@ -287,6 +288,7 @@ function MonthCalendar({
   compact?: boolean;
   loggedDates?: Set<string>;
   parentSelectedDay: number;
+  selectedDateKey?: string;
   onDayPress?: (dateKey: string, meta: ReturnType<typeof calendarMeta>) => void;
 }) {
   const { colors, isDark } = useColorMode();
@@ -308,7 +310,7 @@ function MonthCalendar({
     <View style={[
       styles.monthBlock,
       compact && styles.monthBlockCompact,
-      { backgroundColor: colors.surface, borderColor: colors.border },
+      { backgroundColor: colors.surface, borderColor: "rgba(246,233,239,0.10)", borderWidth: 1 },
     ]}>
       {/* Month title */}
       <View style={styles.monthTitleRow}>
@@ -328,10 +330,9 @@ function MonthCalendar({
       {/* Calendar rows */}
       {rows.map((row, rowIdx) => {
         // Parse contiguous segments in this row
-        const segments: { startCol: number; endCol: number; type: 'logged' | 'expected' | 'fertile' }[] = [];
+        const segments: { startCol: number; endCol: number; type: 'logged' | 'expected' }[] = [];
         let currentLoggedStart: number | null = null;
         let currentExpectedStart: number | null = null;
-        let currentFertileStart: number | null = null;
 
         for (let col = 0; col < 7; col++) {
           const day = row[col];
@@ -361,18 +362,6 @@ function MonthCalendar({
                 currentExpectedStart = null;
               }
             }
-
-            // Check Fertile Range (isFertile)
-            if (meta.isFertile) {
-              if (currentFertileStart === null) {
-                currentFertileStart = col;
-              }
-            } else {
-              if (currentFertileStart !== null) {
-                segments.push({ startCol: currentFertileStart, endCol: col - 1, type: 'fertile' });
-                currentFertileStart = null;
-              }
-            }
           } else {
             if (currentLoggedStart !== null) {
               segments.push({ startCol: currentLoggedStart, endCol: col - 1, type: 'logged' });
@@ -382,10 +371,6 @@ function MonthCalendar({
               segments.push({ startCol: currentExpectedStart, endCol: col - 1, type: 'expected' });
               currentExpectedStart = null;
             }
-            if (currentFertileStart !== null) {
-              segments.push({ startCol: currentFertileStart, endCol: col - 1, type: 'fertile' });
-              currentFertileStart = null;
-            }
           }
         }
         if (currentLoggedStart !== null) {
@@ -393,9 +378,6 @@ function MonthCalendar({
         }
         if (currentExpectedStart !== null) {
           segments.push({ startCol: currentExpectedStart, endCol: 6, type: 'expected' });
-        }
-        if (currentFertileStart !== null) {
-          segments.push({ startCol: currentFertileStart, endCol: 6, type: 'fertile' });
         }
 
         return (
@@ -421,7 +403,7 @@ function MonthCalendar({
                     }}
                   />
                 );
-              } else if (seg.type === 'expected') {
+              } else {
                 return (
                   <View
                     key={`seg-e-${sIdx}`}
@@ -440,22 +422,6 @@ function MonthCalendar({
                     }}
                   />
                 );
-              } else {
-                return (
-                  <View
-                    key={`seg-f-${sIdx}`}
-                    style={{
-                      position: 'absolute',
-                      left: leftPct as any,
-                      width: widthPct as any,
-                      height: 30,
-                      top: 7,
-                      backgroundColor: isDark ? 'rgba(45, 138, 94, 0.18)' : 'rgba(45, 138, 94, 0.12)',
-                      borderRadius: 15,
-                      zIndex: 0,
-                    }}
-                  />
-                );
               }
             })}
 
@@ -467,6 +433,7 @@ function MonthCalendar({
               const lpHere  = meta.isLoggedPeriod;
               const epHere  = meta.isExpectedPeriod;
               const dateKey = getDateKey(monthIndex, day);
+              const isSelected = dateKey === selectedDateKey;
 
               return (
                 <Pressable
@@ -483,17 +450,14 @@ function MonthCalendar({
                     style={[
                       styles.monthDayRing,
                       meta.isToday && !epHere && !lpHere && {
-                        borderColor: colors.primaryCTA,
+                        borderColor: "#E8A6B6",
                         borderWidth: 2,
                         backgroundColor: `${colors.surface}F0`,
                       },
-                      meta.cycleDay === parentSelectedDay && {
+                      isSelected && {
+                        backgroundColor: colors.primaryCTA,
                         borderColor: colors.primaryCTA,
                         borderWidth: 2,
-                      },
-                      meta.isOvulation && {
-                        backgroundColor: isDark ? '#2E7D32' : '#2D8A5E',
-                        borderWidth: 0,
                       },
                     ]}
                   >
@@ -503,13 +467,17 @@ function MonthCalendar({
                         { color: colors.textPrimary },
                         lpHere && { color: isDark ? '#FFA4B6' : '#C44E68', fontFamily: F.uiBold },
                         epHere && { color: isDark ? '#FFA4B6' : '#C44E68', fontFamily: F.uiBold },
-                        meta.isOvulation && { color: '#FFFFFF', fontFamily: F.uiBold },
                         meta.isToday && !epHere && !lpHere && { color: colors.textPrimary, fontFamily: F.uiBlack },
+                        isSelected && { color: '#FFFFFF', fontFamily: F.uiBold },
                       ]}
                     >
                       {day}
                     </Text>
                   </View>
+
+                  {loggedDates.has(dateKey) && (
+                    <View style={[styles.historyDot, { backgroundColor: '#2E7D32', position: 'absolute', bottom: 4 }]} />
+                  )}
 
                   {epHere && !compact && (
                     <Text style={[styles.tinyCycleDay, { color: EP_CLR }]}>D{meta.cycleDay}</Text>
@@ -553,131 +521,140 @@ function InteractiveCycleWheel({
   // Dynamic active color for high-vibrancy glow and high-contrast texts
   function getActiveColor(day: number): string {
     if (isDark) {
-      if (day >= 1 && day <= 5) return "#FF4081";
-      if (day >= 8 && day <= 14) return "#81C784";
-      if (day >= 15 && day <= 28) return "#B39DDB";
-      return "#9E9EAE";
+      if (day >= 1 && day <= 5) return "#E8A6B6"; // Bloom Pink
+      if (day >= 8 && day <= 14) return "#81C784"; // Muted mint green
+      if (day >= 15 && day <= 28) return "#B39DDB"; // Soft lavender
+      return "#FFFFFF";
     } else {
       if (day >= 1 && day <= 5) return "#E63B60"; // Menstruation red/pink
       if (day >= 8 && day <= 14) return "#2D8A5E"; // Fertile window/Ovulation forest green
       if (day >= 15 && day <= 28) return "#7E7EBE"; // Luteal phase purple/blue
-      return "#7E7E9E"; // Pre-fertile grey
+      return "#7E7E9E";
     }
   }
 
   const activeColor = getActiveColor(selectedDay);
 
   // ── Segment fill and text color ──────────────────────────────────────────
-  function getSegmentColor(day: number): { fill: string; text: string } {
+  function getSegmentColor(day: number): { fill: string; text: string; activeColor: string } {
+    const isDayActive = day === selectedDay;
     if (isDark) {
-      // Dark Mode colors
       if (day >= 1 && day <= 5) {
-        // Menstruation (varying pink/red with dark background text for AAA contrast)
-        const colorsList = ["#D81B60", "#EC407A", "#F48FB1", "#F8BBD0", "#FFCDD2"];
-        return { fill: colorsList[day - 1] || "#D81B60", text: colors.background };
+        return {
+          fill: "rgba(232, 166, 182, 0.22)",
+          text: isDayActive ? colors.background : "#E8A6B6",
+          activeColor: "#E8A6B6",
+        };
       }
       if (day === 6 || day === 7) {
-        // Pre-fertile (standard Velvet Mauve inactive day blocks)
-        return { fill: colors.surfaceRaised, text: colors.textPrimary };
+        return {
+          fill: "rgba(255, 255, 255, 0.06)",
+          text: isDayActive ? colors.background : colors.textPrimary,
+          activeColor: colors.textPrimary,
+        };
       }
       if (day >= 8 && day <= 13) {
-        // Fertile window (varying mint greens with dark background text for AAA contrast)
-        const colorsList = ["#1B5E20", "#2E7D32", "#388E3C", "#43A047", "#4CAF50", "#66BB6A"];
-        return { fill: colorsList[day - 8] || "#2E7D32", text: colors.background };
+        return {
+          fill: "rgba(168, 230, 207, 0.25)",
+          text: isDayActive ? colors.background : "#81C784",
+          activeColor: "#81C784",
+        };
       }
       if (day === 14) {
-        // Ovulation
-        return { fill: "#2E7D32", text: colors.background };
+        return {
+          fill: "rgba(46, 125, 50, 0.3)",
+          text: isDayActive ? colors.background : "#81C784",
+          activeColor: "#2E7D32",
+        };
       }
-      // Luteal Phase (Days 15-28 - Velvet Mauve inactive day blocks)
-      return { fill: colors.surfaceRaised, text: colors.textPrimary };
+      return {
+        fill: "rgba(181, 138, 200, 0.25)",
+        text: isDayActive ? colors.background : "#B39DDB",
+        activeColor: "#B39DDB",
+      };
     } else {
-      // Light Mode colors (exact match to screenshot)
       if (day >= 1 && day <= 5) {
-        // Menstruation (varying pinks/reds with white text)
-        const colorsList = ["#E63B60", "#EB607F", "#F0859E", "#F5AABD", "#FAD0DC"];
-        return { fill: colorsList[day - 1] || "#E63B60", text: "#FFFFFF" };
+        return {
+          fill: "rgba(230, 59, 96, 0.12)",
+          text: isDayActive ? "#FFFFFF" : "#E63B60",
+          activeColor: "#E63B60",
+        };
       }
       if (day === 6 || day === 7) {
-        // Pre-fertile (soft greyish lavender with grey text)
-        return { fill: "#F0F0F7", text: "#7E7E9E" };
+        return {
+          fill: "rgba(0, 0, 0, 0.04)",
+          text: isDayActive ? "#FFFFFF" : "#7E7E9E",
+          activeColor: "#7E7E9E",
+        };
       }
       if (day >= 8 && day <= 13) {
-        // Fertile window (varying mint greens with neutral dark text)
-        const colorsList = ["#C2E9C2", "#CEEFCE", "#DBF4DB", "#E8F8E8", "#F0FAF0", "#F7FCF7"];
-        return { fill: colorsList[day - 8] || "#C2E9C2", text: "#221822" };
+        return {
+          fill: "rgba(45, 138, 94, 0.12)",
+          text: isDayActive ? "#FFFFFF" : "#2D8A5E",
+          activeColor: "#2D8A5E",
+        };
       }
       if (day === 14) {
-        // Ovulation
-        return { fill: "#2D8A5E", text: "#FFFFFF" };
+        return {
+          fill: "rgba(45, 138, 94, 0.2)",
+          text: isDayActive ? "#FFFFFF" : "#2D8A5E",
+          activeColor: "#2D8A5E",
+        };
       }
-      // Luteal Phase (Days 15-28)
-      return { fill: "#EDEAF6", text: "#5A5A82" };
+      return {
+        fill: "rgba(126, 126, 190, 0.12)",
+        text: isDayActive ? "#FFFFFF" : "#7E7EBE",
+        activeColor: "#7E7EBE",
+      };
     }
   }
 
   // ── Text Path and Bracket Formulas ─────────────────────────────────────────
-  // Outer Bracket indicators (Line R = 172, Text R = 184)
-  // Menstruation (Days 1-5): B1 (270) to B6 (334.2857)
   const menLineD = describeCurvedPath(CYCLE_CENTER, CYCLE_CENTER, 172, 270, 334.2857);
   const menTextD = describeCurvedPath(CYCLE_CENTER, CYCLE_CENTER, 184, 272, 332.2857);
 
-  // Fertile Window (Days 8-13): B8 (0) to B14 (77.1428)
   const ferLineD = describeCurvedPath(CYCLE_CENTER, CYCLE_CENTER, 172, 0, 77.1428);
-  // Re-routed to trace counter-clockwise (CCW) starting from bottom and going to right,
-  // making characters orient upright along the bottom right quadrant.
   const ferTextD = describeCurvedPathCCW(CYCLE_CENTER, CYCLE_CENTER, 184, 75.1428, 2);
 
-  // Luteal Phase (Days 15-28): B15 (90) to B29 (270)
   const lutLineD = describeCurvedPath(CYCLE_CENTER, CYCLE_CENTER, 172, 90, 270);
   const lutTextD = describeCurvedPath(CYCLE_CENTER, CYCLE_CENTER, 184, 92, 268);
 
-  // Ovulation popped-out coordinates
   const d14Angle = 270 + 13.5 * SEGMENT_ANGLE; // 83.5714
-  const d14X = CYCLE_CENTER + OVULATION_BUBBLE_R * Math.cos(toRad(d14Angle));
-  const d14Y = CYCLE_CENTER + OVULATION_BUBBLE_R * Math.sin(toRad(d14Angle));
   const d14Color = isDark ? "#2E7D32" : "#2D8A5E";
 
-  const menColor = isDark ? "#FF4081" : "#E63B60";
+  const menColor = isDark ? "#E8A6B6" : "#E63B60";
   const ferColor = isDark ? "#81C784" : "#2D8A5E";
   const lutColor = isDark ? "#B39DDB" : "#7E7EBE";
 
-  // Render a small tick marker at specific angle
-  function renderTickLine(angleDeg: number, key: string, color: string) {
-    const pStart = polarPoint(CYCLE_CENTER, CYCLE_CENTER, 168, angleDeg);
-    const pEnd   = polarPoint(CYCLE_CENTER, CYCLE_CENTER, 176, angleDeg);
+  function renderPhaseDot(angleDeg: number, key: string, color: string) {
+    const pt = polarPoint(CYCLE_CENTER, CYCLE_CENTER, 172, angleDeg);
     return (
-      <Line
+      <Circle
         key={key}
-        x1={pStart.x}
-        y1={pStart.y}
-        x2={pEnd.x}
-        y2={pEnd.y}
-        stroke={color}
-        strokeWidth={1.5}
+        cx={pt.x}
+        cy={pt.y}
+        r={3.5}
+        fill={color}
       />
     );
   }
 
-  const centerSize = CIRCULAR_TRACKER_SIZE * 0.48;
+  const centerSize = 156;
 
   return (
-    <View style={[
-      styles.cycleWheelCard,
-      {
-        backgroundColor: isDark ? colors.background : "#FFFFFF",
-        borderColor: isDark ? "transparent" : "#EAEAEA",
-        borderWidth: isDark ? 0 : 1,
-        shadowColor: isDark ? "#140E16" : "#2E2330",
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: isDark ? 0.35 : 0.08,
-        shadowRadius: 28,
-        elevation: 6,
-      },
-    ]}>
+    <View style={{
+      width: 320,
+      height: 320,
+      aspectRatio: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      alignSelf: "center",
+      position: "relative",
+      marginBottom: 20,
+    }}>
       <Svg
-        width={CIRCULAR_TRACKER_SIZE}
-        height={CIRCULAR_TRACKER_SIZE}
+        width={320}
+        height={320}
         viewBox={`0 0 ${CYCLE_VIEWBOX} ${CYCLE_VIEWBOX}`}
       >
         <Defs>
@@ -692,56 +669,42 @@ function InteractiveCycleWheel({
           const isSelected = day === selectedDay;
           const seg = getSegmentColor(day);
 
-          // Skip normal arc render for Day 14 (will render circle below)
-          if (day === 14) return null;
-
           // Trigonometry starts exactly at 12 o'clock (270)
-          let startDeg = 270 + index * SEGMENT_ANGLE + 0.7;
-          let endDeg = 270 + (index + 1) * SEGMENT_ANGLE - 0.7;
+          let startDeg = 270 + index * SEGMENT_ANGLE + 0.5;
+          let endDeg = 270 + (index + 1) * SEGMENT_ANGLE - 0.5;
 
-          // Custom-molded physical socket recess around Day 14 circle
-          if (day === 13) {
-            endDeg = 270 + 13 * SEGMENT_ANGLE - OVULATION_SOCKET_GAP_DEG;
-          } else if (day === 15) {
-            startDeg = 270 + 14 * SEGMENT_ANGLE + OVULATION_SOCKET_GAP_DEG;
-          }
-
-          // Dynamically centered label point inside shortened or standard segments
           const midAngle = (startDeg + endDeg) / 2;
-
-          // Selected block pop-out radius
-          const outerR = isSelected ? CYCLE_OUTER_R + 6 : CYCLE_OUTER_R;
-          const innerR = isSelected ? CYCLE_INNER_R - 2 : CYCLE_INNER_R;
-
-          const labelPoint = polarPoint(CYCLE_CENTER, CYCLE_CENTER, 133, midAngle);
+          const pos = polarPoint(CYCLE_CENTER, CYCLE_CENTER, 133, midAngle);
 
           return (
             <G key={day}>
-              {/* Selected state soft visual drop-glow in active color */}
-              {isSelected && (
-                <Path
-                  d={describeDonutSegment(startDeg - 0.2, endDeg + 0.2, outerR + 4, innerR - 2)}
-                  fill={activeColor}
-                  opacity={0.02}
-                />
-              )}
-
               {/* Main segment path */}
               <Path
-                d={describeDonutSegment(startDeg, endDeg, outerR, innerR)}
+                d={describeDonutSegment(startDeg, endDeg, CYCLE_OUTER_R, CYCLE_INNER_R)}
                 fill={seg.fill}
-                stroke={isSelected ? activeColor : (isDark ? colors.background : "#FFFFFF")}
-                strokeWidth={isSelected ? 2 : 1.5}
+                stroke={isDark ? colors.background : "#FFFFFF"}
+                strokeWidth={1.5}
                 onPress={() => selectDay(day)}
               />
 
-              {/* Day number inside the segment */}
+              {/* Active Day Circle or Ovulation Day Circle */}
+              {(isSelected || day === 14) && (
+                <Circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={day === 1 && isSelected ? 17 : 14}
+                  fill={day === 14 ? d14Color : seg.activeColor}
+                  onPress={() => selectDay(day)}
+                />
+              )}
+
+              {/* Day number */}
               <SvgText
-                x={labelPoint.x}
-                y={labelPoint.y + 4.5}
-                fill={seg.text}
-                fontSize={isSelected ? 14 : 12}
-                fontWeight={isSelected ? "900" : "700"}
+                x={pos.x}
+                y={pos.y + 4.5}
+                fill={isSelected || day === 14 ? "#FFFFFF" : seg.text}
+                fontSize={isSelected ? 13 : 11}
+                fontWeight="900"
                 fontFamily={F.uiLabel}
                 textAnchor="middle"
                 onPress={() => selectDay(day)}
@@ -751,7 +714,7 @@ function InteractiveCycleWheel({
 
               {/* Generous touch target overlay capturing all taps */}
               <Path
-                d={describeDonutSegment(startDeg - 0.7, endDeg + 0.7, outerR + 15, innerR - 15)}
+                d={describeDonutSegment(startDeg - 0.5, endDeg + 0.5, CYCLE_OUTER_R + 15, CYCLE_INNER_R - 15)}
                 fill="rgba(0,0,0,0)"
                 onPress={() => selectDay(day)}
               />
@@ -759,49 +722,9 @@ function InteractiveCycleWheel({
           );
         })}
 
-        {/* Day 14 Ovulation Popped-Out Circle */}
-        <G>
-          {selectedDay === 14 && (
-            <Circle
-              cx={d14X}
-              cy={d14Y}
-              r={32}
-              fill={d14Color}
-              opacity={0.02}
-            />
-          )}
-          <Circle
-            cx={d14X}
-            cy={d14Y}
-            r={26}
-            fill={d14Color}
-            onPress={() => selectDay(14)}
-          />
-          <SvgText
-            x={d14X}
-            y={d14Y + 5.5}
-            fill={isDark ? colors.background : "#FFFFFF"}
-            fontSize={15}
-            fontWeight="900"
-            fontFamily={F.uiLabel}
-            textAnchor="middle"
-            onPress={() => selectDay(14)}
-          >
-            14
-          </SvgText>
-          {/* Expanded transparent hit target for Day 14 */}
-          <Circle
-            cx={d14X}
-            cy={d14Y}
-            r={42}
-            fill="rgba(0,0,0,0)"
-            onPress={() => selectDay(14)}
-          />
-        </G>
-
         {/* Ovulation Constant Flower and Label */}
         <G>
-          <G transform={`translate(${CYCLE_CENTER + OVULATION_MARKER_R * Math.cos(toRad(d14Angle))}, ${CYCLE_CENTER + OVULATION_MARKER_R * Math.sin(toRad(d14Angle))})`}>
+          <G transform={`translate(${CYCLE_CENTER + 182 * Math.cos(toRad(d14Angle))}, ${CYCLE_CENTER + 182 * Math.sin(toRad(d14Angle))})`}>
             {/* 5 petals */}
             <Circle cx={0} cy={-5} r={4.5} fill={d14Color} />
             <Circle cx={4.75} cy={-1.5} r={4.5} fill={d14Color} />
@@ -812,8 +735,8 @@ function InteractiveCycleWheel({
             <Circle cx={0} cy={0} r={3} fill="#E8D28A" />
           </G>
           <SvgText
-            x={CYCLE_CENTER + OVULATION_LABEL_R * Math.cos(toRad(d14Angle))}
-            y={CYCLE_CENTER + OVULATION_LABEL_R * Math.sin(toRad(d14Angle)) + 4}
+            x={CYCLE_CENTER + 206 * Math.cos(toRad(d14Angle))}
+            y={CYCLE_CENTER + 206 * Math.sin(toRad(d14Angle)) + 4}
             fill={colors.textMuted}
             fontSize={10.5}
             fontWeight="800"
@@ -828,8 +751,8 @@ function InteractiveCycleWheel({
         {/* Bracket indicators and curved texts */}
         {/* MENSTRUATION */}
         <Path d={menLineD} stroke={isDark ? colors.textMuted : menColor} strokeWidth={1.2} fill="none" opacity={0.6} />
-        {renderTickLine(270, "men-start", isDark ? colors.textMuted : menColor)}
-        {renderTickLine(334.2857, "men-end", isDark ? colors.textMuted : menColor)}
+        {renderPhaseDot(270, "men-start", isDark ? colors.textMuted : menColor)}
+        {renderPhaseDot(334.2857, "men-end", isDark ? colors.textMuted : menColor)}
         <SvgText fill={colors.textMuted} fontSize="11" fontWeight="700" letterSpacing={3} fontFamily={F.uiLabel}>
           <TextPath href="#menstruationPath" xlinkHref="#menstruationPath" startOffset="50%" textAnchor="middle">
             MENSTRUATION
@@ -838,8 +761,8 @@ function InteractiveCycleWheel({
 
         {/* FERTILE WINDOW */}
         <Path d={ferLineD} stroke={colors.textMuted} strokeWidth={1.2} fill="none" opacity={0.6} />
-        {renderTickLine(0, "fer-start", colors.textMuted)}
-        {renderTickLine(77.1428, "fer-end", colors.textMuted)}
+        {renderPhaseDot(0, "fer-start", colors.textMuted)}
+        {renderPhaseDot(77.1428, "fer-end", colors.textMuted)}
         <SvgText fill={colors.textMuted} fontSize="11" fontWeight="700" letterSpacing={3} fontFamily={F.uiLabel}>
           <TextPath href="#fertilePath" xlinkHref="#fertilePath" startOffset="50%" textAnchor="middle">
             FERTILE WINDOW
@@ -848,8 +771,8 @@ function InteractiveCycleWheel({
 
         {/* LUTEAL PHASE */}
         <Path d={lutLineD} stroke={isDark ? colors.textMuted : lutColor} strokeWidth={1.2} fill="none" opacity={0.6} />
-        {renderTickLine(90, "lut-start", isDark ? colors.textMuted : lutColor)}
-        {renderTickLine(270, "lut-end", isDark ? colors.textMuted : lutColor)}
+        {renderPhaseDot(90, "lut-start", isDark ? colors.textMuted : lutColor)}
+        {renderPhaseDot(270, "lut-end", isDark ? colors.textMuted : lutColor)}
         <SvgText fill={colors.textMuted} fontSize="11" fontWeight="700" letterSpacing={3} fontFamily={F.uiLabel}>
           <TextPath href="#lutealPath" xlinkHref="#lutealPath" startOffset="50%" textAnchor="middle">
             LUTEAL PHASE
@@ -858,39 +781,35 @@ function InteractiveCycleWheel({
       </Svg>
 
       {/* Center info panel — Dynamic content designed for high contrast readability against light/dark surface */}
-      <Animated.View style={[
-        styles.cycleWheelCenter,
-        {
-          width: centerSize,
-          height: centerSize,
-          borderRadius: centerSize / 2,
-          marginLeft: -centerSize / 2,
-          marginTop: -centerSize / 2,
-          opacity: fade,
-          backgroundColor: isDark ? colors.background : "#FFFFFF",
-          borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)",
-          borderWidth: 1,
-          shadowColor: "#000000",
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: isDark ? 0.25 : 0.08,
-          shadowRadius: 18,
-          elevation: 6,
-          padding: 16,
-          alignItems: "center",
-          justifyContent: "center",
-        }
-      ]}>
-        <Text style={{ fontFamily: F.uiBold, fontSize: 10, letterSpacing: 2, color: isDark ? "#A0A0B0" : "#8A8A8A", marginBottom: 4 }}>DAY OF CYCLE</Text>
-        <Text style={{ fontFamily: F.display, fontSize: 80, lineHeight: 88, fontWeight: "800", color: colors.textPrimary }}>
+      <Animated.View style={{
+        position: "absolute",
+        width: centerSize,
+        height: centerSize,
+        borderRadius: centerSize / 2,
+        opacity: fade,
+        backgroundColor: isDark ? colors.background : "#FFFFFF",
+        borderColor: isDark ? "rgba(246,233,239,0.10)" : "rgba(0,0,0,0.03)",
+        borderWidth: 1,
+        shadowColor: colors.primaryCTA,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: isDark ? 0.25 : 0.08,
+        shadowRadius: 18,
+        elevation: 6,
+        padding: 10,
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <Text style={{ fontFamily: F.uiBold, fontSize: 9, letterSpacing: 2, color: isDark ? "#A0A0B0" : "#8A8A8A", marginBottom: 2, textTransform: "uppercase" }}>DAY OF CYCLE</Text>
+        <Text style={{ fontFamily: F.display, fontSize: 62, lineHeight: 68, fontWeight: "900", color: colors.textPrimary }}>
           {selectedDay}
         </Text>
-        <View style={{ flexDirection: "row", alignItems: "center", width: "70%", marginVertical: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", width: "65%", marginVertical: 3 }}>
           <View style={{ flex: 1, height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.06)" }} />
-          <Text style={{ marginHorizontal: 8, fontSize: 16, color: colors.primaryCTA, fontWeight: "700" }}>♡</Text>
+          <MaterialCommunityIcons name="heart" size={12} color={colors.primaryCTA} style={{ marginHorizontal: 4 }} />
           <View style={{ flex: 1, height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.06)" }} />
         </View>
-        <Text style={[styles.cycleWheelPhase, { color: isDark ? colors.textPrimary : "#2E2330", fontFamily: F.uiBold, fontSize: 15, lineHeight: 18, marginBottom: 4 }]}>{selected.phase}</Text>
-        <Text style={[styles.cycleWheelMessage, { color: isDark ? colors.textMuted : "#7E7E8E", fontFamily: F.uiRegular, fontSize: 11, lineHeight: 15 }]}>{selected.message}</Text>
+        <Text numberOfLines={1} style={{ color: isDark ? colors.textPrimary : "#2E2330", fontFamily: F.uiBold, fontSize: 13, lineHeight: 16, marginBottom: 2, textAlign: "center" }}>{selected.phase}</Text>
+        <Text numberOfLines={2} style={{ color: isDark ? colors.textMuted : "#7E7E8E", fontFamily: F.uiRegular, fontSize: 9.5, lineHeight: 13, textAlign: "center", maxWidth: 120 }}>{selected.message}</Text>
       </Animated.View>
     </View>
   );
@@ -964,7 +883,8 @@ function DateDetailPopup({
             styles.popupSheet,
             {
               backgroundColor: colors.surface,
-              borderColor:     colors.border,
+              borderColor:     "rgba(246,233,239,0.10)",
+              borderWidth:     1,
               transform:       [{ translateY: slideAnim }],
             },
           ]}
@@ -1014,7 +934,7 @@ function DateDetailPopup({
                 <Text style={[styles.popupRowValue, { color: colors.textPrimary }]}>{log!.energyLevel}%</Text>
               </View>
               <View style={[styles.popupRow, { borderBottomColor: `${colors.border}30` }]}>
-                <MaterialCommunityIcons name="heart-pulse" size={18} color={colors.primaryCTA} />
+                <MaterialCommunityIcons name="pulse" size={18} color={colors.primaryCTA} />
                 <Text style={[styles.popupRowLabel, { color: colors.textMuted }]}>Stress</Text>
                 <Text style={[styles.popupRowValue, { color: colors.textPrimary }]}>{log!.stressLevel}%</Text>
               </View>
@@ -1189,8 +1109,19 @@ export default function CycleScreen() {
   ];
 
   const [selectedDay, setSelectedDay] = useState(CURRENT_DAY);
+  const [selectedDateKey, setSelectedDateKey] = useState<string>("2026-05-18");
   const [activeGraph,  setActiveGraph]  = useState<"all" | "estrogen" | "progesterone" | "lh">("all");
   const [logSheetOpen, setLogSheetOpen] = useState(false);
+
+  useEffect(() => {
+    // Sync the cycle wheel selection back to the calendar's selected day in May 2026
+    if (selectedDay >= 1 && selectedDay <= 28) {
+      const dk = `2026-05-${String(selectedDay).padStart(2, "0")}`;
+      if (selectedDateKey !== dk) {
+        setSelectedDateKey(dk);
+      }
+    }
+  }, [selectedDay]);
 
   const storeLogs     = useDailyLogStore((s) => s.logs);
   const getLogForDate = useDailyLogStore((s) => s.getLogForDate);
@@ -1309,17 +1240,126 @@ export default function CycleScreen() {
           </View>
         </View>
 
-        {/* ── Cycle Wheel Hero ─────────────────────────────────────────────── */}
+        {/* ── Cycle Calendar Strip (LIFTED TO TOP) ─────────────────────────── */}
+        <View style={[styles.calendarCard, {
+          backgroundColor: colors.surface,
+          borderColor:     "rgba(246,233,239,0.10)",
+          borderWidth:     1,
+          shadowColor:     colors.primaryCTA,
+        }]}>
+          <View style={styles.cardHeader}>
+            <View style={styles.calendarHeaderCopy}>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Period calendar</Text>
+              <Text style={[styles.cardSub,   { color: colors.textMuted   }]}>
+                Track logged days and expected period dates.
+              </Text>
+            </View>
+            <Pressable
+              style={[styles.seeAllBtn, { backgroundColor: `${colors.primaryCTA}1A` }]}
+              onPress={openCalendar}
+            >
+              <Text style={[styles.seeAllText, { color: colors.primaryCTA }]}>See calendar</Text>
+            </Pressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.calendarMonthScroller}
+            decelerationRate="fast"
+            snapToInterval={W - 62}
+            snapToAlignment="start"
+            contentOffset={{ x: W - 62, y: 0 }}
+          >
+            {CALENDAR_MONTHS.map((month, index) => (
+              <MonthCalendar
+                key={month.name}
+                month={month}
+                monthIndex={index}
+                compact
+                loggedDates={loggedDates}
+                parentSelectedDay={selectedDay}
+                selectedDateKey={selectedDateKey}
+                onDayPress={(dk, meta) => {
+                  setSelectedDateKey(dk);
+                  setSelectedDay(meta.cycleDay);
+                  handleDayPress(dk, meta, index, parseInt(dk.split("-")[2], 10));
+                }}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.periodSummaryRow}>
+            <View style={[styles.periodSummaryItem, {
+              backgroundColor: colors.surface,
+              borderColor:     "rgba(246,233,239,0.10)",
+              borderWidth:     1,
+              flexDirection:   "row",
+              alignItems:      "center",
+              gap:             12,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              shadowColor: isDark ? "#140E16" : "#2E2330",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.2 : 0.04,
+              shadowRadius: 8,
+              elevation: 2,
+            }]}>
+              {/* Pill indicator matching light pink style used in the calendar */}
+              <View style={{
+                width: 24,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: isDark ? 'rgba(232, 128, 144, 0.32)' : 'rgba(232, 128, 144, 0.22)',
+              }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.periodSummaryValue, { color: colors.textPrimary }]}>May 1-5</Text>
+                <Text style={[styles.periodSummaryLabel, { color: colors.textMuted }]}>Logged period</Text>
+              </View>
+            </View>
+            <View style={[styles.periodSummaryItem, {
+              backgroundColor: colors.surface,
+              borderColor:     "rgba(246,233,239,0.10)",
+              borderWidth:     1,
+              flexDirection:   "row",
+              alignItems:      "center",
+              gap:             12,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              shadowColor: isDark ? "#140E16" : "#2E2330",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.2 : 0.04,
+              shadowRadius: 8,
+              elevation: 2,
+            }]}>
+              {/* Dashed pill indicator matching dark pink dotted outline style */}
+              <View style={{
+                width: 24,
+                height: 12,
+                borderRadius: 6,
+                borderWidth: 1.5,
+                borderColor: isDark ? '#E88090' : '#C44E68',
+                borderStyle: 'dashed',
+                backgroundColor: 'transparent',
+              }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.periodSummaryValue, { color: colors.textPrimary }]}>May 29-Jun 2</Text>
+                <Text style={[styles.periodSummaryLabel, { color: colors.textMuted }]}>Expected dates</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Cycle Wheel Hero (CENTERED DIRECTLY UNDER CALENDAR) ───────────────── */}
         <InteractiveCycleWheel selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
 
-        {/* ── Hormone Graph ────────────────────────────────────────────────── */}
+        {/* ── Hormone Graph (PRIORITIZED BIOLOGICAL INSIGHT) ────────────────── */}
         <View style={[styles.card, {
           backgroundColor: colors.surface,
-          borderColor:     colors.border,
+          borderColor:     "rgba(246,233,239,0.10)",
+          borderWidth:     1,
           shadowColor:     colors.background,
         }]}>
           <View style={styles.cardHeader}>
-            <View>
+            <View style={styles.calendarHeaderCopy}>
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Hormone Rhythm</Text>
               <Text style={[styles.cardSub,   { color: colors.textMuted   }]}>Cycle days 1–{CYCLE_LENGTH}</Text>
             </View>
@@ -1337,16 +1377,18 @@ export default function CycleScreen() {
               <Pressable
                 key={chip.key}
                 onPress={() => setActiveGraph(chip.key as typeof activeGraph)}
-                style={[
+                style={({ pressed }) => [
                   styles.graphChip,
-                  { borderColor: colors.border },
-                  activeGraph === chip.key && { backgroundColor: chip.color, borderColor: chip.color },
+                  {
+                    backgroundColor: activeGraph === chip.key ? `${chip.color}1E` : colors.surface,
+                    borderColor:     activeGraph === chip.key ? chip.color : colors.border,
+                  },
+                  pressed && styles.pressed,
                 ]}
               >
                 <Text style={[
                   styles.graphChipText,
-                  { color: colors.textMuted },
-                  activeGraph === chip.key && { color: colors.background },
+                  { color: activeGraph === chip.key ? chip.color : colors.textMuted },
                 ]}>
                   {chip.label}
                 </Text>
@@ -1440,7 +1482,8 @@ export default function CycleScreen() {
           {METRICS.map((m) => (
             <View key={m.key} style={[styles.metricCard, {
               backgroundColor: colors.surface,
-              borderColor:     colors.border,
+              borderColor:     "rgba(246,233,239,0.10)",
+              borderWidth:     1,
               shadowColor:     colors.background,
             }]}>
               <View style={[styles.metricIconBubble, { backgroundColor: m.bg }]}>
@@ -1453,176 +1496,6 @@ export default function CycleScreen() {
               </View>
             </View>
           ))}
-        </View>
-
-        {/* ── AI Insight Card ──────────────────────────────────────────────── */}
-        <LinearGradient
-          colors={[`${colors.primaryCTA}1E`, `${colors.primaryCTA}0D`]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.insightCard, { borderColor: `${colors.primaryCTA}33` }]}
-        >
-          <View style={styles.insightLeft}>
-            <View style={styles.insightIconRow}>
-              <MaterialCommunityIcons name="molecule-co2" size={14} color={colors.primaryCTA} />
-              <Text style={[styles.insightTag, { color: colors.primaryCTA }]}>Cycle Insight</Text>
-            </View>
-            <Text style={[styles.insightTitle, { color: colors.textPrimary }]}>
-              Peak fertility window approaching
-            </Text>
-            <Text style={[styles.insightBody, { color: colors.textMuted }]}>
-              Estrogen is rising steadily. Your body is priming for ovulation around Day {OVULATION_DAY}.
-              Energy and libido often peak now — a great time for strength training.
-            </Text>
-            <Pressable
-              style={styles.insightCta}
-              onPress={() => askBloop("Explain my fertility window and energy pattern.")}
-            >
-              <Text style={[styles.insightCtaText, { color: colors.primaryCTA }]}>View full insight</Text>
-              <MaterialCommunityIcons name="arrow-right" size={13} color={colors.primaryCTA} />
-            </Pressable>
-          </View>
-          {/* ⚠️  CachedImage — no tintColor, no colorFilter, no overlay */}
-          <View style={styles.insightImageWrap}>
-            <CachedImage source={imgBloop} style={styles.insightImage} contentFit="contain" />
-            <View style={[styles.insightGlow, { backgroundColor: `${colors.primaryCTA}2E` }]} />
-          </View>
-        </LinearGradient>
-
-        {/* ── Wellness Recommendation ──────────────────────────────────────── */}
-        <View style={styles.wellnessCard}>
-          {/* ⚠️  CachedImage — no tintColor, no colorFilter, no overlay */}
-          <CachedImage source={imgPetals} style={styles.wellnessImage} contentFit="cover" />
-          <LinearGradient
-            colors={["transparent", "rgba(28,21,40,0.72)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.wellnessContent}>
-            <View style={styles.wellnessTag}>
-              <MaterialCommunityIcons name="yoga" size={12} color="#FFFFFF" />
-              <Text style={styles.wellnessTagText}>Recommended for Day {CURRENT_DAY}</Text>
-            </View>
-            <Text style={styles.wellnessTitle}>Follicular Yoga Flow</Text>
-            <Text style={styles.wellnessSub}>18 min · Energising · All levels</Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open follicular yoga routine"
-            style={[styles.playBtn, { shadowColor: colors.warning }]}
-            onPress={openRoutine}
-          >
-            <LinearGradient
-              colors={[colors.warning, colors.primaryCTA]}
-              style={styles.playBtnInner}
-            >
-              <MaterialCommunityIcons name="play" size={20} color={colors.background} />
-            </LinearGradient>
-          </Pressable>
-        </View>
-
-        {/* ── Cycle Calendar Strip ─────────────────────────────────────────── */}
-        <View style={[styles.calendarCard, {
-          backgroundColor: colors.surface,
-          borderColor:     colors.border,
-          shadowColor:     colors.primaryCTA,
-        }]}>
-          <View style={styles.cardHeader}>
-            <View style={styles.calendarHeaderCopy}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Period calendar</Text>
-              <Text style={[styles.cardSub,   { color: colors.textMuted   }]}>
-                Track logged days and expected period dates.
-              </Text>
-            </View>
-            <Pressable
-              style={[styles.seeAllBtn, { backgroundColor: `${colors.primaryCTA}1A` }]}
-              onPress={openCalendar}
-            >
-              <Text style={[styles.seeAllText, { color: colors.primaryCTA }]}>See calendar</Text>
-            </Pressable>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.calendarMonthScroller}
-            decelerationRate="fast"
-            snapToInterval={W - 62}
-            snapToAlignment="start"
-            contentOffset={{ x: W - 62, y: 0 }}
-          >
-            {CALENDAR_MONTHS.map((month, index) => (
-              <MonthCalendar
-                key={month.name}
-                month={month}
-                monthIndex={index}
-                compact
-                loggedDates={loggedDates}
-                parentSelectedDay={selectedDay}
-                onDayPress={(dk, meta) => {
-                  setSelectedDay(meta.cycleDay);
-                  handleDayPress(dk, meta, index, parseInt(dk.split("-")[2], 10));
-                }}
-              />
-            ))}
-          </ScrollView>
-          <View style={styles.periodSummaryRow}>
-            <View style={[styles.periodSummaryItem, {
-              backgroundColor: colors.surface,
-              borderColor:     colors.border,
-              flexDirection:   "row",
-              alignItems:      "center",
-              gap:             12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              shadowColor: isDark ? "#140E16" : "#2E2330",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.2 : 0.04,
-              shadowRadius: 8,
-              elevation: 2,
-            }]}>
-              {/* Pill indicator matching light pink style used in the calendar */}
-              <View style={{
-                width: 24,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: isDark ? 'rgba(232, 128, 144, 0.32)' : 'rgba(232, 128, 144, 0.22)',
-              }} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.periodSummaryValue, { color: colors.textPrimary }]}>May 1-5</Text>
-                <Text style={[styles.periodSummaryLabel, { color: colors.textMuted }]}>Logged period</Text>
-              </View>
-            </View>
-            <View style={[styles.periodSummaryItem, {
-              backgroundColor: colors.surface,
-              borderColor:     colors.border,
-              flexDirection:   "row",
-              alignItems:      "center",
-              gap:             12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              shadowColor: isDark ? "#140E16" : "#2E2330",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isDark ? 0.2 : 0.04,
-              shadowRadius: 8,
-              elevation: 2,
-            }]}>
-              {/* Dashed pill indicator matching dark pink dotted outline style */}
-              <View style={{
-                width: 24,
-                height: 12,
-                borderRadius: 6,
-                borderWidth: 1.5,
-                borderColor: isDark ? '#E88090' : '#C44E68',
-                borderStyle: 'dashed',
-                backgroundColor: 'transparent',
-              }} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.periodSummaryValue, { color: colors.textPrimary }]}>May 29-Jun 2</Text>
-                <Text style={[styles.periodSummaryLabel, { color: colors.textMuted }]}>Expected dates</Text>
-              </View>
-            </View>
-          </View>
         </View>
 
         {/* ── Quick Log Bar ────────────────────────────────────────────────── */}
@@ -1646,8 +1519,6 @@ export default function CycleScreen() {
             ))}
           </LinearGradient>
         </View>
-
-        <View style={{ height: 92 }} />
       </ScrollView>
 
       {/* ── Daily Log Sheet ──────────────────────────────────────────────────── */}
@@ -1680,7 +1551,8 @@ export default function CycleScreen() {
               styles.routineSheet,
               {
                 backgroundColor: colors.surface,
-                borderColor:     colors.border,
+                borderColor:     "rgba(246,233,239,0.10)",
+                borderWidth:     1,
                 transform:       [{ translateY: routineSlide }],
               },
             ]}
@@ -1832,7 +1704,7 @@ export default function CycleScreen() {
                   <Text style={[styles.routinePreviewText, { color: colors.textMuted }]}>
                     Full routine coming soon —{" "}
                     <Text style={{ color: colors.primaryCTA, fontFamily: F.uiSemiBold }}>
-                      Ask Bloop to guide you
+                      Open guided support
                     </Text>
                   </Text>
                   <MaterialCommunityIcons name="chevron-right" size={13} color={`${colors.textMuted}66`} />
@@ -1851,7 +1723,7 @@ export default function CycleScreen() {
                 />
                 <MaterialCommunityIcons name="chat-processing-outline" size={17} color={colors.primaryCTA} />
                 <Text style={[styles.routineBloopText, { color: colors.primaryCTA }]}>
-                  Ask Bloop to guide you through this
+                  Open guided support
                 </Text>
                 <MaterialCommunityIcons name="chevron-right" size={16} color={colors.primaryCTA} />
               </Pressable>
@@ -1879,7 +1751,8 @@ export default function CycleScreen() {
               styles.calendarSheet,
               {
                 backgroundColor: colors.surface,
-                borderColor:     colors.border,
+                borderColor:     "rgba(246,233,239,0.10)",
+                borderWidth:     1,
                 transform:       [{ translateY: calendarSlide }],
               },
             ]}
@@ -1905,7 +1778,9 @@ export default function CycleScreen() {
                   monthIndex={index}
                   loggedDates={loggedDates}
                   parentSelectedDay={selectedDay}
+                  selectedDateKey={selectedDateKey}
                   onDayPress={(dk, meta) => {
+                    setSelectedDateKey(dk);
                     setSelectedDay(meta.cycleDay);
                     handleDayPress(dk, meta, index, parseInt(dk.split("-")[2], 10));
                   }}
@@ -1914,7 +1789,8 @@ export default function CycleScreen() {
 
               <View style={[styles.periodDetailsCard, {
                 backgroundColor: colors.surface,
-                borderColor:     colors.border,
+                borderColor:     "rgba(246,233,239,0.10)",
+                borderWidth:     1,
               }]}>
                 <Text style={[styles.periodDetailsTitle, { color: colors.textPrimary }]}>
                   Period tracking details
@@ -1944,7 +1820,7 @@ export default function CycleScreen() {
                 />
                 <MaterialCommunityIcons name="chat-processing-outline" size={17} color={colors.primaryCTA} />
                 <Text style={[styles.calBloopText, { color: colors.primaryCTA }]}>
-                  Ask Bloop about the next 7 days
+                  Review the next 7 days
                 </Text>
                 <MaterialCommunityIcons name="chevron-right" size={16} color={colors.primaryCTA} />
               </Pressable>
@@ -1967,7 +1843,7 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 20,
     paddingTop:        8,
-    paddingBottom:     28,
+    paddingBottom:     100,
     flexGrow:          1,
   },
   blob: { borderRadius: 999, position: "absolute" },
@@ -2021,7 +1897,7 @@ const styles = StyleSheet.create({
   cycleWheelCard: {
     alignItems:   "center",
     alignSelf:    "center",
-    borderRadius: 30,
+    borderRadius: 28,
     borderWidth:  1,
     justifyContent: "center",
     marginBottom: 18,
@@ -2086,8 +1962,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 24,
     borderWidth:  1,
-    marginBottom: 16,
-    padding:      18,
+    marginBottom: 20,
+    padding:      20,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
     shadowRadius: 16,
@@ -2100,7 +1976,7 @@ const styles = StyleSheet.create({
     marginBottom:  14,
   },
   calendarHeaderCopy: { flex: 1, minWidth: 0 },
-  cardTitle: { fontFamily: F.uiBold,    fontSize: 15 },
+  cardTitle: { fontFamily: F.uiBold, fontSize: 16, fontWeight: "700" },
   cardSub:   { fontFamily: F.uiRegular, fontSize: 11, marginTop: 1 },
   seeAllText: { fontFamily: F.uiSemiBold, fontSize: 12 },
   seeAllBtn: {
@@ -2141,7 +2017,7 @@ const styles = StyleSheet.create({
     marginBottom:  16,
   },
   metricCard: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth:  1,
     padding:      14,
     shadowOffset: { width: 0, height: 4 },
@@ -2169,7 +2045,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom:  16,
     overflow:      "hidden",
-    padding:       18,
+    padding:       20,
   },
   insightLeft:     { flex: 1, paddingRight: 12 },
   insightIconRow:  { alignItems: "center", flexDirection: "row", gap: 5, marginBottom: 6 },
@@ -2194,7 +2070,7 @@ const styles = StyleSheet.create({
     height:       160,
     marginBottom: 16,
     overflow:     "hidden",
-    shadowColor:  "#000",
+    shadowColor:  "#E8A6B6",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
@@ -2233,8 +2109,8 @@ const styles = StyleSheet.create({
 
   // Calendar strip card
   calendarCard: {
-    borderRadius:  26,
-    padding:       18,
+    borderRadius:  24,
+    padding:       20,
     borderWidth:   1,
     shadowOffset:  { width: 0, height: 8 },
     shadowOpacity: 0.10,
@@ -2284,7 +2160,7 @@ const styles = StyleSheet.create({
 
   // Period summary
   periodSummaryRow:   { flexDirection: "row", gap: 10, marginTop: 14 },
-  periodSummaryItem:  { flex: 1, borderRadius: 18, borderWidth: 1, padding: 12 },
+  periodSummaryItem:  { flex: 1, borderRadius: 24, borderWidth: 1, padding: 20 },
   periodSummaryValue: { fontFamily: F.uiBlack,    fontSize: 13  },
   periodSummaryLabel: { fontFamily: F.uiSemiBold, fontSize: 10.5, marginTop: 3 },
 
@@ -2328,7 +2204,7 @@ const styles = StyleSheet.create({
     paddingHorizontal:    24,
     paddingTop:           14,
     zIndex:               50,
-    shadowColor:          "#000",
+    shadowColor:          "#E8A6B6",
     shadowOffset:         { width: 0, height: -6 },
     shadowOpacity:        0.10,
     shadowRadius:         20,
@@ -2439,7 +2315,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 8,
     backgroundColor: "rgba(255,255,255,0.03)",
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(246,233,239,0.10)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
@@ -2470,7 +2346,7 @@ const styles = StyleSheet.create({
     paddingBottom:        0,
     paddingTop:           14,
     zIndex:               50,
-    shadowColor:          "#000",
+    shadowColor:          "#E8A6B6",
     shadowOffset:         { width: 0, height: -6 },
     shadowOpacity:        0.10,
     shadowRadius:         20,
@@ -2485,9 +2361,9 @@ const styles = StyleSheet.create({
 
   // Period details card (inside calendar sheet)
   periodDetailsCard: {
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth:  1,
-    padding:      16,
+    padding:      20,
     marginBottom: 16,
   },
   periodDetailsTitle: { fontFamily: F.luxuryBold, fontSize: 18, lineHeight: 24, marginBottom: 10 },
@@ -2529,7 +2405,7 @@ const styles = StyleSheet.create({
     paddingHorizontal:    24,
     paddingBottom:        36,
     paddingTop:           12,
-    shadowColor:          "#000",
+    shadowColor:          "#E8A6B6",
     shadowOffset:         { width: 0, height: -6 },
     shadowOpacity:        0.10,
     shadowRadius:         20,

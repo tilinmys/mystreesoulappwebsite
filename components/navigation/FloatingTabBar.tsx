@@ -1,14 +1,21 @@
 /**
- * FloatingTabBar — Midnight Plum  v2
+ * FloatingTabBar — Midnight Plum  v3
  *
  * Token mapping
  * ─────────────
  *  Nav pill surface (dark)  →  colors.surface    (#2E2330 Blackberry Smoke)
  *  Active icon / label      →  per-tab accent    (primaryCTA or warning — never old brand hex)
  *  Inactive icon / label    →  colors.textMuted  (#B58AC8 Lavender Dust)
- *  Active bubble fill       →  accent at 13% opacity (legible against surface)
- *  Active dot               →  accent
+ *  Active indicator         →  single underline dot only (no competing background bubbles)
  *  More-sheet surface       →  colors.surface (dark) / near-white (light)
+ *
+ * Visual normalization (v3)
+ * ──────────────────────────
+ *  - Outline icon variants for lighter visual weight
+ *  - Single active indicator: accent dot underline only
+ *  - Bloop orb reduced from 58→52px, shadow softened
+ *  - Removed floating chat badge from Bloop button
+ *  - navLabel always uiBold (color signals state, not weight)
  *
  * Mascot constraint (Bloop button)
  * ──────────────────────────────────
@@ -33,7 +40,7 @@ const bloop = require("../../public/images/bloop-nav.webp");
 // surfaceRaised #4A394D = rgb(74,57,77)
 // background #110812 = rgb(17,8,18)
 const NAV_SURFACE_DARK        = "rgba(46,35,48,0.97)";    // colors.surface
-const NAV_ACTIVE_BUBBLE_ALPHA = "20";                      // 13% — appended to accent hex
+// const NAV_ACTIVE_BUBBLE_ALPHA = "20"; // v3: removed — active bubble backgrounds eliminated
 const NAV_SCRIM_DARK          = "rgba(22,17,28,0.72)";     // deeper scrim on dark bg
 const NAV_SCRIM_LIGHT         = "rgba(34,24,34,0.28)";
 
@@ -49,13 +56,14 @@ const TAB_CONFIG: Record<string, {
   accentLight: string;
   accentDark:  string;
 }> = {
-  dashboard: { icon: "home-variant",                   label: "Today",    accentLight: "#E07A5F", accentDark: BLOOM_PINK   },
-  cycle:     { icon: "water",                          label: "Cycle",    accentLight: "#D04870", accentDark: BLOOM_PINK   },
+  // Outline variants used throughout for calmer visual weight
+  dashboard: { icon: "home-variant-outline",           label: "Today",    accentLight: "#E07A5F", accentDark: BLOOM_PINK   },
+  cycle:     { icon: "water-outline",                  label: "Cycle",    accentLight: "#D04870", accentDark: BLOOM_PINK   },
   insights:  { icon: "chart-bell-curve-cumulative",    label: "Insights", accentLight: "#7B4DB8", accentDark: BLOOM_PINK   },
-  wellness:  { icon: "spa",                            label: "Wellness", accentLight: "#2E8B50", accentDark: BLOOM_PINK   },
-  nourish:   { icon: "food-apple",                     label: "Nourish",  accentLight: "#C97010", accentDark: GOLDEN_SAND  },
+  wellness:  { icon: "spa-outline",                    label: "Wellness", accentLight: "#2E8B50", accentDark: BLOOM_PINK   },
+  nourish:   { icon: "food-apple-outline",             label: "Nourish",  accentLight: "#C97010", accentDark: GOLDEN_SAND  },
   sleep:     { icon: "moon-waning-crescent",           label: "Sleep",    accentLight: "#3654B8", accentDark: GOLDEN_SAND  },
-  profile:   { icon: "account-circle",                 label: "Profile",  accentLight: "#9277C8", accentDark: BLOOM_PINK   },
+  profile:   { icon: "account-circle-outline",         label: "Profile",  accentLight: "#9277C8", accentDark: BLOOM_PINK   },
   more:      { icon: "dots-grid",                      label: "More",     accentLight: "#81B29A", accentDark: BLOOM_PINK   },
 };
 
@@ -117,45 +125,32 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
         onPress={() => { isMore ? setMoreOpen(true) : navigation.navigate(route.name); }}
         style={({ pressed }) => [
           styles.navButton,
-          selected && {
-            // Active state: subtle bubble lift over nav surface
-            backgroundColor: isDark ? `${accent}${NAV_ACTIVE_BUBBLE_ALPHA}` : "rgba(255,255,255,0.82)",
-            borderWidth: 1,
-            borderColor:     isDark ? `${accent}48`                         : `${accent}30`,
-            shadowColor:     accent,
-            shadowOffset:    { width: 0, height: 6 },
-            shadowOpacity:   isDark ? 0.24 : 0.12,
-            shadowRadius:    12,
-            elevation:       isDark ? 4 : 2,
-          },
+          // v3: no competing button-level bg/border/shadow on active state.
+          // Active state is communicated by icon/label color + underline dot only.
           pressed && styles.pressed,
         ]}
       >
-        {/* Icon bubble — tinted fill only when selected */}
-        <View style={[
-          styles.iconBubble,
-          selected && { backgroundColor: `${accent}${NAV_ACTIVE_BUBBLE_ALPHA}` },
-        ]}>
+        {/* Icon — no tinted bubble fill, icon color alone signals active */}
+        <View style={styles.iconBubble}>
           <MaterialCommunityIcons
             name={iconMap[route.name] ?? "circle-outline"}
-            size={22}
+            size={20}
             color={iconColor}
           />
         </View>
 
-        {/* Label */}
+        {/* Label — uiBold always; accent color signals active state */}
         <Text
           numberOfLines={1}
           style={[
             styles.navLabel,
             { color: selected ? accent : isDark ? colors.textMuted : "rgba(107,112,141,0.58)" },
-            selected && { fontFamily: F.uiBlack },
           ]}
         >
           {labelMap[route.name] ?? route.name}
         </Text>
 
-        {/* Active indicator dot */}
+        {/* Single active indicator: slim underline dot */}
         {selected && <View style={[styles.navActiveDot, { backgroundColor: accent }]} />}
       </Pressable>
     );
@@ -262,14 +257,7 @@ function BloopButton({ isDark, colors, onPress }: {
             },
           ]} />
         </View>
-
-        {/* Chat badge — sits in corner of the button, not on the mascot */}
-        <View style={[
-          styles.aiChatMark,
-          { backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.88)" },
-        ]}>
-          <MaterialCommunityIcons name="message-text-outline" size={12} color={colors.primaryCTA} />
-        </View>
+        {/* v3: floating chat badge removed — reduces clutter without removing Bloop button */}
       </LinearGradient>
     </Pressable>
   );
@@ -290,14 +278,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 30,
     borderWidth: 1,
-    elevation: 8,
+    elevation: 6,
     flexDirection: "row",
-    height: 72,
+    height: 68,             // v3: slimmed from 72 for calmer proportion
     justifyContent: "center",
     paddingHorizontal: 10,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.26,
-    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
   },
 
   // ── Tab layout ───────────────────────────────────────────────────────────────
@@ -347,28 +335,28 @@ const styles = StyleSheet.create({
     width: 34,
   },
   navLabel: {
-    fontFamily: F.uiBold,
+    fontFamily: F.uiBold,   // v3: always uiBold — color signals active, not weight
     fontSize: 9,
     lineHeight: 11,
   },
 
-  // ── Bloop center button ───────────────────────────────────────────────────────
+  // ── Bloop center button — v3: reduced from 58→52px, shadow softened ─────────
   aiButtonShell: {
     alignItems: "center",
-    borderRadius: 34,
-    elevation: 14,
-    height: 58,
+    borderRadius: 30,
+    elevation: 8,           // v3: reduced from 14
+    height: 52,             // v3: reduced from 58
     justifyContent: "center",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.32,
-    shadowRadius: 22,
-    width: 58,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,    // v3: reduced from 0.32
+    shadowRadius: 16,       // v3: reduced from 22
+    width: 52,              // v3: reduced from 58
     zIndex: 5,
   },
   aiButton: {
     alignItems: "center",
-    borderColor: "rgba(255,255,255,0.86)",
-    borderRadius: 34,
+    borderColor: "rgba(255,255,255,0.70)",
+    borderRadius: 30,
     borderWidth: 1,
     flex: 1,
     justifyContent: "center",
@@ -377,35 +365,26 @@ const styles = StyleSheet.create({
   },
   aiImageWrap: {
     alignItems: "center",
-    borderRadius: 23,
-    height: 42,
+    borderRadius: 20,
+    height: 38,             // v3: proportionally reduced
     justifyContent: "center",
     overflow: "hidden",
-    width: 42,
+    width: 38,              // v3: proportionally reduced
   },
   aiButtonImage: {
-    height: 40,
-    width: 40,
+    height: 36,             // v3: proportionally reduced from 40
+    width: 36,              // v3: proportionally reduced from 40
   },
   chatOnlineDot: {
-    borderRadius: 4,
+    borderRadius: 3,
     borderWidth: 1.5,
-    bottom: 0,
-    height: 8,
+    bottom: 1,
+    height: 7,
     position: "absolute",
-    right: 2,
-    width: 8,
+    right: 1,
+    width: 7,
   },
-  aiChatMark: {
-    alignItems: "center",
-    borderRadius: 9,
-    bottom: 6,
-    height: 18,
-    justifyContent: "center",
-    position: "absolute",
-    right: 8,
-    width: 18,
-  },
+  // aiChatMark removed in v3 — floating badge created visual clutter
 
   // ── More sheet ────────────────────────────────────────────────────────────────
   moreScrim: {
@@ -422,8 +401,8 @@ const styles = StyleSheet.create({
     shadowRadius: 28,
   },
   moreTitle: {
-    fontFamily: F.uiBlack,
-    fontSize: 15,
+    fontFamily: F.uiBold,   // v3: reduced from uiBlack for calmer header weight
+    fontSize: 14,
     marginBottom: 14,
   },
   moreGrid: {

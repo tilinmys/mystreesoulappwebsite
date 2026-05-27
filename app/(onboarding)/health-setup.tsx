@@ -54,6 +54,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 }
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
+import { FittedText } from "../../components/system/FittedText";
 import { ValidationToast } from "../../components/ValidationToast";
 import { F } from "../../constants/fonts";
 import { getOnboardingPrompt } from "../../constants/onboardingAdaptation";
@@ -431,9 +432,9 @@ export default function HealthSetupScreen() {
                           <MaterialCommunityIcons name={stage.icon} size={16} color={accent} />
                         </View>
                         {/* All card labels use textPrimary — uniform elegance */}
-                        <Text style={[s.cardLabel, { color: colors.textPrimary }]}>
+                        <FittedText style={[s.cardLabel, { color: colors.textPrimary }]} numberOfLines={2}>
                           {stage.label}
-                        </Text>
+                        </FittedText>
                       </View>
 
                       {isSel && (
@@ -496,13 +497,13 @@ export default function HealthSetupScreen() {
                     />
                   </View>
                   {/* Label */}
-                  <Text
+                  <FittedText
                     style={[s.conditionCardLabel,
                       { color: active ? colors.primaryCTA : colors.textPrimary }]}
                     numberOfLines={2}
                   >
                     {c.label}
-                  </Text>
+                  </FittedText>
                 </Pressable>
               );
             })}
@@ -615,10 +616,10 @@ export default function HealthSetupScreen() {
                         ]}
                       >
                         <FlowDrop fill={option.fill} color={option.color} active={active} />
-                        <Text style={[s.flowChoiceLabel,
+                        <FittedText style={[s.flowChoiceLabel,
                           { color: active ? option.color : colors.textPrimary }]}>
                           {option.label}
-                        </Text>
+                        </FittedText>
                         <Text style={[s.flowChoiceSub, { color: colors.textMuted }]}>{option.sub}</Text>
                       </Pressable>
                     );
@@ -661,10 +662,10 @@ export default function HealthSetupScreen() {
                         <View style={[s.supportChoiceIcon, { backgroundColor: `${option.color}18` }]}>
                           <MaterialCommunityIcons name={option.icon} size={22} color={option.color} />
                         </View>
-                        <Text style={[s.supportChoiceLabel,
+                        <FittedText style={[s.supportChoiceLabel,
                           { color: active ? option.color : colors.textPrimary }]}>
                           {option.label}
-                        </Text>
+                        </FittedText>
                         <Text style={[s.supportChoiceSub, { color: colors.textMuted }]}>{option.sub}</Text>
                       </Pressable>
                     );
@@ -725,10 +726,10 @@ export default function HealthSetupScreen() {
                           )}
                         </View>
                         <View style={s.guidanceChoiceCopy}>
-                          <Text style={[s.guidanceChoiceLabel,
+                          <FittedText style={[s.guidanceChoiceLabel,
                             { color: active ? option.color : colors.textPrimary }]}>
                           {option.label}
-                          </Text>
+                          </FittedText>
                           <Text style={[s.guidanceChoiceSub, { color: colors.textMuted }]}>{option.sub}</Text>
                         </View>
                         <View style={[s.guidanceRadio,
@@ -1168,6 +1169,7 @@ const s = StyleSheet.create({
   },
   cardLabel: {
     fontFamily: F.uiBold, fontSize: 14, lineHeight: 19, letterSpacing: 0.2,
+    flex: 1,
   },
   checkBadge: {
     position: "absolute", top: 10, right: 10,
@@ -1216,7 +1218,7 @@ const s = StyleSheet.create({
     position: "absolute", width: 12, height: 18, borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.22)", top: 8, left: 9,
   },
-  flowChoiceLabel: { fontFamily: F.uiBlack, fontSize: 13, marginTop: 4 },
+  flowChoiceLabel: { fontFamily: F.uiBlack, fontSize: 13, marginTop: 4, textAlign: "center", width: "100%" },
   flowChoiceSub:   { fontFamily: F.uiMedium, fontSize: 10.5 },
 
   supportChoiceGrid: {
@@ -1237,7 +1239,7 @@ const s = StyleSheet.create({
     width: 44, height: 44, borderRadius: 18,
     alignItems: "center", justifyContent: "center",
   },
-  supportChoiceLabel: { fontFamily: F.uiBlack, fontSize: 13, textAlign: "center" },
+  supportChoiceLabel: { fontFamily: F.uiBlack, fontSize: 13, textAlign: "center", width: "100%" },
   supportChoiceSub:   { fontFamily: F.uiRegular, fontSize: 10.5, lineHeight: 14, textAlign: "center" },
 
   guidanceHeaderCard: {
@@ -1260,7 +1262,7 @@ const s = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   guidanceChoiceCopy: { flex: 1 },
-  guidanceChoiceLabel: { fontFamily: F.uiBlack, fontSize: 13 },
+  guidanceChoiceLabel: { fontFamily: F.uiBlack, fontSize: 13, width: "100%" },
   guidanceChoiceSub:   { fontFamily: F.uiRegular, fontSize: 11, lineHeight: 15, marginTop: 2 },
   guidanceRadio: {
     width: 20, height: 20, borderRadius: 10, borderWidth: 1.5,
@@ -1395,6 +1397,7 @@ const s = StyleSheet.create({
   },
   conditionCardLabel: {
     fontFamily: F.uiSemiBold, fontSize: 10.5, textAlign: "center", lineHeight: 13,
+    width: "100%",
   },
   conditionCheck: {
     position: "absolute", top: 6, right: 6,

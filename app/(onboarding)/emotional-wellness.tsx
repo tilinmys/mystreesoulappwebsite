@@ -23,6 +23,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../../components/CachedImage";
+import { FittedText } from "../../components/system/FittedText";
 import { F } from "../../constants/fonts";
 import { getEmotionalDefaults, getOnboardingPrompt } from "../../constants/onboardingAdaptation";
 import { useOnboardingStore } from "../../store/onboardingStore";
@@ -524,7 +525,9 @@ function MoodCard({
 
           {/* Label */}
           <View style={s.moodLabelArea}>
-            <Text style={[s.moodLabel, { color: displayTextColor }]}>{mood.label}</Text>
+            <FittedText style={[s.moodLabel, { color: displayTextColor }]}>
+              {mood.label}
+            </FittedText>
           </View>
 
           {/* Selection badge */}
@@ -1109,6 +1112,7 @@ function getStyles(colors: AppColors, isDark: boolean) {
     moodLabelArea: {
       paddingHorizontal: 6,
       paddingBottom: 2,
+      width: "100%",
     },
     moodLabel: {
       fontFamily: F.uiBold,
@@ -1116,6 +1120,7 @@ function getStyles(colors: AppColors, isDark: boolean) {
       lineHeight: 16,
       textAlign: "center",
       letterSpacing: 0.2,
+      width: "100%",
     },
     moodBadge: {
       position: "absolute",

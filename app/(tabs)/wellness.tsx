@@ -103,7 +103,7 @@ const YOGA_CURRICULUM: Record<PhaseKey, {
     breathingTitle: "Ovulatory Breathing: Kapalabhati",
     breathingDesc: "Shining skull breathing to generate warmth",
     poses: [
-      { name: "Ustrasana", desc: "Camel Pose is a deep heart opener to release emotional blocks.", flowStep: "Step 1 of 3: Emotional release" },
+      { name: "Ustrasana", desc: "Camel Pose opens the chest and shoulders.", flowStep: "Step 1 of 3: Chest opening" },
       { name: "Trikonasana", desc: "Triangle Pose improves pelvic blood supply and hip stability.", flowStep: "Step 2 of 3: Pelvic circulation" },
       { name: "Adho Mukha Svanasana", desc: "Downward Dog inversion to reverse blood flow and boost focus.", flowStep: "Step 3 of 3: Clarity inversion" }
     ]
@@ -155,7 +155,7 @@ const C = {
   sage:    "#5E9B6B",   // informational accent
   white:   "#FFFFFF",   // rec card play icon overlay
   cardBg:  "#2E2330",   // surface     (Blackberry Smoke)
-  cardBdr: "#4A394D",   // border      (Velvet Mauve)
+  cardBdr: "rgba(246,233,239,0.10)",   // border      (Velvet Mauve)
 } as const;
 
 // ── Dimensions ────────────────────────────────────────────────────────────────
@@ -373,7 +373,7 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
         key:      "connect",
         title:    "Connect &\nCommunicate",
         duration: "10 min",
-        icon:     "account-heart-outline",
+        icon:     "account-voice",
         colors:   ["#3D2E50", "#2A1E3A"],
         iconBg:   "rgba(255,255,255,0.12)",
       },
@@ -503,7 +503,7 @@ const PHASE_CONTENT: Record<PhaseKey, PhaseContent> = {
     support: [
       {
         key:      "mood",
-        icon:     "heart-outline",
+        icon:     "emoticon-outline",
         color:    C.pink,
         bg:       "rgba(212,92,130,0.10)",
         text:     "Mood may feel\ntender today",
@@ -667,7 +667,7 @@ export default function WellnessScreen() {
                 )
               }
               style={({ pressed }) => [styles.headerIconBtn, pressed && styles.pressed]}
-              accessibilityLabel="Ask Bloop for wellness help"
+              accessibilityLabel="Open wellness guidance"
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="chat-question-outline" size={20} color={C.muted} />
@@ -719,7 +719,7 @@ export default function WellnessScreen() {
                 style={({ pressed }) => [
                   styles.phaseCard,
                   active && {
-                    borderColor: p.color,
+                    borderColor: "#E8A6B6",
                     borderWidth: 1.5,
                     backgroundColor: p.color + "12",
                   },
@@ -780,48 +780,71 @@ export default function WellnessScreen() {
               ]}
               accessibilityLabel={pose.name}
             >
-              <LinearGradient
-                colors={curriculum.gradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-                style={styles.movementCardInner}
-              >
-                {/* Silhouette Background */}
-                <View style={styles.movementSilhouetteWrap}>
+              <View style={styles.movementCardInner}>
+                <View
+                  style={[
+                    styles.movementAccent,
+                    { backgroundColor: `${curriculum.glowColor}24` },
+                  ]}
+                />
+
+                <View style={styles.movementThumbWrap}>
                   <CachedImage
                     source={curriculum.bgImage}
-                    style={styles.movementSilhouette}
+                    style={styles.movementThumb}
                     contentFit="contain"
                   />
                 </View>
 
-                {/* Glass overlay */}
-                <View style={[styles.movementGlassOverlay, { backgroundColor: "rgba(25, 18, 30, 0.42)" }]} />
-
-                {/* Pill tag on top right */}
-                <View style={styles.movementCardTop}>
-                  <Text style={styles.movementStepText}>{pose.flowStep}</Text>
-                  <View style={[styles.movementPillTag, { backgroundColor: `${curriculum.glowColor}25`, borderColor: `${curriculum.glowColor}40` }]}>
-                    <Text style={[styles.movementPillTagText, { color: curriculum.glowColor }]}>{curriculum.level}</Text>
+                <View style={styles.movementContent}>
+                  <View style={styles.movementCardTop}>
+                    <Text style={styles.movementStepText} numberOfLines={1}>
+                      {pose.flowStep}
+                    </Text>
+                    <View
+                      style={[
+                        styles.movementPillTag,
+                        {
+                          backgroundColor: `${curriculum.glowColor}18`,
+                          borderColor: `${curriculum.glowColor}36`,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.movementPillTagText,
+                          { color: curriculum.glowColor },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {curriculum.level}
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Content */}
-                <View style={styles.movementCardBottom}>
-                  <Text style={styles.movementPoseName}>{pose.name}</Text>
-                  <Text style={styles.movementPoseDesc} numberOfLines={3}>{pose.desc}</Text>
+                  <Text style={styles.movementPoseName} numberOfLines={1}>
+                    {pose.name}
+                  </Text>
+                  <Text style={styles.movementPoseDesc} numberOfLines={2}>
+                    {pose.desc}
+                  </Text>
                   
                   <View style={styles.movementPlayRow}>
                     <View style={styles.movementMetaRow}>
-                      <MaterialCommunityIcons name="clock-outline" size={13} color="rgba(255, 255, 255, 0.6)" />
+                      <MaterialCommunityIcons name="clock-outline" size={13} color={C.muted} />
                       <Text style={styles.movementDurationText}>{curriculum.duration}</Text>
                     </View>
-                    <View style={[styles.movementPlayBtn, { shadowColor: curriculum.glowColor }]}>
-                      <MaterialCommunityIcons name="play" size={18} color="#110812" />
+                    <View
+                      style={[
+                        styles.movementPlayBtn,
+                        { borderColor: `${curriculum.glowColor}40` },
+                      ]}
+                    >
+                      <MaterialCommunityIcons name="play" size={16} color={C.text} />
                     </View>
                   </View>
                 </View>
-              </LinearGradient>
+              </View>
             </Pressable>
           ))}
         </ScrollView>
@@ -870,55 +893,56 @@ export default function WellnessScreen() {
         </View>
 
         {/* ── Today's support (phase-driven, each tip tappable → Bloop) ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel2}>Today's support</Text>
-          <Pressable
-            onPress={() =>
-              askBloop(`What else can help me today during my ${pc.pillLabel.toLowerCase()} phase?`)
-            }
-            style={({ pressed }) => [styles.viewAllBtn, pressed && styles.pressed]}
-            accessibilityLabel="See all support tips"
-            hitSlop={10}
-          >
-            <Text style={styles.viewAllText}>See all</Text>
-            <MaterialCommunityIcons name="chevron-right" size={14} color={C.lavender} />
-          </Pressable>
-        </View>
+        {false && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel2}>Today's support</Text>
+              <Pressable
+                onPress={() =>
+                  askBloop(`What else can help me today during my ${pc.pillLabel.toLowerCase()} phase?`)
+                }
+                style={({ pressed }) => [styles.viewAllBtn, pressed && styles.pressed]}
+                accessibilityLabel="See all support tips"
+                hitSlop={10}
+              >
+                <Text style={styles.viewAllText}>See all</Text>
+                <MaterialCommunityIcons name="chevron-right" size={14} color={C.lavender} />
+              </Pressable>
+            </View>
 
-        {/* Bloop nudge — phase-specific prompt */}
-        <Pressable
-          onPress={() => askBloop(pc.careCopy)}
-          style={({ pressed }) => [styles.bloopNudge, pressed && styles.pressed]}
-          accessibilityLabel="Ask Bloop"
-          accessibilityRole="button"
-        >
-          <MaterialCommunityIcons name="chat-processing-outline" size={15} color={C.purple} />
-          <Text style={styles.bloopNudgeText} numberOfLines={1}>
-            Ask Bloop: <Text style={styles.bloopNudgePrompt}>{pc.careCopy}</Text>
-          </Text>
-          <MaterialCommunityIcons name="chevron-right" size={14} color={C.lavender} />
-        </Pressable>
-
-        <View style={styles.supportGrid}>
-          {pc.support.map((item) => (
+            {/* Phase-specific support prompt */}
             <Pressable
-              key={item.key}
-              onPress={() => askBloop(item.bloopMsg)}
-              style={({ pressed }) => [styles.supportPill, pressed && styles.pressed]}
-              accessibilityLabel={item.text.replace("\n", " ")}
+              onPress={() => askBloop(pc.careCopy)}
+              style={({ pressed }) => [styles.bloopNudge, pressed && styles.pressed]}
+              accessibilityLabel="Open phase support"
               accessibilityRole="button"
             >
-              <View style={[styles.supportIconWrap, { backgroundColor: item.bg }]}>
-                <MaterialCommunityIcons name={item.icon} size={18} color={item.color} />
-              </View>
-              <Text style={styles.supportText}>{item.text}</Text>
-              <MaterialCommunityIcons name="chevron-right" size={13} color={C.faint} />
+              <MaterialCommunityIcons name="chat-processing-outline" size={15} color={C.purple} />
+              <Text style={styles.bloopNudgeText} numberOfLines={1}>
+                Support: <Text style={styles.bloopNudgePrompt}>{pc.careCopy}</Text>
+              </Text>
+              <MaterialCommunityIcons name="chevron-right" size={14} color={C.lavender} />
             </Pressable>
-          ))}
-        </View>
 
-        {/* Spacer for FloatingTabBar */}
-        <View style={{ height: 108 }} />
+            <View style={styles.supportGrid}>
+              {pc.support.map((item) => (
+                <Pressable
+                  key={item.key}
+                  onPress={() => askBloop(item.bloopMsg)}
+                  style={({ pressed }) => [styles.supportPill, pressed && styles.pressed]}
+                  accessibilityLabel={item.text.replace("\n", " ")}
+                  accessibilityRole="button"
+                >
+                  <View style={[styles.supportIconWrap, { backgroundColor: item.bg }]}>
+                    <MaterialCommunityIcons name={item.icon} size={18} color={item.color} />
+                  </View>
+                  <Text style={styles.supportText}>{item.text}</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={13} color={C.faint} />
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -933,7 +957,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1, backgroundColor: "transparent" },
   scroll: {
     paddingTop: 8,
-    paddingBottom: 28,
+    paddingBottom: 100,
     flexGrow: 1,
   },
 
@@ -947,9 +971,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color:         C.text,
-    fontFamily:    F.luxuryBold,
-    fontSize:      28,
-    letterSpacing: 0.2,
+    fontFamily:    F.uiBold,
+    fontSize:      26,
+    fontWeight:    "700",
+    letterSpacing: -0.3,
     lineHeight:    34,
   },
   headerSub: {
@@ -967,12 +992,12 @@ const styles = StyleSheet.create({
   headerIconBtn: {
     alignItems:      "center",
     backgroundColor: C.cardBg,
-    borderColor:     C.cardBdr,
-    borderRadius:    20,
+    borderColor:     "rgba(246,233,239,0.10)",
+    borderRadius:    999,
     borderWidth:     1,
     height:          40,
     justifyContent:  "center",
-    shadowColor:     "#000000",
+    shadowColor:     "#E8A6B6",
     shadowOffset:    { width: 0, height: 3 },
     shadowOpacity:   0.12,
     shadowRadius:    8,
@@ -1013,8 +1038,9 @@ const styles = StyleSheet.create({
   },
   heroText: {
     color:             C.text,
-    fontFamily:        F.luxuryBold,
+    fontFamily:        F.uiBold,
     fontSize:          20,
+    fontWeight:        "700",
     lineHeight:        30,
     marginBottom:      14,
     paddingHorizontal: 28,
@@ -1022,7 +1048,7 @@ const styles = StyleSheet.create({
   },
   heroAccent: {
     color:      C.purple,
-    fontFamily: F.luxuryItalic,
+    fontFamily: F.uiBold,
   },
   recoveryPill: {
     alignItems:        "center",
@@ -1043,12 +1069,14 @@ const styles = StyleSheet.create({
 
   // Phase cards
   sectionLabel: {
-    color:             C.text,
+    color:             C.muted,
     fontFamily:        F.uiBold,
-    fontSize:          15,
+    fontSize:          12,
+    letterSpacing:     1.0,
     marginBottom:      12,
     marginTop:         20,
     paddingHorizontal: 20,
+    textTransform:     "uppercase",
   },
   phaseScrollView: {
     marginBottom: 6,
@@ -1060,14 +1088,14 @@ const styles = StyleSheet.create({
   phaseCard: {
     alignItems:        "center",
     backgroundColor:   C.cardBg,
-    borderColor:       C.cardBdr,
-    borderRadius:      18,
+    borderColor:       "rgba(246,233,239,0.10)",
+    borderRadius:      24,
     borderWidth:       1,
     height:            88,
     justifyContent:    "center",
     gap:               8,
     paddingHorizontal: 8,
-    shadowColor:       "#000000",
+    shadowColor:       "#E8A6B6",
     shadowOffset:      { width: 0, height: 3 },
     shadowOpacity:     0.10,
     shadowRadius:      8,
@@ -1090,9 +1118,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionLabel2: {
-    color:      C.text,
-    fontFamily: F.uiBold,
-    fontSize:   15,
+    color:         C.muted,
+    fontFamily:    F.uiBold,
+    fontSize:      12,
+    letterSpacing: 1.0,
+    textTransform: "uppercase",
   },
   viewAllBtn: {
     alignItems:    "center",
@@ -1105,52 +1135,74 @@ const styles = StyleSheet.create({
     fontSize:   12,
   },
 
-  // Movement Carousel Cards
   movementCard: {
-    width: 280,
-    height: 340,
-    borderRadius: 28,
+    width: Math.min(312, W - 52),
+    minHeight: 168,
+    borderRadius: 24,
     marginRight: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(246,233,239,0.10)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    shadowColor: "#E8A6B6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
   },
   movementCardInner: {
     flex: 1,
-    padding: 20,
-    justifyContent: "space-between",
+    padding: 16,
+    flexDirection: "row",
+    gap: 14,
     position: "relative",
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
-  movementSilhouetteWrap: {
+  movementAccent: {
     position: "absolute",
-    bottom: -10,
-    right: -10,
-    width: 180,
-    height: 180,
-    opacity: 0.35,
+    bottom: 0,
+    left: 0,
+    top: 0,
+    width: 4,
   },
-  movementSilhouette: {
-    width: "100%",
-    height: "100%",
+  movementThumbWrap: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: "rgba(246,233,239,0.06)",
+    borderColor: "rgba(246,233,239,0.10)",
+    borderRadius: 20,
+    borderWidth: 1,
+    height: 104,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 92,
   },
-  movementGlassOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  movementThumb: {
+    height: 92,
+    opacity: 0.82,
+    width: 92,
+  },
+  movementContent: {
+    flex: 1,
+    gap: 8,
+    justifyContent: "space-between",
   },
   movementCardTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    zIndex: 10,
+    gap: 8,
   },
   movementStepText: {
-    color: "rgba(255, 255, 255, 0.5)",
+    color: C.muted,
+    flex: 1,
     fontFamily: F.uiMedium,
     fontSize: 11,
   },
   movementPillTag: {
-    paddingHorizontal: 10,
+    maxWidth: 104,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
   },
   movementPillTagText: {
@@ -1159,47 +1211,49 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  movementCardBottom: {
-    gap: 6,
-    zIndex: 10,
-  },
   movementPoseName: {
-    color: "#FFFFFF",
-    fontFamily: F.luxuryBold || F.uiBold,
-    fontSize: 20,
+    color: C.text,
+    fontFamily: F.uiBold,
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 21,
   },
   movementPoseDesc: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: C.muted,
     fontFamily: F.uiRegular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
   },
   movementPlayRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 2,
   },
   movementMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    backgroundColor: "rgba(246,233,239,0.06)",
+    borderColor: "rgba(246,233,239,0.10)",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
   },
   movementDurationText: {
-    color: "rgba(255, 255, 255, 0.6)",
+    color: C.text,
     fontFamily: F.uiMedium,
     fontSize: 12,
   },
   movementPlayBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#FFFFFF",
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
   },
 
   // Recommendation cards
@@ -1211,7 +1265,7 @@ const styles = StyleSheet.create({
     borderRadius:  24,
     height:        200,
     overflow:      "hidden",
-    shadowColor:   "#000000",
+    shadowColor:   "#E8A6B6",
     shadowOffset:  { width: 0, height: 6 },
     shadowOpacity: 0.16,
     shadowRadius:  14,
@@ -1260,7 +1314,7 @@ const styles = StyleSheet.create({
     borderRadius:    16,
     height:          32,
     justifyContent:  "center",
-    shadowColor:     "#000",
+    shadowColor:     "#E8A6B6",
     shadowOffset:    { width: 0, height: 2 },
     shadowOpacity:   0.10,
     shadowRadius:    6,
@@ -1271,7 +1325,7 @@ const styles = StyleSheet.create({
   breathingCard: {
     alignItems:        "center",
     backgroundColor:   C.cardBg,
-    borderColor:       C.cardBdr,
+    borderColor:       "rgba(246,233,239,0.10)",
     borderRadius:      28,
     borderWidth:       1,
     flexDirection:     "row",
@@ -1280,8 +1334,8 @@ const styles = StyleSheet.create({
     marginHorizontal:  20,
     marginTop:         20,
     overflow:          "hidden",
-    paddingHorizontal: 16,
-    shadowColor:       "#000000",
+    paddingHorizontal: 20,
+    shadowColor:       "#E8A6B6",
     shadowOffset:      { width: 0, height: 6 },
     shadowOpacity:     0.12,
     shadowRadius:      18,
@@ -1301,12 +1355,12 @@ const styles = StyleSheet.create({
   breathPlayBtn: {
     alignItems:      "center",
     backgroundColor: C.cardBg,
-    borderColor:     C.cardBdr,
+    borderColor:     "rgba(246,233,239,0.10)",
     borderRadius:    20,
     borderWidth:     1,
     height:          40,
     justifyContent:  "center",
-    shadowColor:     "#000000",
+    shadowColor:     "#E8A6B6",
     shadowOffset:    { width: 0, height: 3 },
     shadowOpacity:   0.12,
     shadowRadius:    8,
@@ -1362,7 +1416,7 @@ const styles = StyleSheet.create({
     marginBottom:      12,
     paddingVertical:   10,
     paddingHorizontal: 14,
-    borderRadius:      16,
+    borderRadius:      24,
     backgroundColor:   "rgba(139,99,214,0.07)",
     borderWidth:       1,
     borderColor:       "rgba(139,99,214,0.16)",
@@ -1388,15 +1442,15 @@ const styles = StyleSheet.create({
   supportPill: {
     alignItems:      "center",
     backgroundColor: C.cardBg,
-    borderColor:     C.cardBdr,
-    borderRadius:    18,
+    borderColor:     "rgba(246,233,239,0.10)",
+    borderRadius:    24,
     borderWidth:     1,
     flexDirection:   "row",
     gap:             10,
     minWidth:        (W - 40 - 10) / 3 - 1,
     flex:            1,
-    padding:         12,
-    shadowColor:     "#000000",
+    padding:         20,
+    shadowColor:     "#E8A6B6",
     shadowOffset:    { width: 0, height: 3 },
     shadowOpacity:   0.10,
     shadowRadius:    8,

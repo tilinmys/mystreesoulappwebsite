@@ -220,7 +220,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id:   "1",
     role: "bloop",
-    text: "Hi gorgeous, I'm here for you 💜\nHow are you feeling today?",
+    text: "Hi gorgeous, I'm right here for you. How is your body feeling today? Let's take a deep breath together 💜",
     time: null,
     read: false,
   },
@@ -234,7 +234,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id:   "3",
     role: "bloop",
-    text: "I'm here with you. I've noticed your stress has been a bit high this week. Want to try a calming reset together?",
+    text: "Oh honey, I hear you. I've noticed your stress level has been sitting a bit high this week. You don't have to carry it all alone. Let's do a gentle, soothing reset together, okay? 🌸",
     time: null,
     read: false,
   },
@@ -421,10 +421,10 @@ function getBloopReply(text: string, sourceLabel = ""): string {
 
   // Fallback — warm and open-ended
   const fallbacks = [
-    `${from}I hear you 💜 Tell me more — what does your body feel like right now, and how long have you been feeling this way?`,
-    `${from}That makes sense to sit with. Your feelings are valid data about what your body and mind need. What would feel most supportive right now?`,
-    `${from}I'm with you. Let's take this one gentle step at a time. What feels like the heaviest thing to carry today?`,
-    `${from}Your wellbeing matters deeply. Can you tell me a little more so I can give you something truly useful, not just generic advice?`,
+    `${from}I hear you, sweetheart 💜 Tell me more — what does your body feel like right now, and how long have you been carrying this?`,
+    `${from}Oh honey, that makes complete sense to sit with. Your feelings are valid signals from your body. What would feel most comforting right now?`,
+    `${from}I'm right here with you, sister. Let's take this one gentle, slow breath at a time. What feels like the heaviest thing on your heart today?`,
+    `${from}Your heart and wellbeing matter so deeply to me. Can you share a little more? I'm listening with my whole heart.`,
   ];
   return fallbacks[Math.abs(text.length) % fallbacks.length];
 return fallbacks[Math.abs(text.length) % fallbacks.length];
@@ -710,6 +710,7 @@ export default function BloopChatScreen() {
   const safeBack  = useSafeBack();
   const scrollRef = useRef<ScrollView>(null);
   const handledPromptRef = useRef<string | null>(null);
+  const voiceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [inputText,    setInputText]    = useState("");
   const [isTalking,    setIsTalking]    = useState(false);
@@ -772,7 +773,53 @@ export default function BloopChatScreen() {
   }, [routePrompt, shouldAutoSend, sourceLabel]);
 
   const toggleTalk = () => {
-    setIsTalking((v) => !v);
+    if (!isTalking) {
+      setIsTalking(true);
+      // Simulate voice-to-text typing
+      voiceTimeoutRef.current = setTimeout(() => {
+        setIsTalking(false);
+        // Simulate user sending a voice message
+        const voicePrompt = "I'm having a bit of a heavy day, can you help me relax? 💜";
+        setInputText(voicePrompt);
+        
+        // Trigger send for this message after a brief typing feel
+        setTimeout(() => {
+          const userId = `${Date.now()}-user`;
+          setMessages((prev) => [
+            ...prev,
+            { id: userId, role: "user", text: voicePrompt, time: "Just now", read: false },
+          ]);
+          setInputText("");
+          setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+
+          setBloopTyping(true);
+          const delay = 1500;
+          setTimeout(() => {
+            setBloopTyping(false);
+            const replyText = getBloopReply(voicePrompt);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `${Date.now()}-bloop`,
+                role: "bloop",
+                text: replyText,
+                time: null,
+                read: false,
+                cardType: "curriculum",
+                cardPhase: "luteal",
+              },
+            ]);
+            setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+          }, delay);
+        }, 600);
+      }, 3200);
+    } else {
+      setIsTalking(false);
+      if (voiceTimeoutRef.current) {
+        clearTimeout(voiceTimeoutRef.current);
+        voiceTimeoutRef.current = null;
+      }
+    }
   };
 
   const sendMessage = () => {
@@ -894,15 +941,20 @@ export default function BloopChatScreen() {
           <View style={styles.headerRight}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isTalking ? "Stop voice mode" : "Start voice mode"}
+              accessibilityLabel={isTalking ? "Stop voice simulation" : "Start voice simulation"}
               onPress={toggleTalk}
               style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
             >
               <MaterialCommunityIcons name="waveform" size={18} color={C.muted} />
             </Pressable>
-            <View style={styles.headerBtn} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Companion Settings"
+              onPress={() => router.push("/bloop" as any)}
+              style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
+            >
               <MaterialCommunityIcons name="dots-horizontal" size={20} color={C.muted} />
-            </View>
+            </Pressable>
           </View>
         </View>
 
@@ -1060,87 +1112,73 @@ export default function BloopChatScreen() {
             />
           </Pressable>
 
-          <View style={{ height: 12 }} />
+          <View style={{ height: 16 }} />
         </ScrollView>
-
-        {/* ── Voice panel ─────────────────────────────────────────────── */}
-        <View style={[styles.voicePanel, { backgroundColor: C.cardBg, borderColor: C.cardBdr }]}>
-          {/* Waveform bars — left side */}
-          <View style={styles.waveGroup}>
-            {Array.from({ length: WAVE_BARS }, (_, i) => (
-              <WaveBar
-                key={i}
-                phase={WAVE_PHASES[i]}
-                active={isTalking}
-              />
-            ))}
-          </View>
-
-          {/* Mic button */}
-          <Pressable
-            accessibilityLabel={isTalking ? "Stop voice mode" : "Start voice mode"}
-            accessibilityRole="button"
-            onPress={toggleTalk}
-            style={({ pressed }) => [styles.micBtnShell, pressed && styles.pressed]}
-          >
-            <LinearGradient
-              colors={["#C4A0E8", "#8B63D6"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.micBtn}
-            >
-              <MaterialCommunityIcons
-                name={isTalking ? "microphone" : "microphone-outline"}
-                size={26}
-                color={C.white}
-              />
-            </LinearGradient>
-          </Pressable>
-
-          {/* Waveform bars — right side */}
-          <View style={styles.waveGroup}>
-            {Array.from({ length: WAVE_BARS }, (_, i) => (
-              <WaveBar
-                key={i + WAVE_BARS}
-                phase={WAVE_PHASES[i + WAVE_BARS]}
-                active={isTalking}
-              />
-            ))}
-          </View>
-
-          {/* Tap to talk label */}
-          <Text style={styles.tapToTalk}>
-            {isTalking ? "Listening…" : "Tap to talk"}
-          </Text>
-        </View>
 
         {/* ── Text input bar ───────────────────────────────────────────── */}
         <View style={styles.inputRow}>
           <View style={styles.inputBar}>
-            <MaterialCommunityIcons name="leaf-maple" size={18} color={C.faint} />
+            {/* Microphone side button */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isTalking ? "Stop voice simulation" : "Start voice simulation"}
+              onPress={toggleTalk}
+              style={({ pressed }) => [
+                styles.inputVoiceBtn,
+                isTalking && styles.inputVoiceBtnActive,
+                pressed && styles.pressed
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={isTalking ? "microphone" : "microphone-outline"}
+                size={20}
+                color={isTalking ? C.pink : C.muted}
+              />
+            </Pressable>
+
+            {/* Input field */}
             <TextInput
               style={styles.inputField}
               value={inputText}
               onChangeText={setInputText}
-              placeholder="Message Bloop…"
+              placeholder={isTalking ? "Listening to your voice..." : "Chat with Bloop..."}
               placeholderTextColor={C.faint}
               returnKeyType="send"
               onSubmitEditing={sendMessage}
+              editable={!bloopTyping && !isTalking}
             />
+
+            {/* Voice animation inside input bar */}
+            {isTalking && (
+              <View style={styles.inlineVoiceAnim}>
+                <View style={[styles.inlineAnimBar, { height: 10 }]} />
+                <View style={[styles.inlineAnimBar, { height: 18 }]} />
+                <View style={[styles.inlineAnimBar, { height: 14 }]} />
+                <View style={[styles.inlineAnimBar, { height: 6 }]} />
+              </View>
+            )}
+
+            {/* Heart emoji button */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Add heart emoji"
               onPress={addEmoji}
               style={({ pressed }) => [styles.emojiBtn, pressed && styles.pressed]}
             >
-              <MaterialCommunityIcons name="emoticon-happy-outline" size={20} color={C.faint} />
+              <MaterialCommunityIcons name="heart-outline" size={20} color={C.muted} />
             </Pressable>
+
+            {/* Send button */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Send message"
               onPress={sendMessage}
-              disabled={bloopTyping}
-              style={({ pressed }) => [styles.sendBtn, pressed && styles.pressed, bloopTyping && { opacity: 0.38 }]}
+              disabled={bloopTyping || isTalking}
+              style={({ pressed }) => [
+                styles.sendBtn,
+                pressed && styles.pressed,
+                (bloopTyping || isTalking) && { opacity: 0.38 }
+              ]}
             >
               <LinearGradient
                 colors={["#C4A0E8", "#8B63D6"]}
@@ -1148,38 +1186,10 @@ export default function BloopChatScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.sendBtnInner}
               >
-                <MaterialCommunityIcons name="arrow-right" size={18} color={C.white} />
+                <MaterialCommunityIcons name="arrow-up" size={18} color={C.white} />
               </LinearGradient>
             </Pressable>
           </View>
-        </View>
-
-        {/* ── Bottom action shortcuts ──────────────────────────────────── */}
-        <View style={styles.bottomActions}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/grounding" as any)}
-            style={({ pressed }) => [styles.actionItem, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons name="sprout-outline" size={16} color={C.muted} />
-            <Text style={styles.actionLabel}>Grounding</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={toggleTalk}
-            style={({ pressed }) => [styles.actionItem, pressed && styles.pressed]}
-          >
-            <Ionicons name="options-outline" size={16} color={C.muted} />
-            <Text style={styles.actionLabel}>Breath</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/grounding" as any)}
-            style={({ pressed }) => [styles.actionItem, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons name="heart-circle-outline" size={16} color={C.muted} />
-            <Text style={styles.actionLabel}>I need support</Text>
-          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1813,5 +1823,30 @@ const styles = StyleSheet.create({
 
   pressed: {
     transform: [{ scale: 0.96 }],
+  },
+  inputVoiceBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(146, 119, 200, 0.08)",
+    borderColor: "rgba(146, 119, 200, 0.16)",
+    borderWidth: 1,
+  },
+  inputVoiceBtnActive: {
+    backgroundColor: "rgba(212, 92, 130, 0.12)",
+    borderColor: "rgba(212, 92, 130, 0.25)",
+  },
+  inlineVoiceAnim: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginRight: 6,
+  },
+  inlineAnimBar: {
+    width: 3,
+    borderRadius: 1.5,
+    backgroundColor: C.pink,
   },
 });

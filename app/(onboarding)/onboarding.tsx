@@ -69,7 +69,7 @@ const CYCLE_PHASES = [
     bubbleBg: "rgba(244, 184, 110, 0.14)",
     tileBg: "rgba(244, 184, 110, 0.06)",
     tileBorder: "rgba(244, 184, 110, 0.22)",
-    icon: "fire-outline" as const,
+    icon: "lightning-bolt-outline" as const,
   },
 ] as const;
 

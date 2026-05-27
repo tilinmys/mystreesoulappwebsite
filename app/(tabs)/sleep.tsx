@@ -350,10 +350,7 @@ export default function SleepScreen() {
   const { isDark } = useColorMode();
 
   // Theme Local State
-  const [dark, setDark] = useState(isDark);
-  useEffect(() => {
-    setDark(isDark);
-  }, [isDark]);
+  const dark = true;
 
   const { colors, s } = useStyles(dark);
 
@@ -446,25 +443,7 @@ export default function SleepScreen() {
           </View>
 
           <View style={s.headerRight}>
-            {/* Dark / Light theme toggle — moon+switch+sun */}
-            <View style={s.themeToggle}>
-              <MaterialCommunityIcons
-                name={dark ? "moon-waning-crescent" : "white-balance-sunny"}
-                size={13} color={colors.textMuted}
-              />
-              <Switch
-                value={dark}
-                onValueChange={setDark}
-                trackColor={{ false: "rgba(123,82,200,0.3)", true: colors.primaryCTA + "80" }}
-                thumbColor={dark ? colors.primaryCTA : "#9B7EC8"}
-                ios_backgroundColor="rgba(123,82,200,0.25)"
-                style={{ transform: [{ scaleX: 0.72 }, { scaleY: 0.72 }] }}
-              />
-              <MaterialCommunityIcons
-                name={dark ? "white-balance-sunny" : "moon-waning-crescent"}
-                size={13} color={colors.textMuted}
-              />
-            </View>
+
 
             {/* Settings — opens Sleep Settings sheet */}
             <Pressable
@@ -691,8 +670,6 @@ export default function SleepScreen() {
               <MaterialCommunityIcons name="chevron-right" size={14} color={colors.textHint} />
             </Pressable>
           )}
-
-          <View style={{ height: 110 }} />
         </ScrollView>
       </SafeAreaView>
 
@@ -869,7 +846,7 @@ function getStyles(colors: AppColors, isDark: boolean) {
       backgroundColor: colors.surface,
     },
     scrollView: { flex: 1, backgroundColor: "transparent" },
-    scroll: { paddingTop: 4, paddingBottom: 28, flexGrow: 1 },
+    scroll: { paddingTop: 4, paddingBottom: 100, flexGrow: 1 },
 
     // Hero
     heroCard: {

@@ -14,20 +14,16 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <style dangerouslySetInnerHTML={{
           __html: `
             * { box-sizing: border-box; }
-            html {
-              background: #000;
-            }
+            html { background: #000; }
             body {
-              max-width: 390px;
+              max-width: 390px !important;
               min-height: 100dvh;
-              margin: 0 auto;
+              margin: 0 auto !important;
               overflow-x: hidden;
               background: #fff;
-              position: relative;
             }
             #root {
-              max-width: 390px;
-              min-height: 100dvh;
+              max-width: 390px !important;
               overflow-x: hidden;
             }
           `

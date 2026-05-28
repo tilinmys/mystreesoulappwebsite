@@ -2,7 +2,9 @@ import * as Font from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
+import { useAuthStore } from "../store/authStore";
+import { useOnboardingStore } from "../store/onboardingStore";
 
 // ── Fraunces — warm serif display (headers, greetings, hero moments) ──────────
 import {
@@ -68,6 +70,34 @@ export default function RootLayout() {
   useNetworkStatus();
   const { colors, isDark } = useColorMode();
   const [fontsReady, setFontsReady] = useState(false);
+
+  // ── Store hydration gate — prevents blank dashboard on web ───────────────
+  // Zustand persist reads localStorage asynchronously; we must wait for both
+  // stores to finish before rendering routes, otherwise selectors return defaults
+  // and conditional renders may produce an empty screen.
+  const [hydrated, setHydrated] = useState(
+    () =>
+      useOnboardingStore.persist.hasHydrated() &&
+      useAuthStore.persist.hasHydrated()
+  );
+
+  useEffect(() => {
+    // Sync immediately in case stores finished before this effect ran
+    const syncHydration = () =>
+      setHydrated(
+        useOnboardingStore.persist.hasHydrated() &&
+          useAuthStore.persist.hasHydrated()
+      );
+
+    const u1 = useOnboardingStore.persist.onFinishHydration(syncHydration);
+    const u2 = useAuthStore.persist.onFinishHydration(syncHydration);
+    syncHydration(); // check again in case both resolved before subscribing
+
+    return () => {
+      u1();
+      u2();
+    };
+  }, []);
 
   useEffect(() => {
     void Font.loadAsync({
@@ -139,6 +169,22 @@ export default function RootLayout() {
       body.style.backgroundColor = previousBodyBackground;
     };
   }, [colors.background]);
+
+  // ── Loading gate — show spinner until fonts + stores are ready ───────────
+  if (!fontsReady || !hydrated) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#0f0a0f",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color="#c49a6c" />
+      </View>
+    );
+  }
 
   return (
     <>

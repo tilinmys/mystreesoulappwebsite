@@ -119,13 +119,20 @@ export default function DashboardScreen() {
   const { colors, isDark, s, ps } = useStyles();
 
   // ── Personalisation data from onboarding ──────────────────────────────────
-  const name           = useOnboardingStore((s) => s.name);
-  const selectedGoals  = useOnboardingStore((s) => s.selectedGoals);
-  const lifeStage      = useOnboardingStore((s) => s.lifeStage);
-  const stressLevel    = useOnboardingStore((s) => s.stressLevel);
-  const sleepScore     = useOnboardingStore((s) => s.sleepScore);
-  const emotionalState = useOnboardingStore((s) => s.emotionalState);
-  const cycleBasics    = useOnboardingStore((s) => s.cycleBasics);
+  const name           = useOnboardingStore((s) => s.name) || "";
+  const selectedGoals  = useOnboardingStore((s) => s.selectedGoals) || [];
+  const lifeStage      = useOnboardingStore((s) => s.lifeStage) || null;
+  const stressLevel    = useOnboardingStore((s) => s.stressLevel) ?? 50;
+  const sleepScore     = useOnboardingStore((s) => s.sleepScore) || "okay";
+  const emotionalState = useOnboardingStore((s) => s.emotionalState) || "calm";
+  const cycleBasics    = useOnboardingStore((s) => s.cycleBasics) || {
+    lastPeriodStart: "",
+    periodLength: "",
+    cycleLength: "",
+    usualFlow: "",
+    supportNeeds: [],
+    fertilityIntent: "",
+  };
 
   // ── Phase 4: Shared personalization engine ─────────────────────────────────
   // TODO: Architectural Migration Step
@@ -271,6 +278,8 @@ export default function DashboardScreen() {
     inputRange:  [0, 1],
     outputRange: [CIRC, CIRC * 0.27],
   });
+  // TEMP DEBUG — remove after confirming
+  console.log('Dashboard render state:', { name, selectedGoals, lifeStage, stressLevel, cycleBasics });
 
   return (
     <SafeAreaView edges={["top"]} style={s.screen}>

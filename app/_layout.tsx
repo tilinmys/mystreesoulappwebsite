@@ -1,4 +1,10 @@
 import * as Font from "expo-font";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Feather from "@expo/vector-icons/Feather";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -140,6 +146,12 @@ export default function RootLayout() {
       Manrope_500Medium,
       Manrope_600SemiBold,
       Manrope_700Bold,
+      ...AntDesign.font,
+      ...Ionicons.font,
+      ...MaterialCommunityIcons.font,
+      ...Feather.font,
+      ...FontAwesome.font,
+      ...FontAwesome5.font,
     }).then(() => setFontsReady(true));
   }, []);
 

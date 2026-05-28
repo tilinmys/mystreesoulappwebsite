@@ -11,6 +11,20 @@ export default function Root({ children }: { children: React.ReactNode }) {
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
         <ScrollViewStyleReset />
+        <link
+          rel="preload"
+          href="/_expo/static/fonts/Ionicons.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/_expo/static/fonts/MaterialCommunityIcons.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
         <style dangerouslySetInnerHTML={{
           __html: `
             html { background: #1a1a1a; }

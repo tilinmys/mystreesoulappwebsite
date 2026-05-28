@@ -3,7 +3,8 @@
 // Uses localStorage on web, SecureStore on iOS/Android
 
 import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+
+const SecureStore = Platform.OS !== 'web' ? require('expo-secure-store') : null;
 
 const Storage = {
   async getItem(key: string): Promise<string | null> {

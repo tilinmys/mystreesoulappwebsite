@@ -3,39 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MyTree Soul — Demo</title>
+  <title>MyStree Soul — Demo</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       min-height: 100vh;
-      background: radial-gradient(ellipse at top, #2d1b2e 0%, #0f0a0f 70%);
+      background: radial-gradient(ellipse at 50% 0%, #2d1b2e 0%, #0d0d0d 60%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      padding: 32px 16px;
-      gap: 28px;
+      padding: 40px 20px;
+      gap: 32px;
     }
 
     .header { text-align: center; }
-    .live-badge {
+
+    .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(196,154,108,0.15);
-      border: 1px solid rgba(196,154,108,0.35);
+      gap: 7px;
+      background: rgba(196,154,108,0.12);
+      border: 1px solid rgba(196,154,108,0.3);
       color: #c49a6c;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
       text-transform: uppercase;
       padding: 5px 14px;
       border-radius: 99px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
-    .live-dot {
+    .dot {
       width: 6px; height: 6px;
       background: #c49a6c;
       border-radius: 50%;
@@ -43,61 +44,58 @@
     }
     @keyframes pulse {
       0%,100% { opacity:1; transform:scale(1); }
-      50% { opacity:0.3; transform:scale(0.7); }
+      50% { opacity:0.3; transform:scale(0.6); }
     }
-    .header h1 {
-      font-size: clamp(20px, 5vw, 32px);
+    h1 {
+      font-size: clamp(22px, 4vw, 38px);
       font-weight: 700;
       color: #fff;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.5px;
     }
-    .header p {
-      margin-top: 6px;
-      font-size: clamp(12px, 2.5vw, 15px);
-      color: #8a7a8a;
+    .sub {
+      margin-top: 8px;
+      font-size: clamp(13px, 2vw, 16px);
+      color: #6b5b6b;
     }
 
     /* Phone */
-    .phone-outer {
+    .phone {
       position: relative;
-      width: min(300px, 80vw);
-      aspect-ratio: 300 / 640;
+      width: min(320px, 85vw);
+      aspect-ratio: 320 / 680;
+      flex-shrink: 0;
     }
-    .phone-shell {
+    .shell {
       width: 100%;
       height: 100%;
-      background: linear-gradient(160deg, #2c2c2c, #171717);
-      border-radius: 15%;
+      background: linear-gradient(160deg, #2c2c2e, #1c1c1e);
+      border-radius: 15.5%;
       box-shadow:
-        0 0 0 1.5px #3a3a3a,
-        0 0 0 3px #111,
-        0 35px 90px rgba(0,0,0,0.95),
-        inset 0 1px 0 rgba(255,255,255,0.07);
-      padding: 3.5%;
+        0 0 0 1.5px #3a3a3c,
+        0 0 0 4px #1c1c1e,
+        0 40px 100px rgba(0,0,0,0.95),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      padding: 3.8%;
       position: relative;
     }
-    .dynamic-island {
+    .island {
       position: absolute;
       top: 3.8%;
       left: 50%;
       transform: translateX(-50%);
-      width: 30%;
-      height: 4.5%;
+      width: 29%;
+      height: 4.2%;
       background: #000;
       border-radius: 99px;
       z-index: 10;
     }
-    .btn {
-      position: absolute;
-      background: linear-gradient(to bottom, #252525, #1c1c1c);
-      border-radius: 2px;
-    }
-    .btn-power  { right:-1.8%; top:25%; width:1.8%; height:11%; }
-    .btn-vol-up { left:-1.8%; top:20%; width:1.8%; height:8%; }
-    .btn-vol-dn { left:-1.8%; top:31%; width:1.8%; height:10%; }
-    .btn-silent { left:-1.8%; top:14%; width:1.8%; height:4%; }
+    .btn { position: absolute; background: #2c2c2e; border-radius: 3px; }
+    .pwr  { right:-1.8%; top:24%; width:1.8%; height:10%; }
+    .vup  { left:-1.8%;  top:19%; width:1.8%; height:7%; }
+    .vdn  { left:-1.8%;  top:29%; width:1.8%; height:9%; }
+    .sil  { left:-1.8%;  top:13%; width:1.8%; height:3.5%; }
 
-    .phone-screen {
+    .screen {
       width: 100%;
       height: 100%;
       border-radius: 12.5%;
@@ -105,12 +103,13 @@
       background: #000;
       position: relative;
     }
-    .phone-screen iframe {
+    .screen iframe {
       width: 100%;
       height: 100%;
       border: none;
       display: block;
     }
+
     .loader {
       position: absolute;
       inset: 0;
@@ -118,93 +117,107 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #0f0a0f;
+      background: #120a12;
       gap: 14px;
       z-index: 5;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.6s ease;
+      border-radius: 12.5%;
     }
     .loader.hidden { opacity: 0; pointer-events: none; }
-    .loader-logo {
-      font-size: 28px;
+    .lname {
+      font-size: 20px;
       font-weight: 700;
       color: #c49a6c;
-      letter-spacing: -1px;
+      letter-spacing: -0.5px;
+      font-family: Georgia, serif;
     }
     .spinner {
-      width: 24px; height: 24px;
+      width: 22px; height: 22px;
       border: 2px solid #2a2a2a;
       border-top-color: #c49a6c;
       border-radius: 50%;
       animation: spin 0.9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader-text { font-size: 11px; color: #555; letter-spacing: 0.5px; }
+    .ltxt { font-size: 11px; color: #4a3a4a; letter-spacing: 0.5px; }
 
-    /* CTA */
-    .cta { text-align: center; }
-    .cta-label {
-      font-size: 11px;
-      color: #4a3a4a;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 10px;
+    /* Store buttons */
+    .stores {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
-    .store-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-    .btn-store {
+    .stores-label {
+      font-size: 10px;
+      color: #3a2a3a;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .store-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .sbtn {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #555;
+      border: 1px solid rgba(255,255,255,0.07);
+      color: #4a4a4a;
       font-size: 12px;
       padding: 9px 18px;
-      border-radius: 9px;
+      border-radius: 10px;
       text-decoration: none;
-      opacity: 0.6;
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    /* Responsive — on mobile show app directly */
+    @media (max-width: 480px) {
+      body { padding: 20px 10px; gap: 20px; }
+      .phone { width: min(300px, 92vw); }
     }
   </style>
 </head>
 <body>
+
   <div class="header">
-    <div class="live-badge"><span class="live-dot"></span>Live Interactive Demo</div>
-    <h1>MyTree Soul</h1>
-    <p>Your personal women's wellness companion</p>
+    <div class="badge"><span class="dot"></span>Live Interactive Demo</div>
+    <h1>MyStree Soul</h1>
+    <p class="sub">Your personal women's wellness companion</p>
   </div>
 
-  <div class="phone-outer">
-    <div class="phone-shell">
-      <div class="dynamic-island"></div>
-      <div class="btn btn-silent"></div>
-      <div class="btn btn-vol-up"></div>
-      <div class="btn btn-vol-dn"></div>
-      <div class="btn btn-power"></div>
-      <div class="phone-screen">
+  <div class="phone">
+    <div class="shell">
+      <div class="island"></div>
+      <div class="btn pwr"></div>
+      <div class="btn vup"></div>
+      <div class="btn vdn"></div>
+      <div class="btn sil"></div>
+      <div class="screen">
         <div class="loader" id="loader">
-          <div class="loader-logo">✦ MyTree</div>
+          <div class="lname">MyStree Soul</div>
           <div class="spinner"></div>
-          <div class="loader-text">Loading your app...</div>
+          <div class="ltxt">Starting your experience...</div>
         </div>
         <iframe
-          id="app-frame"
-          src="https://mystreesoulappwebsite.vercel.app"
-          title="MyTree Soul Live Demo"
+          id="frame"
+          src="https://mystreesoulappwebsite.onrender.com"
+          title="MyStree Soul Live Demo"
           allow="camera; microphone; geolocation; clipboard-write"
         ></iframe>
       </div>
     </div>
   </div>
 
-  <div class="cta">
-    <div class="cta-label">Coming soon to</div>
-    <div class="store-buttons">
-      <span class="btn-store">
+  <div class="stores">
+    <div class="stores-label">Coming soon to</div>
+    <div class="store-row">
+      <span class="sbtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
         </svg>
         App Store
       </span>
-      <span class="btn-store">
+      <span class="sbtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M3.18 23.76c.35.19.75.19 1.09 0l11.37-6.52-2.4-2.41-10.06 8.93zm14.83-8.51L5.47 8.74 3.18.24C2.84.05 2.44.05 2.1.24L2 .3v23.4l.1.06 13.54-7.76 2.37-1.36v-.39zm-2.36-6.44L3.18.28l10.06 8.93 2.41-2.4zm2.36 5.04l-2.37-1.36.01-.01 2.36-1.35c.34.2.34.52 0 .72z"/>
         </svg>
@@ -214,10 +227,11 @@
   </div>
 
   <script>
-    const frame = document.getElementById('app-frame');
+    const frame = document.getElementById('frame');
     const loader = document.getElementById('loader');
     frame.addEventListener('load', () => loader.classList.add('hidden'));
-    setTimeout(() => loader.classList.add('hidden'), 10000);
+    setTimeout(() => loader.classList.add('hidden'), 12000);
   </script>
+
 </body>
 </html>

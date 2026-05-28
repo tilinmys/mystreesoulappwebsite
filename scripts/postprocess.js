@@ -2,7 +2,37 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, '../dist/index.html');
+const distDir = path.join(__dirname, '../dist');
+const filePath = path.join(distDir, 'index.html');
+const fallbackRoutes = [
+  'adolescence',
+  'bloop',
+  'bloop-chat',
+  'cycle',
+  'dashboard',
+  'fertility',
+  'grounding',
+  'health-records',
+  'insights',
+  'journal',
+  'login',
+  'menopause',
+  'nourish',
+  'notifications',
+  'onboarding',
+  'personalization',
+  'premium',
+  'pregnancy',
+  'privacy-consent',
+  'profile',
+  'ready',
+  'register',
+  'saved-programs',
+  'settings',
+  'sleep',
+  'wellness',
+  'welcome',
+];
 
 if (fs.existsSync(filePath)) {
   let content = fs.readFileSync(filePath, 'utf8');
@@ -67,7 +97,14 @@ if (fs.existsSync(filePath)) {
   }
   
   fs.writeFileSync(filePath, content, 'utf8');
-  console.log('[POST-PROCESS] Successfully injected mobile shell and type="module" into dist/index.html');
+
+  fallbackRoutes.forEach((route) => {
+    const routeDir = path.join(distDir, route);
+    fs.mkdirSync(routeDir, { recursive: true });
+    fs.writeFileSync(path.join(routeDir, 'index.html'), content, 'utf8');
+  });
+
+  console.log('[POST-PROCESS] Successfully injected mobile shell, type="module", and route fallbacks into dist/index.html');
 } else {
   console.error('[POST-PROCESS] dist/index.html not found!');
 }

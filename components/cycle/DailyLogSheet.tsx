@@ -873,6 +873,10 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     position: "absolute",
     right: 0,
     height: SHEET_HEIGHT,
+    // Web: keep inside 390px shell
+    maxWidth: 390,
+    alignSelf: "center",
+    width: "100%",
   },
   sheet: {
     backgroundColor: colors.surface,

@@ -2410,6 +2410,10 @@ const styles = StyleSheet.create({
     shadowOpacity:        0.10,
     shadowRadius:         20,
     elevation:            14,
+    // Web: keep inside 390px shell
+    maxWidth: 390,
+    alignSelf: "center",
+    width: "100%",
   },
   popupHandle: {
     width:      40,

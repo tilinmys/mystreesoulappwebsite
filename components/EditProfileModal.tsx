@@ -418,6 +418,10 @@ const styles = StyleSheet.create({
     elevation: 18,
     paddingHorizontal: 24,
     paddingTop: 12,
+    // Web: keep inside 390px shell
+    maxWidth: 390,
+    alignSelf: "center",
+    width: "100%",
   },
   sheetDark: {
     backgroundColor: "#1A1028",

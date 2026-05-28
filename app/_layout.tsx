@@ -192,7 +192,14 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           animation: "fade",
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: {
+            backgroundColor: colors.background,
+            // Web: lock every screen inside the 390px mobile shell
+            maxWidth: 390,
+            width: "100%",
+            alignSelf: "center",
+            overflow: "hidden",
+          },
           headerShown: false
         }}
       >

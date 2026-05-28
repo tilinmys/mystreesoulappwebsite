@@ -2,28 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,
+      maximum-scale=1.0, user-scalable=no" />
     <title>MyStree Soul</title>
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
       html {
-        background: #000;
+        background: #111;
+        height: 100%;
       }
+
       body {
+        width: 390px !important;
         max-width: 390px !important;
         min-height: 100vh;
+        min-height: 100dvh;
         margin: 0 auto !important;
         overflow-x: hidden;
+        overflow-y: auto;
+        position: relative;
         background: #ffffff;
+        /* Center shadow to look like a phone on desktop */
+        box-shadow: 0 0 0 1px #333,
+                    0 20px 60px rgba(0,0,0,0.5);
       }
+
       #root {
+        width: 390px !important;
         max-width: 390px !important;
         min-height: 100vh;
+        min-height: 100dvh;
         overflow-x: hidden;
+        position: relative;
       }
     </style>
   </head>

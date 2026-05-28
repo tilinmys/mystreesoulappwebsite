@@ -405,6 +405,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.20,
     shadowRadius: 28,
+    // Web: keep inside 390px shell
+    maxWidth: 390,
+    alignSelf: "center",
+    width: "100%",
   },
   moreTitle: {
     fontFamily: F.uiBold,   // v3: reduced from uiBlack for calmer header weight

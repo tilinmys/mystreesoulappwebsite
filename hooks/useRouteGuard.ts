@@ -30,6 +30,8 @@ const secondarySegments = new Set([
   "settings",
   "notifications",
   "journal",
+  "health-records",
+  "saved-programs",
   "fertility",
   "pregnancy",
   "menopause",

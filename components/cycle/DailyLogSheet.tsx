@@ -34,8 +34,11 @@ import { useDailyLogStore } from "../../store/dailyLogStore";
 
 const imgBloop = require("../../public/images/bloop-welcome.webp");
 
-const { width: W, height: H } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
+const H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 const SHEET_HEIGHT = H * 0.88;
+// On web, useNativeDriver is unsupported inside Modal — keep JS-driven animations
+const USE_NATIVE_DRIVER = Platform.OS !== "web";
 
 // ── Palette — Midnight Plum dark theme ────────────────────────────────────────
 const C = {
@@ -351,13 +354,13 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
       haloScale2.setValue(0.8);
       haloOp2.setValue(0);
       Animated.parallel([
-        Animated.spring(translateY, { toValue: 0,   useNativeDriver: true, tension: 65, friction: 11 }),
-        Animated.timing(backdropOp, { toValue: 1,   useNativeDriver: true, duration: 280, easing: Easing.out(Easing.ease) }),
+        Animated.spring(translateY, { toValue: 0,   useNativeDriver: USE_NATIVE_DRIVER, tension: 65, friction: 11 }),
+        Animated.timing(backdropOp, { toValue: 1,   useNativeDriver: USE_NATIVE_DRIVER, duration: 280, easing: Easing.out(Easing.ease) }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(translateY, { toValue: SHEET_HEIGHT, useNativeDriver: true, duration: 300, easing: Easing.in(Easing.ease) }),
-        Animated.timing(backdropOp, { toValue: 0,            useNativeDriver: true, duration: 260 }),
+        Animated.timing(translateY, { toValue: SHEET_HEIGHT, useNativeDriver: USE_NATIVE_DRIVER, duration: 300, easing: Easing.in(Easing.ease) }),
+        Animated.timing(backdropOp, { toValue: 0,            useNativeDriver: USE_NATIVE_DRIVER, duration: 260 }),
       ]).start();
     }
     return () => {
@@ -379,7 +382,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
         if (gs.dy > 80 || gs.vy > 0.6) {
           handleClose();
         } else {
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 12 }).start();
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: USE_NATIVE_DRIVER, tension: 80, friction: 12 }).start();
         }
       },
     })
@@ -387,8 +390,8 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
 
   const handleClose = () => {
     Animated.parallel([
-      Animated.timing(translateY, { toValue: SHEET_HEIGHT, useNativeDriver: true, duration: 300, easing: Easing.in(Easing.ease) }),
-      Animated.timing(backdropOp, { toValue: 0,            useNativeDriver: true, duration: 260 }),
+      Animated.timing(translateY, { toValue: SHEET_HEIGHT, useNativeDriver: USE_NATIVE_DRIVER, duration: 300, easing: Easing.in(Easing.ease) }),
+      Animated.timing(backdropOp, { toValue: 0,            useNativeDriver: USE_NATIVE_DRIVER, duration: 260 }),
     ]).start(() => onClose());
   };
 
@@ -427,14 +430,14 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
         toValue: 1,
         duration: 250,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
       // 2. Success Card spring scaling
       Animated.spring(bloopScale, {
         toValue: 1,
         tension: 80,
         friction: 8,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
       // 3. Staggered checkmark badge spring scaling
       Animated.sequence([
@@ -443,7 +446,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
           toValue: 1,
           tension: 100,
           friction: 6,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]),
       // 4. Staggered content reveal (text translation & opacity)
@@ -454,13 +457,13 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
             toValue: 1,
             duration: 250,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(textY, {
             toValue: 0,
             duration: 300,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
         ]),
       ]),
@@ -470,19 +473,19 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
           Animated.timing(haloOp1, {
             toValue: 0.45,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(haloScale1, {
             toValue: 1.8,
             duration: 700,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
         ]),
         Animated.timing(haloOp1, {
           toValue: 0,
           duration: 350,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]),
       // 6. Second concentric halo wave ripple (slightly delayed)
@@ -492,19 +495,19 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
           Animated.timing(haloOp2, {
             toValue: 0.35,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(haloScale2, {
             toValue: 2.5,
             duration: 800,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
         ]),
         Animated.timing(haloOp2, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]),
     ]).start();
@@ -516,12 +519,12 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
           toValue: SHEET_HEIGHT,
           duration: 380,
           easing: Easing.bezier(0.32, 0.72, 0, 1),
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.timing(backdropOp, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]).start(() => {
         setShowSuccess(false);

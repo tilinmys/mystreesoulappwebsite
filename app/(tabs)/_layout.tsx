@@ -1,29 +1,35 @@
 import { Tabs } from "expo-router";
+import { FloatingTabBar } from "../../components/navigation/FloatingTabBar";
 
 export default function TabsLayout() {
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarPosition: 'bottom',
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          maxWidth: 390,
-          alignSelf: 'center',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(255,255,255,0.1)',
-        },
+        tabBarHideOnKeyboard: true,
         sceneStyle: {
-          paddingBottom: 80,
+          backgroundColor: "transparent",
           maxWidth: 390,
-          width: '100%',
-          alignSelf: 'center',
-          overflow: 'hidden',
+          width: "100%",
+          alignSelf: "center",
+          overflow: "hidden",
+        },
+        tabBarStyle: {
+          backgroundColor: "transparent",
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
         },
       }}
-    />
+    >
+      <Tabs.Screen name="dashboard" />
+      <Tabs.Screen name="cycle" />
+      <Tabs.Screen name="insights" />
+      <Tabs.Screen name="wellness" />
+      <Tabs.Screen name="nourish" />
+      <Tabs.Screen name="sleep" />
+      <Tabs.Screen name="profile" />
+    </Tabs>
   );
 }

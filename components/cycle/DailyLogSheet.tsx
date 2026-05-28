@@ -13,7 +13,6 @@ import {
   Dimensions,
   Easing,
   KeyboardAvoidingView,
-  Modal,
   PanResponder,
   Platform,
   Pressable,
@@ -31,6 +30,7 @@ import { darkColors, lightColors, type AppColors } from "../../constants/colors"
 import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
 import { useDailyLogStore } from "../../store/dailyLogStore";
+import { WebSafeModal } from "../WebSafeModal";
 
 const imgBloop = require("../../public/images/bloop-welcome.webp");
 
@@ -571,7 +571,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
   };
 
   return (
-    <Modal
+    <WebSafeModal
       visible={visible}
       transparent={true}
       statusBarTranslucent={true}
@@ -862,7 +862,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
         </KeyboardAvoidingView>
       </Animated.View>
       </View>
-    </Modal>
+    </WebSafeModal>
   );
 }
 

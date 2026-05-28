@@ -5,7 +5,6 @@ import {
   Dimensions,
   Easing,
   FlatList,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +19,7 @@ import { F } from "../constants/fonts";
 import { useColorMode } from "../hooks/useColorMode";
 import { useHaptics } from "../hooks/useHaptics";
 import { useSafeBack } from "../hooks/useSafeBack";
+import { WebSafeModal } from "../components/WebSafeModal";
 
 const SCREEN_H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 
@@ -384,7 +384,7 @@ function RecordDetailModal({
   }, [visible, scrimAnim, slideAnim]);
 
   return (
-    <Modal transparent={true} statusBarTranslucent={true} visible={visible} animationType="none" onRequestClose={onClose}>
+    <WebSafeModal transparent={true} statusBarTranslucent={true} visible={visible} animationType="none" onRequestClose={onClose}>
       <View style={s.modalShell}>
       <Animated.View style={[s.modalScrim, { opacity: scrimAnim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
@@ -430,7 +430,7 @@ function RecordDetailModal({
         )}
       </Animated.View>
       </View>
-    </Modal>
+    </WebSafeModal>
   );
 }
 

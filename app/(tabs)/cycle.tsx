@@ -7,7 +7,6 @@ import {
   Animated,
   Dimensions,
   Easing,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -36,6 +35,7 @@ import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
 import { openBloopWithContext } from "../../lib/openBloopWithContext";
 import { useDailyLogStore } from "../../store/dailyLogStore";
+import { WebSafeModal } from "../../components/WebSafeModal";
 
 // ── Assets ────────────────────────────────────────────────────────────────────
 const imgPetals      = require("../../public/images/fertility-glow-visual.webp");
@@ -877,7 +877,7 @@ function DateDetailPopup({
     colors.textMuted;
 
   return (
-    <Modal transparent={true} statusBarTranslucent={true} visible={visible} animationType="none" onRequestClose={handleClose}>
+    <WebSafeModal transparent={true} statusBarTranslucent={true} visible={visible} animationType="none" onRequestClose={handleClose}>
       <View style={styles.modalShell}>
         <Animated.View style={[styles.popupScrim, { opacity: scrimAnim }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
@@ -974,7 +974,7 @@ function DateDetailPopup({
           </Animated.View>
         </Animated.View>
       </View>
-    </Modal>
+    </WebSafeModal>
   );
 }
 

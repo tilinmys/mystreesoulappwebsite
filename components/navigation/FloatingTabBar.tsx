@@ -25,9 +25,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { WebSafeModal } from "../WebSafeModal";
 import { F } from "../../constants/fonts";
 import { useColorMode } from "../../hooks/useColorMode";
 import { useUserProfile } from "../../hooks/useUserProfile";
@@ -177,7 +178,7 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
       </View>
 
       {/* Overflow "More" sheet */}
-      <Modal transparent={true} statusBarTranslucent={true} visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)}>
+      <WebSafeModal transparent={true} statusBarTranslucent={true} visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)}>
         <View style={styles.modalShell}>
         <Pressable style={[styles.moreScrim, { backgroundColor: isDark ? NAV_SCRIM_DARK : NAV_SCRIM_LIGHT }]} onPress={() => setMoreOpen(false)}>
           <View style={[
@@ -219,7 +220,7 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
           </View>
         </Pressable>
         </View>
-      </Modal>
+      </WebSafeModal>
     </View>
   );
 }

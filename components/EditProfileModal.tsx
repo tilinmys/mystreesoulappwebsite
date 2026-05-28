@@ -14,7 +14,6 @@ import {
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,13 +22,15 @@ import {
   TextInput,
   View,
 } from "react-native";
-
-const { height: SCREEN_H } = Dimensions.get("window");
 // react-native-reanimated 4.x requires a native dev-client — use RN Animated instead.
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { F } from "../constants/fonts";
 import { useColorMode } from "../hooks/useColorMode";
 import { useOnboardingStore } from "../store/onboardingStore";
+import { WebSafeModal } from "./WebSafeModal";
+
+const SCREEN_H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
+const USE_NATIVE_DRIVER = Platform.OS !== "web";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
@@ -191,8 +192,8 @@ export function EditProfileModal({ visible, onClose }: Props) {
       setSaveSuccess(false);
       // Entrance
       Animated.parallel([
-        Animated.timing(scrimAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 20, useNativeDriver: true }),
+        Animated.timing(scrimAnim, { toValue: 1, duration: 220, useNativeDriver: USE_NATIVE_DRIVER }),
+        Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 20, useNativeDriver: USE_NATIVE_DRIVER }),
       ]).start();
     } else {
       scrimAnim.setValue(0);
@@ -203,8 +204,8 @@ export function EditProfileModal({ visible, onClose }: Props) {
   function animatedClose() {
     Keyboard.dismiss();
     Animated.parallel([
-      Animated.timing(scrimAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: SCREEN_H, duration: 240, useNativeDriver: true }),
+      Animated.timing(scrimAnim, { toValue: 0, duration: 180, useNativeDriver: USE_NATIVE_DRIVER }),
+      Animated.timing(slideAnim, { toValue: SCREEN_H, duration: 240, useNativeDriver: USE_NATIVE_DRIVER }),
     ]).start(() => onClose());
   }
 
@@ -234,12 +235,12 @@ export function EditProfileModal({ visible, onClose }: Props) {
   if (!visible) return null;
 
   return (
-    <Modal
+    <WebSafeModal
       transparent={true}
       visible={visible}
       animationType="none"
       onRequestClose={animatedClose}
-      statusBarTranslucent
+      statusBarTranslucent={true}
     >
       <View style={styles.modalShell}>
         <KeyboardAvoidingView
@@ -393,7 +394,7 @@ export function EditProfileModal({ visible, onClose }: Props) {
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
-    </Modal>
+    </WebSafeModal>
   );
 }
 

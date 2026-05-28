@@ -59,6 +59,51 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function parsePositiveInt(value: string | number | null | undefined) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function resolveCycleGlance(cycleBasics: {
+  lastPeriodStart?: string | null;
+  periodLength?: string | number | null;
+  cycleLength?: string | number | null;
+}) {
+  const cycleLength = parsePositiveInt(cycleBasics.cycleLength);
+  const periodLength = parsePositiveInt(cycleBasics.periodLength) ?? 5;
+  const startTime = cycleBasics.lastPeriodStart
+    ? new Date(cycleBasics.lastPeriodStart).getTime()
+    : Number.NaN;
+
+  if (!cycleLength || !Number.isFinite(startTime)) {
+    return {
+      cycleDayDisplay: "--",
+      phaseDisplay: "Tracking...",
+      nextPeriodDisplay: "--",
+      ringFill: 0,
+    };
+  }
+
+  const elapsedDays = Math.max(1, Math.floor((Date.now() - startTime) / 86400000) + 1);
+  const cycleDay = ((elapsedDays - 1) % cycleLength) + 1;
+  const nextPeriodDays = Math.max(1, cycleLength - cycleDay + 1);
+  const phaseDisplay =
+    cycleDay <= periodLength
+      ? "Period phase"
+      : cycleDay <= Math.ceil(cycleLength * 0.55)
+        ? "Rising phase"
+        : cycleDay <= Math.ceil(cycleLength * 0.72)
+          ? "Ovulation window"
+          : "Luteal phase";
+
+  return {
+    cycleDayDisplay: String(cycleDay),
+    phaseDisplay,
+    nextPeriodDisplay: String(nextPeriodDays),
+    ringFill: Math.min(1, Math.max(0.06, cycleDay / cycleLength)),
+  };
+}
+
 // â"€â"€ Static data structures (Dynamic Color Mapping) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function getHealthWay(colors: AppColors) {
   return [
@@ -272,11 +317,13 @@ export default function DashboardScreen() {
     }
   }
 
-  // Cycle ring: 73% filled = Day 12 of ~16-day window
+  const cycleGlance = useMemo(() => resolveCycleGlance(cycleBasics), [cycleBasics]);
+
+  // Cycle ring uses a placeholder track until persisted cycle data hydrates.
   const CIRC = 2 * Math.PI * 66;
   const ringOffset = ringProgress.interpolate({
     inputRange:  [0, 1],
-    outputRange: [CIRC, CIRC * 0.27],
+    outputRange: [CIRC, CIRC * (1 - cycleGlance.ringFill)],
   });
   // TEMP DEBUG — remove after confirming
   console.log('Dashboard render state:', { name, selectedGoals, lifeStage, stressLevel, cycleBasics });
@@ -314,6 +361,9 @@ export default function DashboardScreen() {
           ringOffset={ringOffset}
           AnimCircle={AnimCircle}
           CIRC={CIRC}
+          cycleDayDisplay={cycleGlance.cycleDayDisplay}
+          phaseDisplay={cycleGlance.phaseDisplay}
+          nextPeriodDisplay={cycleGlance.nextPeriodDisplay}
           onCalendar={() => router.navigate("/(tabs)/cycle")}
           onLog={() => setLogOpen(true)}
         />
@@ -370,7 +420,7 @@ export default function DashboardScreen() {
                 cardElement = <FertilityDetailCard key="FertilityDetail" onPress={() => router.push("/(tabs)/cycle")} />;
                 break;
               case "LifeStageCard":
-                cardElement = lifeStage != null ? <LifeStageModuleCard key="LifeStageCard" lifeStage={lifeStage} router={router} /> : null;
+                cardElement = <LifeStageModuleCard key="LifeStageCard" lifeStage={lifeStage} router={router} />;
                 break;
               case "MentalHealthHub":
                 cardElement = (
@@ -612,11 +662,21 @@ function LogPillNudge({ onLog }: { onLog: () => void }) {
 
 // â"€â"€ 3. Today at a glance â€" premium full-width hero â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 function TodayGrid({
-  ringOffset, AnimCircle, CIRC, onCalendar, onLog,
+  ringOffset,
+  AnimCircle,
+  CIRC,
+  cycleDayDisplay,
+  phaseDisplay,
+  nextPeriodDisplay,
+  onCalendar,
+  onLog,
 }: {
   ringOffset: Animated.AnimatedInterpolation<number | string>;
   AnimCircle: ReturnType<typeof Animated.createAnimatedComponent<typeof Circle>>;
   CIRC: number;
+  cycleDayDisplay: string;
+  phaseDisplay: string;
+  nextPeriodDisplay: string;
   onCalendar: () => void;
   onLog: () => void;
 }) {
@@ -650,8 +710,8 @@ function TodayGrid({
         {/* Soft glow aura behind the number */}
         <View style={s.cycleHeroAura} />
         <Text style={s.cycleDayLabel}>DAY</Text>
-        <Text style={s.cycleDayNum}>12</Text>
-        <Text style={s.cyclePhase}>Rising phase</Text>
+        <Text style={s.cycleDayNum}>{cycleDayDisplay ?? "--"}</Text>
+        <Text style={s.cyclePhase}>{phaseDisplay ?? "Tracking..."}</Text>
       </View>
 
       {/* Progress ring */}
@@ -680,7 +740,7 @@ function TodayGrid({
         </Svg>
         <View style={s.ringCenter} pointerEvents="none">
           <Text style={s.ringLabel}>Next period</Text>
-          <Text style={s.ringDays}><Text style={s.ringDaysNum}>16 </Text>days</Text>
+          <Text style={s.ringDays}><Text style={s.ringDaysNum}>{nextPeriodDisplay ?? "--"} </Text>days</Text>
         </View>
       </View>
 
@@ -1062,11 +1122,19 @@ function LifeStageModuleCard({
   lifeStage,
   router,
 }: {
-  lifeStage: NonNullable<LifeStage>;
+  lifeStage: LifeStage;
   router: ReturnType<typeof useRouter>;
 }) {
   const { colors, s } = useStyles();
-  const data = {
+  const fallbackData = {
+    title:    "Life Stage",
+    subtitle: "Tracking...",
+    icon:     "heart-outline" as const,
+    color:    colors.textMuted,
+    bg:       `${colors.textMuted}22`,
+    route:    "/(tabs)/profile" as const,
+  };
+  const lifeStageData = {
     teen: {
       title:    "Teen Wellness",
       subtitle: "A safe space to understand your body",
@@ -1099,7 +1167,8 @@ function LifeStageModuleCard({
       bg:       `${colors.warning}22`,
       route:    "/menopause" as const,
     },
-  }[lifeStage];
+  };
+  const data = lifeStage ? lifeStageData[lifeStage] : fallbackData;
 
   return (
     <Pressable
@@ -1694,6 +1763,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   // Hero day number area
   cycleHeroArea: {
     alignItems: "center",
+    minHeight: 138,
     paddingVertical: 14,
     position: "relative",
   },
@@ -1756,6 +1826,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     justifyContent: "center",
+    minHeight: 150,
     marginTop: 18,
     marginBottom: 8,
   },
@@ -1804,6 +1875,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   logActionRow: {
     flexDirection: "row",
     gap: 10,
+    minHeight: 48,
     marginTop: 14,
   },
   logActionBtn: {
@@ -1840,6 +1912,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     alignItems: "center",
     gap: 8,
     flex: 1,
+    minHeight: 80,
   },
   healthCircle: {
     width: 56,
@@ -1861,6 +1934,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   insightsCard: {
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
+    minHeight: 80,
     borderWidth: 1,
     borderColor: "rgba(246,233,239,0.10)",
     padding: 20,
@@ -2024,6 +2098,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   lifeStageCard: {
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
+    minHeight: 80,
     borderWidth: 1,
     borderColor: "rgba(246,233,239,0.10)",
     padding: 20,
@@ -2066,6 +2141,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   mhCard: {
     backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
+    minHeight: 80,
     borderWidth: 1,
     borderColor: "rgba(246,233,239,0.10)",
     paddingTop: 4,
@@ -2152,6 +2228,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   phase5Card: {
     backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: CARD_RADIUS,
+    minHeight: 80,
     borderWidth: 1,
     borderColor: "rgba(246,233,239,0.10)",
     padding: 20,
@@ -2374,6 +2451,7 @@ const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 12,
     marginBottom: 16,
+    minHeight: 80,
     borderRadius: 28,
     borderWidth: 1,
     borderColor: "rgba(246,233,239,0.10)",

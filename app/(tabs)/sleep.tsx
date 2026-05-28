@@ -6,6 +6,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -30,7 +31,7 @@ import { openBloopWithContext } from "../../lib/openBloopWithContext";
 import { darkColors, lightColors, AppColors } from "../../constants/colors";
 
 // ── Dimensions ────────────────────────────────────────────────────────────────
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const GRAPH_W = Math.max(220, W - 132);
 const GRAPH_H = 88;
 

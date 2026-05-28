@@ -6,6 +6,7 @@ import {
   Easing,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,7 +21,7 @@ import { useColorMode } from "../hooks/useColorMode";
 import { useHaptics } from "../hooks/useHaptics";
 import { useSafeBack } from "../hooks/useSafeBack";
 
-const { height: SCREEN_H } = Dimensions.get("window");
+const SCREEN_H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type HealthRecord = {

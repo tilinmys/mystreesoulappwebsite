@@ -6,6 +6,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -57,7 +58,8 @@ const C = {
   sheetBg:   darkColors.surface,
 };
 
-const { width: W, height: H } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
+const H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 
 // ── Hydration ring ─────────────────────────────────────────────────────────────
 const RING_R    = 22;

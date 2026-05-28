@@ -14,6 +14,7 @@ import {
   Dimensions,
   Easing,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,7 +32,7 @@ import { useColorMode } from "../../hooks/useColorMode";
 import { type AppColors } from "../../constants/colors";
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const SIDE_PAD = 20;
 const MOOD_GAP = 9;
 const MOOD_W   = (W - SIDE_PAD * 2 - MOOD_GAP * 2) / 3;

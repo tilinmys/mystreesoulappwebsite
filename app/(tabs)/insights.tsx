@@ -6,6 +6,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -54,7 +55,8 @@ const C = {
 } as const;
 
 // ── Screen / graph geometry ───────────────────────────────────────────────────
-const { width: W, height: H } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
+const H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 const CARD_MX   = 20;
 const CARD_PX   = 18;
 const GRAPH_W   = W - CARD_MX * 2 - CARD_PX * 2;

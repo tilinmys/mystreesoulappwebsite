@@ -8,6 +8,7 @@ import {
   Dimensions,
   Easing,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -63,7 +64,8 @@ const PROGESTERONE_DATA= [5,5,5,6,6,7,7,8,8,9,10,10,10,12,14,18,22,28,32,38,52,6
 const LH_DATA          = [8,8,9,10,10,12,14,16,18,20,22,24,28,32,38,48,62,78,88,92,95,72,35,20,15,12,10,8];
 
 // ── Ring geometry ─────────────────────────────────────────────────────────────
-const { width: W, height: H } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
+const H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 const RING_SIZE = W - 48;
 const CX = RING_SIZE / 2;
 const CY = RING_SIZE / 2;

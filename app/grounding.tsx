@@ -12,6 +12,7 @@ import {
   Dimensions,
   Easing,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -50,7 +51,7 @@ const C = {
 };
 
 // ── Dimensions ────────────────────────────────────────────────────────────────
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const RING_SIZE = 264;
 const RING_R    = RING_SIZE / 2;
 const ORB_SIZE  = 200;

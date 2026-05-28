@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
   Dimensions,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,7 +25,7 @@ const jiggyImage  = require("../public/images/companion-jiggy.webp");
 const manchiImage = require("../public/images/companion-manchi.webp");
 const yogiImage   = require("../public/images/companion-yogi.webp");
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 const C = {

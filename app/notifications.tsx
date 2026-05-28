@@ -6,6 +6,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,7 +18,7 @@ import { CachedImage } from "../components/CachedImage";
 import { F } from "../constants/fonts";
 import { useSafeBack } from "../hooks/useSafeBack";
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 
 // ── Assets ────────────────────────────────────────────────────────────────────
 const imgBloopCalm    = require("../public/images/bloop-calm.webp");

@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRootNavigationState, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Easing, Image, StyleSheet, Text, View } from "react-native";
+import { Animated, Dimensions, Easing, Image, Platform, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { preloadAppImages } from "../components/imagePreload";
 import { F } from "../constants/fonts";
@@ -10,7 +10,7 @@ import { useOnboardingStore } from "../store/onboardingStore";
 
 void preloadAppImages();
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 
 const C = {
   bgTop: "#FFF8F4",

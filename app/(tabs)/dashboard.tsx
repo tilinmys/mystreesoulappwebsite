@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -46,7 +47,7 @@ const companionJiggy     = require("../../public/images/companion-jiggy-cutout.w
 const companionManchi    = require("../../public/images/companion-manchi-cutout.webp");
 const companionYogi      = require("../../public/images/companion-yogi-cutout.webp");
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const DASHBOARD_HERO_DISMISSED_KEY = "mystree.dashboard.hero.dismissed";
 
 // ── Phase 2 mascot constraint (design, not personalization) ───────────────────

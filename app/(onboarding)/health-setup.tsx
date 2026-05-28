@@ -64,7 +64,7 @@ import { useSafeBack } from "../../hooks/useSafeBack";
 import { CycleBasics, LifeStage, useOnboardingStore } from "../../store/onboardingStore";
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const SIDE_PAD = 20;
 const CARD_GAP = 12;
 const CARD_W = (W - SIDE_PAD * 2 - CARD_GAP) / 2;

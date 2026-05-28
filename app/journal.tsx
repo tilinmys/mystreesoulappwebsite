@@ -20,7 +20,7 @@ import { FittedText } from "../components/system/FittedText";
 import { F } from "../constants/fonts";
 import { useSafeBack } from "../hooks/useSafeBack";
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const SIDE = 20;
 
 // ── Assets ────────────────────────────────────────────────────────────────────

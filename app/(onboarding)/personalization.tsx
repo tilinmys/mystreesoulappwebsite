@@ -13,6 +13,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,7 +32,7 @@ import { useOnboardingStore } from "../../store/onboardingStore";
 const colors = darkColors;
 
 // ─── Screen geometry ──────────────────────────────────────────────────────────
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const SIDE_PAD  = 20;
 const CARD_GAP  = 9;
 const CARD_W    = (W - SIDE_PAD * 2 - CARD_GAP) / 2;

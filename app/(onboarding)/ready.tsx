@@ -15,6 +15,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -30,7 +31,7 @@ import { getUserProfile } from "../../constants/userProfile";
 import { darkColors } from "../../constants/colors";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const SIDE_PAD = 20;
 
 // ─── Assets ───────────────────────────────────────────────────────────────────

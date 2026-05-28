@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import { CachedImage } from "../../components/CachedImage";
@@ -18,7 +18,7 @@ const profileAvatar = require("../../public/images/profile-priya-avatar.webp");
 const bloopImage = require("../../public/images/bloop-profile-meditation-cutout.webp");
 const premiumLotus = require("../../public/images/bloop-premium-lotus.webp");
 
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const SIDE = 20;
 const GRID_GAP = 12;
 const QUICK_CARD_W = (W - SIDE * 2 - GRID_GAP) / 2;

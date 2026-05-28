@@ -16,6 +16,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -159,7 +160,7 @@ const C = {
 } as const;
 
 // ── Dimensions ────────────────────────────────────────────────────────────────
-const { width: W } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
 const HERO_H  = 290;
 const BCARD_W = W - 40;
 const BCARD_H = 156;

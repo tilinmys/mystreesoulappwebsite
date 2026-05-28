@@ -6,6 +6,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,7 +23,8 @@ import { useOnboardingStore } from "../../store/onboardingStore";
 import { darkColors, type AppColors } from "../../constants/colors";
 import { StatusBar } from "expo-status-bar";
 
-const { width: W, height: H } = Dimensions.get("window");
+const W = Platform.OS === "web" ? 390 : Dimensions.get("window").width;
+const H = Platform.OS === "web" ? 844 : Dimensions.get("window").height;
 const SIDE_PAD     = 20;
 const CARD_GAP     = 10;
 const TRUST_CARD_W = (W - SIDE_PAD * 2 - CARD_GAP * 2) / 3;

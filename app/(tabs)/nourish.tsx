@@ -1249,6 +1249,10 @@ const styles = StyleSheet.create({
   ideaSheet: {
     position: "absolute",
     bottom: 0, left: 0, right: 0,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -1286,6 +1290,10 @@ const styles = StyleSheet.create({
   mealSheet: {
     position: "absolute",
     bottom: 0, left: 0, right: 0,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
     maxHeight: H * 0.84,
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28,

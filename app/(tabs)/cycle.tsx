@@ -875,20 +875,21 @@ function DateDetailPopup({
     colors.textMuted;
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={handleClose}>
-      <Animated.View style={[styles.popupScrim, { opacity: scrimAnim }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        <Animated.View
-          style={[
-            styles.popupSheet,
-            {
-              backgroundColor: colors.surface,
-              borderColor:     "rgba(246,233,239,0.10)",
-              borderWidth:     1,
-              transform:       [{ translateY: slideAnim }],
-            },
-          ]}
-        >
+    <Modal transparent={true} statusBarTranslucent={true} visible={visible} animationType="none" onRequestClose={handleClose}>
+      <View style={styles.modalShell}>
+        <Animated.View style={[styles.popupScrim, { opacity: scrimAnim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+          <Animated.View
+            style={[
+              styles.popupSheet,
+              {
+                backgroundColor: colors.surface,
+                borderColor:     "rgba(246,233,239,0.10)",
+                borderWidth:     1,
+                transform:       [{ translateY: slideAnim }],
+              },
+            ]}
+          >
           <View style={styles.popupHandle} />
 
           <View style={styles.popupHeaderRow}>
@@ -968,8 +969,9 @@ function DateDetailPopup({
               </Text>
             </View>
           )}
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -2184,6 +2186,13 @@ const styles = StyleSheet.create({
   pressed:       { transform: [{ scale: 0.95 }] },
 
   // Shared sheet primitives
+  modalShell: {
+    flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
+  },
   sheetScrim:    { backgroundColor: "rgba(0,0,0,0.38)", zIndex: 40 },
   sheetHandle:   { width: 38, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 18 },
   sheetCloseBtn: { alignSelf: "center", paddingVertical: 10, paddingHorizontal: 24, marginTop: 6 },
@@ -2195,6 +2204,10 @@ const styles = StyleSheet.create({
     bottom:               0,
     left:                 0,
     right:                0,
+    maxWidth:             390,
+    width:                "100%",
+    alignSelf:            "center",
+    overflow:             "hidden",
     maxHeight:            H * 0.85,
     borderTopLeftRadius:  28,
     borderTopRightRadius: 28,
@@ -2335,6 +2348,10 @@ const styles = StyleSheet.create({
     bottom:               0,
     left:                 0,
     right:                0,
+    maxWidth:             390,
+    width:                "100%",
+    alignSelf:            "center",
+    overflow:             "hidden",
     maxHeight:            H * 0.90,
     flexDirection:        "column",
     borderTopLeftRadius:  28,

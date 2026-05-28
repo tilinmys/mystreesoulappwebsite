@@ -177,7 +177,8 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
       </View>
 
       {/* Overflow "More" sheet */}
-      <Modal transparent visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)}>
+      <Modal transparent={true} statusBarTranslucent={true} visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)}>
+        <View style={styles.modalShell}>
         <Pressable style={[styles.moreScrim, { backgroundColor: isDark ? NAV_SCRIM_DARK : NAV_SCRIM_LIGHT }]} onPress={() => setMoreOpen(false)}>
           <View style={[
             styles.moreSheet,
@@ -217,6 +218,7 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
             </View>
           </View>
         </Pressable>
+        </View>
       </Modal>
     </View>
   );
@@ -393,6 +395,13 @@ const styles = StyleSheet.create({
   // aiChatMark removed in v3 — floating badge created visual clutter
 
   // ── More sheet ────────────────────────────────────────────────────────────────
+  modalShell: {
+    flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
+  },
   moreScrim: {
     flex: 1,
     justifyContent: "flex-end",

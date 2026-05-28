@@ -171,7 +171,7 @@ function IdentityChips() {
       {identityChips.map((chip) => (
         <View key={chip.label} style={s.identityChip}>
           <MaterialCommunityIcons name={chip.icon} size={17} color={chip.color} />
-          <Text style={s.identityText}>{chip.label}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit style={s.identityText}>{chip.label}</Text>
         </View>
       ))}
     </ScrollView>
@@ -187,7 +187,7 @@ function QuickAccessGrid({ onNavigate }: { onNavigate: (route: string) => void }
           <View style={[s.quickIcon, { backgroundColor: `${item.color}1A` }]}>
             <MaterialCommunityIcons name={item.icon} size={25} color={item.color} />
           </View>
-          <Text ellipsizeMode="tail" numberOfLines={2} style={s.quickLabel} textBreakStrategy="balanced">{item.label}</Text>
+          <Text adjustsFontSizeToFit ellipsizeMode="tail" numberOfLines={2} style={s.quickLabel} textBreakStrategy="balanced">{item.label}</Text>
           <Ionicons name="chevron-forward" size={17} color={colors.textMuted} />
         </Pressable>
       ))}
@@ -315,12 +315,12 @@ function PremiumCard({ onPress }: { onPress: () => void }) {
         <CachedImage source={premiumLotus} style={s.premiumLotusImage} contentFit="cover" />
       </View>
       <View style={s.premiumCopy}>
-        <Text style={s.premiumTitle}>Soul Premium</Text>
-        <Text style={s.premiumSub}>Gentler guidance, deeper rituals, and care that follows your rhythm.</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={s.premiumTitle}>Soul Premium</Text>
+        <Text numberOfLines={2} style={s.premiumSub}>Gentler guidance, deeper rituals, and care that follows your rhythm.</Text>
       </View>
       <Pressable onPress={onPress} style={({ pressed }) => [s.premiumButton, pressed && s.pressed]}>
         <MaterialCommunityIcons name="lock-outline" size={15} color={colors.textPrimary} />
-        <Text style={s.premiumButtonText}>Explore Soul</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={s.premiumButtonText}>Explore Soul</Text>
         <Ionicons name="chevron-forward" size={14} color={colors.textPrimary} />
       </Pressable>
     </LinearGradient>
@@ -332,7 +332,7 @@ function LogoutButton({ onLogout }: { onLogout: () => void }) {
   return (
     <Pressable onPress={onLogout} style={({ pressed }) => [s.logoutButton, pressed && s.pressed]}>
       <MaterialCommunityIcons name="logout" size={20} color={colors.primaryCTA} />
-      <Text style={s.logoutText}>Log Out</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={s.logoutText}>Log Out</Text>
     </Pressable>
   );
 }
@@ -355,7 +355,7 @@ function getStyles(colors: AppColors, isDark: boolean) {
     auraPeach: { position: "absolute", top: -80, right: -90, width: 260, height: 260, borderRadius: 130, backgroundColor: isDark ? "rgba(232,166,182,0.07)" : "rgba(232,166,182,0.03)" },
     auraLavender: { position: "absolute", top: 220, left: -110, width: 260, height: 260, borderRadius: 130, backgroundColor: isDark ? "rgba(146,119,200,0.08)" : "rgba(146,119,200,0.04)" },
     auraSage: { position: "absolute", bottom: 120, right: -120, width: 280, height: 280, borderRadius: 140, backgroundColor: isDark ? "rgba(129,178,154,0.06)" : "rgba(129,178,154,0.02)" },
-    content: { paddingHorizontal: SIDE, paddingTop: 8, paddingBottom: 28, gap: 10, flexGrow: 1 },
+    content: { paddingHorizontal: SIDE, paddingTop: 8, paddingBottom: 110, gap: 10, flexGrow: 1 },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
     headerTitle: { color: colors.textPrimary, fontFamily: F.luxuryExtraBold, fontSize: 34, lineHeight: 38 },
     headerSubRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
@@ -382,16 +382,16 @@ function getStyles(colors: AppColors, isDark: boolean) {
     heroBloopImage: { width: 92, height: 92 },
     chipRow: { gap: 8, paddingRight: 20 },
     identityChip: { minHeight: 34, borderRadius: 17, paddingHorizontal: 11, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: isDark ? 0.30 : 0.08, shadowRadius: 24, elevation: 2 },
-    identityText: { color: colors.textPrimary, fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15 },
+    identityText: { color: colors.textPrimary, fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15, flexShrink: 1 },
     grid: { flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP },
-    quickCard: { width: QUICK_CARD_W, minWidth: 0, minHeight: 70, borderRadius: 20, padding: 11, flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: isDark ? 0.30 : 0.08, shadowRadius: 24, elevation: 2 },
+    quickCard: { width: QUICK_CARD_W, minWidth: 0, minHeight: 80, borderRadius: 20, padding: 11, flexDirection: "row", alignItems: "center", gap: 9, overflow: "hidden", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: isDark ? 0.30 : 0.08, shadowRadius: 24, elevation: 2 },
     quickIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
     quickLabel: { flex: 1, flexShrink: 1, minWidth: 0, color: colors.textPrimary, fontFamily: F.luxuryBold, fontSize: 13, lineHeight: 16 },
     summaryCard: { borderRadius: 26, padding: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: isDark ? 0.30 : 0.08, shadowRadius: 24, elevation: 2 },
     summaryHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
     summaryTitle: { color: colors.textPrimary, fontFamily: F.luxuryBold, fontSize: 16, lineHeight: 21 },
     summaryGrid: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
-    summaryItem: { width: "24%", minWidth: 0, alignItems: "center" },
+    summaryItem: { width: "24%", minWidth: 0, minHeight: 80, alignItems: "center", overflow: "hidden" },
     ringOuter: { width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center" },
     ringIcon: { position: "absolute" },
     summaryLabel: { color: colors.textPrimary, fontFamily: F.uiSemiBold, fontSize: 9.5, lineHeight: 12, marginTop: 6, minHeight: 24, textAlign: "center", flexShrink: 1 },
@@ -412,10 +412,10 @@ function getStyles(colors: AppColors, isDark: boolean) {
     premiumLotusImage: { width: 56, height: 56 },
     premiumCopy: { flex: 1 },
     premiumTitle: { color: "#F6E9EF", fontFamily: F.luxuryBold, fontSize: 19, lineHeight: 24 },
-    premiumSub: { color: "#B58AC8", fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15, marginTop: 2 },
+    premiumSub: { color: "#B58AC8", fontFamily: F.uiSemiBold, fontSize: 11, lineHeight: 15, marginTop: 2, flexShrink: 1 },
     premiumButton: { minHeight: 38, borderRadius: 19, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, backgroundColor: isDark ? "rgba(74,57,77,0.60)" : "rgba(255,255,255,0.7)", borderWidth: 1, borderColor: isDark ? "rgba(146,119,200,0.40)" : colors.borderSubtle },
     premiumButtonText: { color: isDark ? "#F6E9EF" : "#221822", fontFamily: F.uiBold, fontSize: 11, lineHeight: 15 },
-    logoutButton: { minHeight: 52, borderRadius: 26, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: isDark ? 0.28 : 0.08, shadowRadius: 22, elevation: 1 },
+    logoutButton: { minHeight: 52, borderRadius: 26, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14, marginBottom: 40, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: isDark ? 0.28 : 0.08, shadowRadius: 22, elevation: 1 },
     logoutText: { color: colors.primaryCTA, fontFamily: F.uiBold, fontSize: 15, lineHeight: 19 },
     pressed: { transform: [{ scale: 0.97 }] }
   });

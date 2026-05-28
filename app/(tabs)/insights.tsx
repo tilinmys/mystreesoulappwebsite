@@ -880,6 +880,7 @@ const styles = StyleSheet.create({
   // ── Filter sheet ───────────────────────────────────────────────────────────
   filterSheet: {
     position: "absolute", bottom: 0, left: 0, right: 0,
+    maxWidth: 390, width: "100%", alignSelf: "center", overflow: "hidden",
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
@@ -906,6 +907,7 @@ const styles = StyleSheet.create({
   // ── Key Pattern detail sheet ───────────────────────────────────────────────
   patternSheet: {
     position: "absolute", bottom: 0, left: 0, right: 0, maxHeight: H * 0.86,
+    maxWidth: 390, width: "100%", alignSelf: "center", overflow: "hidden",
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
@@ -945,6 +947,7 @@ const styles = StyleSheet.create({
   // ── View-all insight sheet ─────────────────────────────────────────────────
   viewAllSheet: {
     position: "absolute", bottom: 0, left: 0, right: 0,
+    maxWidth: 390, width: "100%", alignSelf: "center", overflow: "hidden",
     backgroundColor: C.sheetBg,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,

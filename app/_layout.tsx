@@ -154,21 +154,15 @@ export default function RootLayout() {
     const body = document.body;
     const previousRootOverscroll = root.style.overscrollBehaviorY;
     const previousBodyOverscroll = body.style.overscrollBehaviorY;
-    const previousBodyBackground = body.style.backgroundColor;
-    const previousRootBackground = root.style.backgroundColor;
 
     root.style.overscrollBehaviorY = "none";
     body.style.overscrollBehaviorY = "none";
-    root.style.backgroundColor = colors.background;
-    body.style.backgroundColor = colors.background;
 
     return () => {
       root.style.overscrollBehaviorY = previousRootOverscroll;
       body.style.overscrollBehaviorY = previousBodyOverscroll;
-      root.style.backgroundColor = previousRootBackground;
-      body.style.backgroundColor = previousBodyBackground;
     };
-  }, [colors.background]);
+  }, []);
 
   // ── Loading gate — show spinner until fonts + stores are ready ───────────
   if (!fontsReady || !hydrated) {
@@ -191,22 +185,17 @@ export default function RootLayout() {
       <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.background} />
       <Stack
         screenOptions={{
-          animation: "fade",
+          headerShown: false,
+          animation: Platform.OS === 'web' ? 'none' : 'default',
           contentStyle: {
-            backgroundColor: colors.background,
-            // Web: lock every screen inside the 390px mobile shell
-            maxWidth: 390,
             width: "100%",
-            alignSelf: "center",
+            maxWidth: 390,
+            alignSelf: 'center',
             overflow: "hidden",
+            flex: 1,
           },
-          headerShown: false
         }}
-      >
-        <Stack.Screen name="welcome" options={{ animation: "fade" }} />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-      </Stack>
+      />
     </>
   );
 }

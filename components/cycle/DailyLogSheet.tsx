@@ -570,11 +570,12 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
   return (
     <Modal
       visible={visible}
-      transparent
-      statusBarTranslucent
+      transparent={true}
+      statusBarTranslucent={true}
       animationType="none"
       onRequestClose={handleClose}
     >
+      <View style={s.modalShell}>
       {/* ── Backdrop ──────────────────────────────────────────────────────── */}
       <Animated.View style={[s.backdrop, { opacity: backdropOp }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
@@ -584,7 +585,7 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
       <Animated.View style={[s.sheetWrap, { transform: [{ translateY }] }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
+          style={s.keyboardShell}
           keyboardVerticalOffset={0}
         >
           <View style={[s.sheet, { paddingBottom: insets.bottom + 16 }]}>
@@ -857,12 +858,27 @@ export function DailyLogSheet({ visible, onClose, onSave }: Props) {
           </View>
         </KeyboardAvoidingView>
       </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
+  modalShell: {
+    flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
+  },
+  keyboardShell: {
+    flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: `${colors.background}CC`,

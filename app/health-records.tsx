@@ -383,7 +383,8 @@ function RecordDetailModal({
   }, [visible, scrimAnim, slideAnim]);
 
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+    <Modal transparent={true} statusBarTranslucent={true} visible={visible} animationType="none" onRequestClose={onClose}>
+      <View style={s.modalShell}>
       <Animated.View style={[s.modalScrim, { opacity: scrimAnim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
@@ -427,6 +428,7 @@ function RecordDetailModal({
           </ScrollView>
         )}
       </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -754,6 +756,13 @@ function getStyles(colors: AppColors) {
     pressed: { transform: [{ scale: 0.97 }] },
 
     // ── Detail modal ──────────────────────────────────────────────────────────
+    modalShell: {
+      flex: 1,
+      maxWidth: 390,
+      width: "100%",
+      alignSelf: "center",
+      overflow: "hidden",
+    },
     modalScrim: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: "rgba(14,10,18,0.60)",

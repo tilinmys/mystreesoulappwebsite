@@ -175,7 +175,7 @@ export default function JournalScreen() {
       <View style={s.blob3} pointerEvents="none" />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={s.keyboardShell}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
@@ -553,6 +553,16 @@ const s = StyleSheet.create({
   // ── Screen ──────────────────────────────────────────────────────────────────
   screen: {
     flex:     1,
+    width: "100%",
+    maxWidth: 390,
+    alignSelf: "center",
+    overflow: "hidden",
+  },
+  keyboardShell: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 390,
+    alignSelf: "center",
     overflow: "hidden",
   },
 

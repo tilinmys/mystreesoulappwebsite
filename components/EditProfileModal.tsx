@@ -235,26 +235,27 @@ export function EditProfileModal({ visible, onClose }: Props) {
 
   return (
     <Modal
-      transparent
+      transparent={true}
       visible={visible}
       animationType="none"
       onRequestClose={animatedClose}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <Animated.View style={[styles.scrim, { opacity: scrimAnim }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={animatedClose} />
+      <View style={styles.modalShell}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardShell}
+        >
+          <Animated.View style={[styles.scrim, { opacity: scrimAnim }]}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={animatedClose} />
 
-          <Animated.View
-            style={[
-              styles.sheet,
-              isDark && styles.sheetDark,
-              { paddingBottom: Math.max(insets.bottom, 24), transform: [{ translateY: slideAnim }] },
-            ]}
-          >
+            <Animated.View
+              style={[
+                styles.sheet,
+                isDark && styles.sheetDark,
+                { paddingBottom: Math.max(insets.bottom, 24), transform: [{ translateY: slideAnim }] },
+              ]}
+            >
             {/* Handle */}
             <View style={styles.handle} />
 
@@ -388,19 +389,38 @@ export function EditProfileModal({ visible, onClose }: Props) {
                 </LinearGradient>
               </Pressable>
             </ScrollView>
+            </Animated.View>
           </Animated.View>
-        </Animated.View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  modalShell: {
+    flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
+  },
+  keyboardShell: {
+    flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
+    overflow: "hidden",
+  },
   scrim: {
     flex: 1,
+    maxWidth: 390,
+    width: "100%",
+    alignSelf: "center",
     backgroundColor: "rgba(22,18,28,0.36)",
     justifyContent: "flex-end",
+    overflow: "hidden",
   },
   sheet: {
     backgroundColor: "#FFFDFB",

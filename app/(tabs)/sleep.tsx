@@ -1070,6 +1070,10 @@ function getStyles(colors: AppColors, isDark: boolean) {
     settingsSheet: {
       position: "absolute",
       bottom: 0, left: 0, right: 0,
+      maxWidth: 390,
+      width: "100%",
+      alignSelf: "center",
+      overflow: "hidden",
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
       paddingHorizontal: 24,
@@ -1123,6 +1127,10 @@ function getStyles(colors: AppColors, isDark: boolean) {
     tipSheet: {
       position: "absolute",
       bottom: 0, left: 0, right: 0,
+      maxWidth: 390,
+      width: "100%",
+      alignSelf: "center",
+      overflow: "hidden",
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
       paddingHorizontal: 24,

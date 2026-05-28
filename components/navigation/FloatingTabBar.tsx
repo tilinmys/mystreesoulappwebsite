@@ -270,6 +270,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 6,
     zIndex: 40,
+    // Pin to bottom on web — expo-router places the custom tabBar above
+    // screen content in the flex layout without this.
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 
   // ── Nav pill ─────────────────────────────────────────────────────────────────

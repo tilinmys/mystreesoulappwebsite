@@ -1,11 +1,12 @@
-import * as SecureStore from "expo-secure-store";
+import Storage from "../utils/storage";
 
 const memoryStorage = new Map<string, string>();
 
 export const resilientJSONStorage = {
   getItem: async (name: string) => {
     try {
-      const value = await SecureStore.getItemAsync(name);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      const value = await Storage.getItem(name);
       return value ?? memoryStorage.get(name) ?? null;
     } catch {
       return memoryStorage.get(name) ?? null;
@@ -14,7 +15,8 @@ export const resilientJSONStorage = {
   setItem: async (name: string, value: string) => {
     memoryStorage.set(name, value);
     try {
-      await SecureStore.setItemAsync(name, value);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      await Storage.setItem(name, value);
     } catch {
       // Keep runtime state alive during native storage hiccups in development.
     }
@@ -22,7 +24,8 @@ export const resilientJSONStorage = {
   removeItem: async (name: string) => {
     memoryStorage.delete(name);
     try {
-      await SecureStore.deleteItemAsync(name);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      await Storage.removeItem(name);
     } catch {
       // See setItem fallback.
     }

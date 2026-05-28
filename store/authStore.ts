@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import Storage from "../utils/storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -10,7 +10,8 @@ const memoryStorage = new Map<string, string>();
 const secureStorage = {
   getItem: async (name: string) => {
     try {
-      const value = await SecureStore.getItemAsync(name);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      const value = await Storage.getItem(name);
       return value ?? memoryStorage.get(name) ?? null;
     } catch {
       return memoryStorage.get(name) ?? null;
@@ -19,7 +20,8 @@ const secureStorage = {
   setItem: async (name: string, value: string) => {
     memoryStorage.set(name, value);
     try {
-      await SecureStore.setItemAsync(name, value);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      await Storage.setItem(name, value);
     } catch {
       // Keep dev reloads moving if the native secure storage module is briefly unavailable.
     }
@@ -27,7 +29,8 @@ const secureStorage = {
   removeItem: async (name: string) => {
     memoryStorage.delete(name);
     try {
-      await SecureStore.deleteItemAsync(name);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      await Storage.removeItem(name);
     } catch {
       // See setItem fallback.
     }

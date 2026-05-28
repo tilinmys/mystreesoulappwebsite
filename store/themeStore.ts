@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import * as SecureStore from "expo-secure-store";
+import Storage from "../utils/storage";
 
 // ─── Secure + memory-fallback storage adapter (same pattern as onboardingStore) ─
 const memoryStorage = new Map<string, string>();
@@ -8,7 +8,8 @@ const memoryStorage = new Map<string, string>();
 const secureStorage = {
   getItem: async (name: string) => {
     try {
-      const value = await SecureStore.getItemAsync(name);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      const value = await Storage.getItem(name);
       return value ?? memoryStorage.get(name) ?? null;
     } catch {
       return memoryStorage.get(name) ?? null;
@@ -17,7 +18,8 @@ const secureStorage = {
   setItem: async (name: string, value: string) => {
     memoryStorage.set(name, value);
     try {
-      await SecureStore.setItemAsync(name, value);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      await Storage.setItem(name, value);
     } catch {
       // Expo Go fallback — keep app moving with memory storage.
     }
@@ -25,7 +27,8 @@ const secureStorage = {
   removeItem: async (name: string) => {
     memoryStorage.delete(name);
     try {
-      await SecureStore.deleteItemAsync(name);
+      // [WEB-COMPAT] Replaced SecureStore with Storage
+      await Storage.removeItem(name);
     } catch {
       // See setItem fallback.
     }

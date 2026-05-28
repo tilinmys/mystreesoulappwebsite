@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ImageSource } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import * as SecureStore from "expo-secure-store";
+import Storage from "../../utils/storage";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -236,14 +236,16 @@ export default function DashboardScreen() {
       setNudgeState("logged");
       return;
     }
-    SecureStore.getItemAsync(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`)
+    // [WEB-COMPAT] Replaced SecureStore with Storage
+    Storage.getItem(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`)
       .then((value) => setNudgeState(value === "true" ? "dismissed" : "nudge"))
       .catch(() => setNudgeState("nudge"));
   }, [hasLoggedToday]);
 
   function dismissNudge() {
     setNudgeState("dismissed");
-    SecureStore.setItemAsync(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`, "true").catch(() => undefined);
+    // [WEB-COMPAT] Replaced SecureStore with Storage
+    Storage.setItem(`${DASHBOARD_HERO_DISMISSED_KEY}.${todayKey()}`, "true").catch(() => undefined);
   }
 
   function onLogSaved(payload?: any) {

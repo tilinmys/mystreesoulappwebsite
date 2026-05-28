@@ -5,6 +5,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -152,6 +153,7 @@ export default function RootLayout() {
       ...Feather.font,
       ...FontAwesome.font,
       ...FontAwesome5.font,
+      ...MaterialIcons.font,
     }).then(() => setFontsReady(true));
   }, []);
 

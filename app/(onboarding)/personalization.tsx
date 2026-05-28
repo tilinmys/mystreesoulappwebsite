@@ -10,6 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   Dimensions,
   Easing,
@@ -271,6 +272,10 @@ export default function PersonalizationScreen() {
     );
 
   function handleCreate() {
+    if (selWellness.length === 0 && selMovements.length === 0) {
+      Alert.alert("Please make a selection to continue");
+      return;
+    }
     setSelectedGoals(Array.from(new Set([...selectedGoals, ...selWellness])));
     router.push("/(onboarding)/ready");
   }

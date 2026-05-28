@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   Dimensions,
   Easing,
@@ -119,6 +120,10 @@ export default function OnboardingGoalsScreen() {
   }, []);
 
   const handleContinue = () => {
+    if (selected.size === 0) {
+      Alert.alert("Please make a selection to continue");
+      return;
+    }
     setSelectedGoals(Array.from(selected));
     setLifeStage("cycle_fertility");
     router.push("/(onboarding)/privacy-consent");

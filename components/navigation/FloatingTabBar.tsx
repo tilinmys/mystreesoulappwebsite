@@ -160,6 +160,9 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
   // On web, use position:fixed so the bar escapes overflow:hidden parent
   // containers and is always pinned to the bottom of the viewport.
   // Center it over the 390px app frame with left:50% + translateX(-195).
+  // IMPORTANT: the WebSafeModal (More sheet) must be rendered OUTSIDE this
+  // View — CSS transform on a parent breaks position:fixed for children by
+  // creating a new containing block. Using a Fragment keeps them siblings.
   const webStyle = Platform.OS === "web" ? {
     position: "fixed" as any,
     bottom: 0,
@@ -170,70 +173,84 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
   } : {};
 
   return (
-    <View style={[styles.navWrap, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom, 10) }, webStyle]}>
-      {/* Nav pill — distinctly lifts off the background */}
-      <View style={[
-        styles.navBar,
-        {
-          backgroundColor: isDark ? NAV_SURFACE_DARK : "rgba(255,253,252,0.96)",
-          borderColor:     isDark ? colors.border    : "rgba(255,255,255,0.88)",
-          shadowColor:     isDark ? colors.background : "#D6C3B9",
-        },
-      ]}>
-        <View style={styles.tabsRow}>
-          <View style={styles.tabSide}>{firstHalf.map(renderTab)}</View>
-          <View style={styles.bloopCenter}>
-            <BloopButton isDark={isDark} colors={colors} onPress={() => router.push("/bloop-chat" as any)} />
+    <>
+      {/* ── Nav pill ─────────────────────────────────────────────────────── */}
+      <View style={[styles.navWrap, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom, 10) }, webStyle]}>
+        <View style={[
+          styles.navBar,
+          {
+            backgroundColor: isDark ? NAV_SURFACE_DARK : "rgba(255,253,252,0.96)",
+            borderColor:     isDark ? colors.border    : "rgba(255,255,255,0.88)",
+            shadowColor:     isDark ? colors.background : "#D6C3B9",
+          },
+        ]}>
+          <View style={styles.tabsRow}>
+            <View style={styles.tabSide}>{firstHalf.map(renderTab)}</View>
+            <View style={styles.bloopCenter}>
+              <BloopButton isDark={isDark} colors={colors} onPress={() => router.push("/bloop-chat" as any)} />
+            </View>
+            <View style={styles.tabSide}>{secondHalf.map(renderTab)}</View>
           </View>
-          <View style={styles.tabSide}>{secondHalf.map(renderTab)}</View>
         </View>
       </View>
 
-      {/* Overflow "More" sheet */}
-      <WebSafeModal transparent={true} statusBarTranslucent={true} visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)} fixedOnWeb={true}>
+      {/* ── Overflow "More" sheet ────────────────────────────────────────── */}
+      {/* Sibling (not child) of navWrap so CSS transform on navWrap does    */}
+      {/* not create a new containing block for this fixed overlay.          */}
+      <WebSafeModal
+        transparent={true}
+        statusBarTranslucent={true}
+        visible={moreOpen}
+        animationType="fade"
+        onRequestClose={() => setMoreOpen(false)}
+        fixedOnWeb={true}
+      >
         <View style={styles.modalShell}>
-        <Pressable style={[styles.moreScrim, { backgroundColor: isDark ? NAV_SCRIM_DARK : NAV_SCRIM_LIGHT }]} onPress={() => setMoreOpen(false)}>
-          <View style={[
-            styles.moreSheet,
-            {
-              backgroundColor: isDark ? colors.surface       : "rgba(255,253,252,0.98)",
-              borderColor:     isDark ? colors.border        : "rgba(255,255,255,0.88)",
-              shadowColor:     isDark ? colors.background    : "#9B7B70",
-            },
-          ]}>
-            <Text style={[styles.moreTitle, { color: colors.textPrimary }]}>More from MyStree</Text>
-            <View style={styles.moreGrid}>
-              {overflowRoutes.map((route) => {
-                const cfg    = TAB_CONFIG[route.name];
-                const accent = isDark ? (cfg?.accentDark ?? BLOOM_PINK) : (cfg?.accentLight ?? "#E07A5F");
-                return (
-                  <Pressable
-                    key={route.key}
-                    style={({ pressed }) => [
-                      styles.moreItem,
-                      {
-                        backgroundColor: isDark ? colors.surfaceRaised + "60" : "rgba(255,250,247,0.92)",
-                        borderColor:     isDark ? colors.border               : `${accent}18`,
-                      },
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={() => { setMoreOpen(false); navigation.navigate(route.name); }}
-                  >
-                    <View style={[styles.moreIcon, { backgroundColor: `${accent}22` }]}>
-                      <MaterialCommunityIcons name={iconMap[route.name] ?? "circle-outline"} size={22} color={accent} />
-                    </View>
-                    <Text style={[styles.moreLabel, { color: colors.textPrimary }]}>
-                      {labelMap[route.name] ?? route.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+          <Pressable
+            style={[styles.moreScrim, { backgroundColor: isDark ? NAV_SCRIM_DARK : NAV_SCRIM_LIGHT }]}
+            onPress={() => setMoreOpen(false)}
+          >
+            <View style={[
+              styles.moreSheet,
+              {
+                backgroundColor: isDark ? colors.surface    : "rgba(255,253,252,0.98)",
+                borderColor:     isDark ? colors.border     : "rgba(255,255,255,0.88)",
+                shadowColor:     isDark ? colors.background : "#9B7B70",
+              },
+            ]}>
+              <Text style={[styles.moreTitle, { color: colors.textPrimary }]}>More from MyStree</Text>
+              <View style={styles.moreGrid}>
+                {overflowRoutes.map((route) => {
+                  const cfg    = TAB_CONFIG[route.name];
+                  const accent = isDark ? (cfg?.accentDark ?? BLOOM_PINK) : (cfg?.accentLight ?? "#E07A5F");
+                  return (
+                    <Pressable
+                      key={route.key}
+                      style={({ pressed }) => [
+                        styles.moreItem,
+                        {
+                          backgroundColor: isDark ? colors.surfaceRaised + "60" : "rgba(255,250,247,0.92)",
+                          borderColor:     isDark ? colors.border                : `${accent}18`,
+                        },
+                        pressed && styles.pressed,
+                      ]}
+                      onPress={() => { setMoreOpen(false); navigation.navigate(route.name); }}
+                    >
+                      <View style={[styles.moreIcon, { backgroundColor: `${accent}22` }]}>
+                        <MaterialCommunityIcons name={iconMap[route.name] ?? "circle-outline"} size={22} color={accent} />
+                      </View>
+                      <Text style={[styles.moreLabel, { color: colors.textPrimary }]}>
+                        {labelMap[route.name] ?? route.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-        </Pressable>
+          </Pressable>
         </View>
       </WebSafeModal>
-    </View>
+    </>
   );
 }
 
@@ -414,10 +431,11 @@ const styles = StyleSheet.create({
     maxWidth: 390,
     width: "100%",
     alignSelf: "center",
-    overflow: "hidden",
+    // No overflow:hidden — would clip moreSheet box-shadow and flex children
   },
   moreScrim: {
     flex: 1,
+    height: "100%",
     justifyContent: "flex-end",
     padding: 18,
   },

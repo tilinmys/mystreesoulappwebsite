@@ -149,11 +149,6 @@ export default function PrivacyConsentScreen() {
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
       <StatusBar style="light" backgroundColor="#110812" translucent />
 
-      {/* Ambient blobs — atmosphere only */}
-      <View style={s.blob1} pointerEvents="none" />
-      <View style={s.blob2} pointerEvents="none" />
-      <View style={s.blob3} pointerEvents="none" />
-
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable

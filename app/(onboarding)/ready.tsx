@@ -309,10 +309,6 @@ export default function ReadyScreen() {
     <View style={s.root}>
       <StatusBar style="light" backgroundColor={darkColors.background} translucent />
 
-      {/* Decorative environment layout spots */}
-      <View pointerEvents="none" style={s.blob1} />
-      <View pointerEvents="none" style={s.blob2} />
-
       <SafeAreaView style={s.safe} edges={["top", "left", "right", "bottom"]}>
 
         {/* ── Editorial Header ────────────────────────────────────────────── */}

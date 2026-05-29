@@ -134,10 +134,6 @@ export default function OnboardingGoalsScreen() {
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
       <StatusBar style="light" backgroundColor="#110812" translucent />
-      {/* Ambient background atmosphere */}
-      <View style={s.blob1} pointerEvents="none" />
-      <View style={s.blob2} pointerEvents="none" />
-
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable

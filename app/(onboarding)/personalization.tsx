@@ -283,11 +283,6 @@ export default function PersonalizationScreen() {
   return (
     <View style={s.root}>
       <StatusBar style="light" backgroundColor="#110812" translucent />
-      {/* Ambient blobs — atmosphere only */}
-      <View pointerEvents="none" style={s.blob1} />
-      <View pointerEvents="none" style={s.blob2} />
-      <View pointerEvents="none" style={s.blob3} />
-
       <SafeAreaView style={s.safe} edges={["top", "left", "right"]}>
 
         {/* ── Header ────────────────────────────────────────────────── */}

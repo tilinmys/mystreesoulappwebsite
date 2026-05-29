@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CachedImage } from "../components/CachedImage";
-import { AuraBackground } from "../components/system/AuraBackground";
 import { ValidationToast } from "../components/ValidationToast";
 import { spacing } from "../constants/spacing";
 import { typography } from "../constants/typography";
@@ -82,7 +81,6 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
-      <AuraBackground variant="profile" />
       <ValidationToast
         message={error ? error : null}
         onDismiss={() => setError("")}

@@ -259,9 +259,6 @@ export default function EmotionalWellnessScreen() {
   return (
     <View style={s.root}>
       {/* Ambient blobs — atmosphere only */}
-      <View pointerEvents="none" style={s.blob1} />
-      <View pointerEvents="none" style={s.blob2} />
-      <View pointerEvents="none" style={s.blob3} />
 
       {/* Floating particle dots */}
       <FloatingParticles />

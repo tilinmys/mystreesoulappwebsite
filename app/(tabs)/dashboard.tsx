@@ -1518,7 +1518,7 @@ const SIDE_PAD     = 20;
 const getStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   scrollView: { flex: 1, backgroundColor: "transparent" },
-  scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, paddingBottom: 28, gap: 20 },
+  scroll: { paddingHorizontal: SIDE_PAD, paddingTop: 18, paddingBottom: Platform.OS === "web" ? 110 : 28, gap: 20 },
 
   // â"€â"€ Header â"€â"€
   header: {

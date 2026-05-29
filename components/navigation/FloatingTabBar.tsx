@@ -25,7 +25,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebSafeModal } from "../WebSafeModal";
@@ -157,8 +157,20 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
     );
   };
 
+  // On web, use position:fixed so the bar escapes overflow:hidden parent
+  // containers and is always pinned to the bottom of the viewport.
+  // Center it over the 390px app frame with left:50% + translateX(-195).
+  const webStyle = Platform.OS === "web" ? {
+    position: "fixed" as any,
+    bottom: 0,
+    left: "50%" as any,
+    right: "auto" as any,
+    width: 390,
+    transform: [{ translateX: -195 }],
+  } : {};
+
   return (
-    <View style={[styles.navWrap, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.navWrap, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom, 10) }, webStyle]}>
       {/* Nav pill — distinctly lifts off the background */}
       <View style={[
         styles.navBar,

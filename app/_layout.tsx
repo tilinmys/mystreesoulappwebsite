@@ -178,6 +178,48 @@ export default function RootLayout() {
     };
   }, []);
 
+  // ── Web scroll & layout polish ───────────────────────────────────────────
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const style = document.createElement("style");
+    style.id = "mystree-web-polish";
+    style.textContent = `
+      /* Momentum scrolling on iOS Safari */
+      * { -webkit-overflow-scrolling: touch; }
+
+      /* Hide all native scrollbars — app scrolling only */
+      ::-webkit-scrollbar { display: none; }
+      * { scrollbar-width: none; -ms-overflow-style: none; }
+
+      /* Prevent bounce/overscroll on the root document */
+      html, body { overscroll-behavior: none; height: 100%; }
+
+      /* Centre the 390px app frame in the viewport on desktop */
+      body > div:first-child {
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+        background: #0f0a0f;
+      }
+
+      /* Smooth pointer cursor for all pressable-like elements */
+      [role="button"], button { cursor: pointer; }
+
+      /* Kill tap highlight flash on mobile web */
+      * { -webkit-tap-highlight-color: transparent; }
+    `;
+
+    if (!document.getElementById("mystree-web-polish")) {
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      const existing = document.getElementById("mystree-web-polish");
+      if (existing) existing.remove();
+    };
+  }, []);
+
   // ── Loading gate — show spinner until fonts + stores are ready ───────────
   if (!fontsReady || !hydrated) {
     return (

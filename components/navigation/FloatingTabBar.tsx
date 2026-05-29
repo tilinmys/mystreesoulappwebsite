@@ -178,7 +178,7 @@ export function FloatingTabBar({ navigation, state }: { navigation: any; state: 
       </View>
 
       {/* Overflow "More" sheet */}
-      <WebSafeModal transparent={true} statusBarTranslucent={true} visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)}>
+      <WebSafeModal transparent={true} statusBarTranslucent={true} visible={moreOpen} animationType="fade" onRequestClose={() => setMoreOpen(false)} fixedOnWeb={true}>
         <View style={styles.modalShell}>
         <Pressable style={[styles.moreScrim, { backgroundColor: isDark ? NAV_SCRIM_DARK : NAV_SCRIM_LIGHT }]} onPress={() => setMoreOpen(false)}>
           <View style={[
@@ -398,6 +398,7 @@ const styles = StyleSheet.create({
   // ── More sheet ────────────────────────────────────────────────────────────────
   modalShell: {
     flex: 1,
+    height: "100%",
     maxWidth: 390,
     width: "100%",
     alignSelf: "center",
